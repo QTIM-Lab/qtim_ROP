@@ -17,7 +17,7 @@ class RetinalDataset(object):
     It has been modified to use a human-readable config file in YAML format.
     """
 
-    def __init__(self, config_file, out_dir):
+    def __init__(self, config_file):
 
         with open(config_file, 'rb') as y:
             self.config = yaml.load(y)
