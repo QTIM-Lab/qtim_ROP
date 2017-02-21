@@ -54,7 +54,7 @@ class RetinalDataset(object):
         masks_arr = np.empty((self.n_imgs, self.height, self.width))
 
         # Loop through all files in images directory
-        for i, file_ in enumerate(listdir(imgs_dir)):
+        for i, file_ in enumerate(sorted(listdir(imgs_dir))):
 
             print "Loading '{}'".format(file_)
 
@@ -90,7 +90,7 @@ class RetinalDataset(object):
 
         masks_arr = np.reshape(masks_arr, (self.n_imgs, 1, self.height, self.width))
         assert(masks_arr.shape == (self.n_imgs, 1, self.height, self.width))
-        
+
         # Write the data to disk
         type_ = 'train' if training else 'test'
 
