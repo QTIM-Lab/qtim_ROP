@@ -5,8 +5,8 @@ import h5py
 import numpy as np
 from PIL import Image
 import yaml
-from os import listdir
-from os.path import join
+from os import listdir, mkdir
+from os.path import join, isdir
 
 
 class RetinalDataset(object):
@@ -23,16 +23,20 @@ class RetinalDataset(object):
             self.config = yaml.load(y)
 
         self.dataset_path = self.config['dataset_path']
+        assert(isdir(self.dataset_path))
+
         self.n_imgs = self.config['n_imgs']
         self.height = self.config['height']
         self.width = self.config['width']
         self.channels = 3
 
-        # Directory of the trainging and testing data
+        # Directory of the training and testing data
         self.training = join(self.dataset_path, 'training')
         self.testing = join(self.dataset_path, 'testing')
+        self.out_dir = self.config['out_dir']
 
-        self.out_dir = out_dir
+        if not isdir(self.out_dir):
+            mkdir(self.out_dir)
 
     def create_dataset(self, training=True):
 
@@ -113,8 +117,7 @@ if __name__ == "__main__":
 
     import sys
     conf = sys.argv[1]
-    out = sys.argv[2]
 
-    rd = RetinalDataset(conf, out)
+    rd = RetinalDataset(conf)
     training_imgs, _training_ground_truth, training_masks = rd.create_dataset(training=True)
     testing_imgs, testing_ground_truth, testing_masks = rd.create_dataset(training=False)
