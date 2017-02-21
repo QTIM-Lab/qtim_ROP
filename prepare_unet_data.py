@@ -32,7 +32,7 @@ class RetinalDataset(object):
 
         # Directory of the training and testing data
         self.training = join(self.dataset_path, 'training')
-        self.testing = join(self.dataset_path, 'testing')
+        self.testing = join(self.dataset_path, 'test')
         self.out_dir = self.config['out_dir']
 
         if not isdir(self.out_dir):
@@ -50,23 +50,25 @@ class RetinalDataset(object):
 
         # Initialise empty data arrays
         imgs_arr = np.empty((self.n_imgs, self.height, self.width, self.channels))
-        ground_truth_array = np.empty((self.n_imgs, self.height, self.width))
+        ground_truth_arr = np.empty((self.n_imgs, self.height, self.width))
         masks_arr = np.empty((self.n_imgs, self.height, self.width))
 
         # Loop through all files in images directory
         for i, file_ in enumerate(listdir(imgs_dir)):
 
+            print "Loading '{}'".format(file_)
+
             # Add the image to an ndarray
-            img = Image.open(join(imgs_dir, file))
+            img = Image.open(join(imgs_dir, file_))
             imgs_arr[i] = np.asarray(img)
 
             # Find the ground truth
             gt_file = file_[0:6] + "_manual1.gif"
             g_truth = Image.open(join(ground_truth_dir, gt_file))
-            ground_truth_array[i] = np.asarray(g_truth)
+            ground_truth_arr[i] = np.asarray(g_truth)
 
             # Find the mask
-            ext = "_training_mask.gif" if training else "_test_mask.gif"
+            ext = "_test_mask.gif"
             mask_file = file_[0:6] + ext
             b_mask = Image.open(join(mask_dir, mask_file))
             masks_arr[i] = np.asarray(b_mask)
@@ -75,21 +77,29 @@ class RetinalDataset(object):
         print "imgs max: {}".format(np.max(imgs_arr))
         print "imgs min: {}".format(np.min(imgs_arr))
 
-        assert(np.max(ground_truth_array) == 1 and np.max(masks_arr) == 1)
-        assert(np.min(ground_truth_array) == 0 and np.min(masks_arr) == 0)
+        assert(np.max(ground_truth_arr) == 1 and np.max(masks_arr) == 1)
+        assert(np.min(ground_truth_arr) == 0 and np.min(masks_arr) == 0)
         print "Ground truth and border masks are correctly within pixel value range 0 - 1 (black - white)"
 
         # Reshaping
         imgs_arr = np.transpose(imgs_arr,(0,3,1,2))
         assert(imgs_arr.shape == (self.n_imgs, self.channels, self.height, self.width))
 
-        ground_truth_array = np.reshape(ground_truth_array,(self.n_imgs, 1, self.height, self.width))
-        assert(ground_truth_array.shape == (self.n_imgs, 1, self.height, self.width))
+        ground_truth_arr = np.reshape(ground_truth_arr,(self.n_imgs, 1, self.height, self.width))
+        assert(ground_truth_arr.shape == (self.n_imgs, 1, self.height, self.width))
 
         masks_arr = np.reshape(masks_arr, (self.n_imgs, 1, self.height, self.width))
         assert(masks_arr.shape == (self.n_imgs, 1, self.height, self.width))
+        
+        # Write the data to disk
+        type_ = 'train' if training else 'test'
 
-        return imgs_arr, ground_truth_array, masks_arr
+        print "Saving dataset to '{}'".format(self.out_dir)
+        write_hdf5(imgs_arr, join(self.out_dir, "200image_dataset_imgs_{}.hdf5".format(type_)))
+        write_hdf5(ground_truth_arr, join(self.out_dir, "200image_dataset_groundTruth_{}.hdf5".format(type_)))
+        write_hdf5(masks_arr, join(self.out_dir, "200image_dataset_borderMasks_{}.hdf5".format(type_)))
+
+        return imgs_arr, ground_truth_arr, masks_arr
 
 
 # #getting the training datasets
@@ -119,5 +129,9 @@ if __name__ == "__main__":
     conf = sys.argv[1]
 
     rd = RetinalDataset(conf)
+
+    print "Generating training data..."
     training_imgs, _training_ground_truth, training_masks = rd.create_dataset(training=True)
+
+    print "Generating test data..."
     testing_imgs, testing_ground_truth, testing_masks = rd.create_dataset(training=False)
