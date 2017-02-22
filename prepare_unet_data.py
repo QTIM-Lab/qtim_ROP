@@ -71,13 +71,13 @@ class RetinalDataset(object):
             ext = "_test_mask.gif"
             mask_file = file_[0:6] + ext
             b_mask = Image.open(join(mask_dir, mask_file))
-            masks_arr[i] = np.asarray(b_mask)
+            masks_arr[i] = np.asarray(b_mask).astype(np.uint8) * 255
 
         # Value assertions
         print "imgs max: {}".format(np.max(imgs_arr))
         print "imgs min: {}".format(np.min(imgs_arr))
 
-        assert(np.max(ground_truth_arr) == 1 and np.max(masks_arr) == 1)
+        assert(np.max(ground_truth_arr) == 255 and np.max(masks_arr) == 255)
         assert(np.min(ground_truth_arr) == 0 and np.min(masks_arr) == 0)
         print "Ground truth and border masks are correctly within pixel value range 0 - 255 (black - white)"
 
