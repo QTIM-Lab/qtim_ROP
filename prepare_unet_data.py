@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
-import os
-import h5py
 import numpy as np
 from PIL import Image
 import yaml
 from os import listdir, mkdir
 from os.path import join, isdir
+from common import write_hdf5
 
 
 class RetinalDataset(object):
@@ -100,27 +99,6 @@ class RetinalDataset(object):
         write_hdf5(masks_arr, join(self.out_dir, "200image_dataset_borderMasks_{}.hdf5".format(type_)))
 
         return imgs_arr, ground_truth_arr, masks_arr
-
-
-# #getting the training datasets
-# print "getting training data"
-# imgs_train, groundTruth_train, border_masks_train = get_datasets(original_imgs_train,groundTruth_imgs_train,borderMasks_imgs_train,"train")
-# print "saving train datasets"
-# write_hdf5(imgs_train, dataset_path + "200image_test_set_dataset_imgs_train.hdf5")
-# write_hdf5(groundTruth_train, dataset_path + "200image_test_set_dataset_groundTruth_train.hdf5")
-# write_hdf5(border_masks_train,dataset_path + "200image_test_set_dataset_borderMasks_train.hdf5")
-#
-# #getting the testing datasets
-# imgs_test, groundTruth_test, border_masks_test = get_datasets(original_imgs_test,groundTruth_imgs_test,borderMasks_imgs_test,"test")
-# print "saving test datasets"
-# write_hdf5(imgs_test,dataset_path + "200image_test_set_dataset_imgs_test.hdf5")
-# write_hdf5(groundTruth_test, dataset_path + "200image_test_set_dataset_groundTruth_test.hdf5")
-# write_hdf5(border_masks_test,dataset_path + "200image_test_set_dataset_borderMasks_test.hdf5")
-
-
-def write_hdf5(arr, outfile):
-    with h5py.File(outfile, "w") as f:
-        f.create_dataset("image", data=arr, dtype=arr.dtype)
 
 
 if __name__ == "__main__":
