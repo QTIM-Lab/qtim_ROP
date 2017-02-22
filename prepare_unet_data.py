@@ -65,7 +65,7 @@ class RetinalDataset(object):
             # Find the ground truth
             gt_file = file_[0:6] + "_manual1.gif"
             g_truth = Image.open(join(ground_truth_dir, gt_file))
-            ground_truth_arr[i] = np.asarray(g_truth)
+            ground_truth_arr[i] = np.asarray(g_truth).astype(np.uint8) * 255
 
             # Find the mask
             ext = "_test_mask.gif"
@@ -79,7 +79,7 @@ class RetinalDataset(object):
 
         assert(np.max(ground_truth_arr) == 1 and np.max(masks_arr) == 1)
         assert(np.min(ground_truth_arr) == 0 and np.min(masks_arr) == 0)
-        print "Ground truth and border masks are correctly within pixel value range 0 - 1 (black - white)"
+        print "Ground truth and border masks are correctly within pixel value range 0 - 255 (black - white)"
 
         # Reshaping
         imgs_arr = np.transpose(imgs_arr,(0,3,1,2))
