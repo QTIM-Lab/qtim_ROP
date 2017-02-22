@@ -2,6 +2,7 @@
 
 import cv2, numpy
 from glob import glob
+from os import mkdir
 from os.path import join, isdir, basename
 from methods import *
 
@@ -22,6 +23,10 @@ def preprocessing(in_path, out_path, method='bg', m_args=None):
 
     for c in CLASSES:
 
+        class_dir = join(out_path, c)
+        if not isdir(class_dir):
+            mkdir(class_dir)
+
         im_list = find_images(join(in_path, c))
         assert(len(im_list) > 0)
 
@@ -30,7 +35,7 @@ def preprocessing(in_path, out_path, method='bg', m_args=None):
 
                 proc_im = func(im, *m_args)
                 base_name = basename(im)
-                new_file = join(out_path, c, base_name)
+                new_file = join(class_dir, base_name)
 
                 print "Writing preprocessed image to '{}'".format(new_file)
                 cv2.imwrite(new_file, proc_im)
