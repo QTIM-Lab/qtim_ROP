@@ -4,7 +4,7 @@ from scipy.misc import imresize
 
 def resize(f, *args):
 
-    width, height = int(args[0]), int(args[1])
+    height, width = int(args[0]), int(args[1])
     im = cv2.imread(f)
 
     im_shrunk = imresize(im, (width, height), interp='bicubic')
