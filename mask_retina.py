@@ -18,13 +18,13 @@ def create_mask(im_arr, erode=None):
     all_labels = measure.label(inv_bin)
 
     # Select largest object and invert
-    seg_arr = np.invert(all_labels == 1).astype(np.uint8)
+    seg_arr = np.invert(all_labels == 1)
 
     if erode:
-        strel = selem.disk(erode, dtype=np.uint8)
+        strel = selem.disk(erode, dtype=np.bool)
         seg_arr = binary_erosion(seg_arr, selem=strel)
 
-    return seg_arr
+    return seg_arr.astype(np.bool)
 
 
 if __name__ == "__main__":

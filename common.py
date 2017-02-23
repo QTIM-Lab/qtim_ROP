@@ -22,7 +22,7 @@ def imgs_to_unet_array(img_list):
     width, height, channels = test_im.shape
 
     imgs_arr = np.empty((n_imgs, width, height, channels))
-    masks_arr = np.empty((n_imgs, width, height, 1))
+    masks_arr = np.empty((n_imgs, width, height, 1), dtype=np.bool)
 
     for i, im_path in enumerate(img_list):
 

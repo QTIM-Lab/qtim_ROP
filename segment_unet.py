@@ -28,7 +28,7 @@ def segment_unet(input_path, out_dir, model):
     imgs_original, masks = imgs_to_unet_array(im_list)
 
     # Pre-process the images, and return as patches
-    stride_x, stride_y = 10, 10
+    stride_x, stride_y = 6, 6
     img_patches, new_height, new_width, img_masks = preprocess_images(imgs_original, masks, 48, 48, stride_x, stride_y)
 
     # Define model
@@ -50,8 +50,8 @@ def segment_unet(input_path, out_dir, model):
     for im_name, seg, mask in zip(im_list, segmentations, img_masks):
 
         # Mask the segmentation and transpose
-        seg_masked = seg * mask
-        seg_T = np.transpose(seg_masked, (1, 2, 0))
+        seg[np.invert(mask.astype(np.bool))] = 0
+        seg_T = np.transpose(seg, (1, 2, 0))
 
         # Save masked segmentation
         name, ext = splitext(basename(im_name))
