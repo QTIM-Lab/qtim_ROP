@@ -47,7 +47,7 @@ def segment_unet(input_path, out_dir, model):
 
         # Load original image and create mask
         mask = create_mask(np.asarray(Image.open(im_name)))
-        seg_T = np.transpose(seg, (1, 2, 0)) * mask
+        seg_T = np.transpose(seg, (1, 2, 0)) * np.expand_dims(mask, 2)
 
         # Save masked segmentation
         name, ext = splitext(basename(im_name))
