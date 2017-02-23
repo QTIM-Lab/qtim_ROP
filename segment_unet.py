@@ -23,15 +23,8 @@ def segment_unet(input_path, out_dir, model):
     else:
         raise IOError("Please specify a valid image path or folder of images")
 
-    # Create ndarray of images to feed into model
-    imgs_array = imgs_to_unet_array(im_list)
-
-    # Preprocessing
-    imgs_array = my_PreProc(imgs_array)
-    new_height, new_width = imgs_array.shape[2], imgs_array.shape[3]
-
-    # Extract patches
-    img_patches = extract_ordered(imgs_array, 48, 48)
+    # Pre-process the images, and return as patches
+    img_patches, new_height, new_width = preprocess_images(im_list, 48, 48, 5, 5)
 
     # Define model
     model_basename = basename(model)
@@ -54,7 +47,21 @@ def segment_unet(input_path, out_dir, model):
         filename = join(out_dir, basename(im_name))
         visualize(seg_T, filename)
 
-get_data_testing_overlap
+
+def preprocess_images(img_list, patch_height, patch_width, stride_height, stride_width):
+
+    test_imgs_original = imgs_to_unet_array(img_list)
+    test_imgs = my_PreProc(test_imgs_original)
+
+    # Pad images so they can be divided exactly by the patches dimensions
+    test_imgs = paint_border_overlap(test_imgs, patch_height, patch_width, stride_height, stride_width)
+
+    # Extract patches from the full images
+    patches_imgs_test = extract_ordered_overlap(test_imgs, patch_height, patch_width, stride_height, stride_width)
+
+    return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3]
+
+
 if __name__ == "__main__":
 
     from argparse import ArgumentParser
