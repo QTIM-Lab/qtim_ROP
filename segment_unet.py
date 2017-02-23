@@ -1,6 +1,7 @@
-from os.path import isdir, isfile, join, basename
+from os.path import isdir, isfile, join, basename, splitext
 from common import find_images, imgs_to_unet_array
-
+from PIL import Image
+from mask_retina import create_mask
 from keras.models import model_from_json
 
 try:
@@ -43,8 +44,14 @@ def segment_unet(input_path, out_dir, model):
     segmentations = recompone_overlap(pred_imgs, new_height, new_width, 5, 5)  # not sure about the stride widths
 
     for seg, im_name in zip(segmentations, im_list):
-        seg_T = np.transpose(seg, (1, 2, 0))
-        filename = join(out_dir, basename(im_name))
+
+        # Load original image and create mask
+        mask = create_mask(Image.open(im_name))
+        seg_T = np.transpose(seg, (1, 2, 0)) * mask
+
+        # Save masked segmentation
+        name, ext = splitext(basename(im_name))
+        filename = join(out_dir, name + '_seg' + ext)
         visualize(seg_T, filename)
 
 
@@ -69,7 +76,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('-i', '--images', help="Image or folder of images", dest='images', required=True)
     parser.add_argument('-o', '--out-dir', help="Output directory", dest="out_dir", required=True)
-    parser.add_argument('-m', '--model', help='retina-unet directory', dest='model', required=True)
+    parser.add_argument('-u', '--unet', help='retina-unet dir', dest='model', required=True)
     args = parser.parse_args()
 
     segment_unet(args.images, args.out_dir, args.model)
