@@ -24,8 +24,12 @@ def segment_unet(input_path, out_dir, model):
     else:
         raise IOError("Please specify a valid image path or folder of images")
 
+    # Load images and create masks
+    imgs_original, masks = imgs_to_unet_array(im_list)
+
     # Pre-process the images, and return as patches
-    img_patches, new_height, new_width, img_masks = preprocess_images(im_list, 48, 48, 5, 5)
+    stride_x, stride_y = 5, 5
+    img_patches, new_height, new_width, img_masks = preprocess_images(imgs_original, masks, 48, 48, stride_x, stride_y)
 
     # Define model
     _, model_basename = split(model)
@@ -41,7 +45,7 @@ def segment_unet(input_path, out_dir, model):
     pred_imgs = pred_to_imgs(predictions)
 
     # Reconstruct images
-    segmentations = recompone_overlap(pred_imgs, new_height, new_width, 5, 5)  # not sure about the stride widths
+    segmentations = recompone_overlap(pred_imgs, new_height, new_width, stride_x, stride_y )  # not sure about the stride widths
 
     for im_name, seg, mask in zip(im_list, segmentations, img_masks):
 
@@ -57,9 +61,8 @@ def segment_unet(input_path, out_dir, model):
         visualize(seg_T, filename)
 
 
-def preprocess_images(img_list, patch_height, patch_width, stride_height, stride_width):
+def preprocess_images(imgs_original, masks, patch_height, patch_width, stride_height, stride_width):
 
-    imgs_original, masks = imgs_to_unet_array(img_list)
     test_imgs = my_PreProc(imgs_original)
 
     # Pad images so they can be divided exactly by the patches dimensions

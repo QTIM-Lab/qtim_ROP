@@ -29,7 +29,7 @@ def imgs_to_unet_array(img_list):
         img = np.asarray(Image.open(im_path))
         imgs_arr[i] = img
 
-        mask = create_mask(img)
+        mask = create_mask(img, erode=5)
         masks_arr[i] = np.expand_dims(mask, 2)
 
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))

@@ -1,12 +1,14 @@
 from skimage import measure
 from skimage.color import rgb2gray
 from skimage.filters import threshold_otsu
+from skimage.morphology import binary_erosion, selem
+
 from PIL import Image
 import numpy as np
 from os.path import split, join, splitext
 
 
-def create_mask(im_arr):
+def create_mask(im_arr, erode=None):
 
     if im_arr.shape[2] == 3:
         im_arr = rgb2gray(im_arr)
@@ -15,7 +17,13 @@ def create_mask(im_arr):
     inv_bin = np.invert(im_arr > thresh)
     all_labels = measure.label(inv_bin)
 
+    # Select largest object and invert
     seg_arr = np.invert(all_labels == 1).astype(np.uint8)
+
+    if erode:
+        strel = selem.disk(erode, dtype=np.uint8)
+        seg_arr = binary_erosion(seg_arr, selem=strel)
+
     return seg_arr
 
 
