@@ -40,7 +40,7 @@ def preprocessing(in_path, out_path, method='bg', m_args=None):
                 cv2.imwrite(new_file, proc_im)
 
             except:
-                print(im)
+                print "Error processing '{}'".format(im)
 
 
 
