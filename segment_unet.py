@@ -28,7 +28,7 @@ def segment_unet(input_path, out_dir, model):
     imgs_original, masks = imgs_to_unet_array(im_list)
 
     # Pre-process the images, and return as patches
-    stride_x, stride_y = 5, 5
+    stride_x, stride_y = 10, 10
     img_patches, new_height, new_width, img_masks = preprocess_images(imgs_original, masks, 48, 48, stride_x, stride_y)
 
     # Define model
@@ -45,7 +45,7 @@ def segment_unet(input_path, out_dir, model):
     pred_imgs = pred_to_imgs(predictions)
 
     # Reconstruct images
-    segmentations = recompone_overlap(pred_imgs, new_height, new_width, stride_x, stride_y )  # not sure about the stride widths
+    segmentations = recompone_overlap(pred_imgs, new_height, new_width, stride_x, stride_y)  # not sure about the stride widths
 
     for im_name, seg, mask in zip(im_list, segmentations, img_masks):
 
@@ -55,9 +55,8 @@ def segment_unet(input_path, out_dir, model):
 
         # Save masked segmentation
         name, ext = splitext(basename(im_name))
-        filename = join(out_dir, name + '_seg' + ext)
+        filename = join(out_dir, name + '_seg')
         print "Writing {}".format(filename)
-
         visualize(seg_T, filename)
 
 
