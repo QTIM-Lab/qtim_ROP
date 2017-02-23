@@ -1,7 +1,7 @@
+#!/usr/bin/env python
+
 from os.path import isdir, isfile, join, basename, splitext, split
 from common import find_images, imgs_to_unet_array
-from PIL import Image
-from mask_retina import create_mask
 from keras.models import model_from_json
 
 try:
