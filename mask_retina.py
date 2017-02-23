@@ -6,13 +6,13 @@ import numpy as np
 from os.path import split, join, splitext
 
 
-def create_mask(im):
+def create_mask(im_arr):
 
-    if im.shape[2] == 3:
-        im = rgb2gray(im)
+    if im_arr.shape[2] == 3:
+        im_arr = rgb2gray(im_arr)
 
-    thresh = threshold_otsu(im)
-    inv_bin = np.invert(im > thresh)
+    thresh = threshold_otsu(im_arr)
+    inv_bin = np.invert(im_arr > thresh)
     all_labels = measure.label(inv_bin)
 
     seg_arr = np.invert(all_labels == 1).astype(np.uint8)

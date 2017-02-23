@@ -25,7 +25,7 @@ def segment_unet(input_path, out_dir, model):
         raise IOError("Please specify a valid image path or folder of images")
 
     # Pre-process the images, and return as patches
-    img_patches, new_height, new_width = preprocess_images(im_list, 48, 48, 5, 5)
+    img_patches, new_height, new_width, img_masks = preprocess_images(im_list, 48, 48, 5, 5)
 
     # Define model
     _, model_basename = split(model)
@@ -43,11 +43,10 @@ def segment_unet(input_path, out_dir, model):
     # Reconstruct images
     segmentations = recompone_overlap(pred_imgs, new_height, new_width, 5, 5)  # not sure about the stride widths
 
-    for seg, im_name in zip(segmentations, im_list):
+    for im_name, seg, mask in zip(im_list, segmentations, img_masks):
 
         # Load original image and create mask
-        mask = create_mask(np.asarray(Image.open(im_name)))
-        seg_T = np.transpose(seg, (1, 2, 0)) * np.expand_dims(mask, 2)
+        seg_T = np.transpose(seg, (1, 2, 0)) * mask
 
         # Save masked segmentation
         name, ext = splitext(basename(im_name))
@@ -59,16 +58,17 @@ def segment_unet(input_path, out_dir, model):
 
 def preprocess_images(img_list, patch_height, patch_width, stride_height, stride_width):
 
-    test_imgs_original = imgs_to_unet_array(img_list)
-    test_imgs = my_PreProc(test_imgs_original)
+    imgs_original, masks = imgs_to_unet_array(img_list)
+    test_imgs = my_PreProc(imgs_original)
 
     # Pad images so they can be divided exactly by the patches dimensions
     test_imgs = paint_border_overlap(test_imgs, patch_height, patch_width, stride_height, stride_width)
+    test_masks = paint_border_overlap(masks, patch_height, patch_width, stride_height, stride_width)
 
     # Extract patches from the full images
     patches_imgs_test = extract_ordered_overlap(test_imgs, patch_height, patch_width, stride_height, stride_width)
 
-    return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3]
+    return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3], test_masks
 
 
 if __name__ == "__main__":

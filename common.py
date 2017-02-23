@@ -3,6 +3,7 @@ from os.path import join
 import h5py
 from PIL import Image
 import numpy as np
+from mask_retina import create_mask
 
 
 def find_images(im_path):
@@ -18,20 +19,24 @@ def imgs_to_unet_array(img_list):
 
     n_imgs = len(img_list)
     test_im = np.asarray(Image.open(img_list[0]))
-
     width, height, channels = test_im.shape
 
     imgs_arr = np.empty((n_imgs, width, height, channels))
+    masks_arr = np.empty((n_imgs, width, height, 1))
 
     for i, im_path in enumerate(img_list):
 
-        img = Image.open(im_path)
-        imgs_arr[i] = np.asarray(img)
+        img = np.asarray(Image.open(im_path))
+        imgs_arr[i] = img
+
+        mask = create_mask(img)
+        masks_arr[i] = np.expand_dims(mask, 2)
 
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
-    print imgs_arr.shape
+    masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
 
-    return imgs_arr
+    return imgs_arr, masks_arr
+
 
 def write_hdf5(arr, outfile):
     with h5py.File(outfile, "w") as f:
