@@ -1,4 +1,4 @@
-from os.path import isdir, isfile, join, basename, splitext
+from os.path import isdir, isfile, join, basename, splitext, split
 from common import find_images, imgs_to_unet_array
 from PIL import Image
 from mask_retina import create_mask
@@ -28,7 +28,7 @@ def segment_unet(input_path, out_dir, model):
     img_patches, new_height, new_width = preprocess_images(im_list, 48, 48, 5, 5)
 
     # Define model
-    model_basename = basename(model)
+    _, model_basename = split(model)
     model_arch = join(model, model_basename + '_architecture.json')
     model_weights = join(model, model_basename + '_best_weights.h5')
 
@@ -46,12 +46,14 @@ def segment_unet(input_path, out_dir, model):
     for seg, im_name in zip(segmentations, im_list):
 
         # Load original image and create mask
-        mask = create_mask(Image.open(im_name))
+        mask = create_mask(np.asarray(Image.open(im_name)))
         seg_T = np.transpose(seg, (1, 2, 0)) * mask
 
         # Save masked segmentation
         name, ext = splitext(basename(im_name))
         filename = join(out_dir, name + '_seg' + ext)
+        print "Writing {}".format(filename)
+
         visualize(seg_T, filename)
 
 
