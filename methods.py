@@ -1,5 +1,14 @@
 import cv2, numpy
+from scipy.misc import imresize
 
+
+def resize(f, *args):
+
+    width, height = args[0], args[1]
+    im = cv2.imread(f)
+
+    im_shrunk = imresize(im, (width, height), interp='bicubic')
+    return im_shrunk
 
 # https://github.com/btgraham/SparseConvNet/blob/kaggle_Diabetic_Retinopathy_competition/Data/
 # kaggleDiabeticRetinopathy/preprocessImages.py
@@ -21,3 +30,5 @@ def scale_radius(img, scale):
     r = (x > x.mean() / 10).sum() / 2
     s = scale * 1.0 / r
     return cv2.resize(img, (0, 0), fx=s, fy=s)
+
+

@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-import cv2, numpy
-from glob import glob
+from common import find_images
 from os import mkdir
 from os.path import join, isdir, basename
 from methods import *
 
 
-METHODS = {'bg': kaggle_BG}
+METHODS = {'bg': kaggle_BG, 'resize': resize}
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 SCALE = 256
 
@@ -44,13 +43,6 @@ def preprocessing(in_path, out_path, method='bg', m_args=None):
                 print(im)
 
 
-def find_images(im_path):
-
-    files = []
-    for ext in ('*.bmp', '*.BMP', '*.png', '*.jpg', '*.tif'):
-        files.extend(glob(join(im_path, ext)))
-
-    return sorted(files)
 
 
 if __name__ == '__main__':
@@ -60,8 +52,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-i', '--input-path', dest='input_path', help="Input images to preprocess", required=True)
     parser.add_argument('-o', '--output-path', dest='output_path', help="Path to output processed images", required=True)
-    parser.add_argument('-m', '--method', dest='method', help="Preprocessing method", choices=('bg',), default='bg')
-    parser.add_argument('-a', '--args', dest='m_args', help="Preprocessing arguments", nargs='+', default=(128, .95))
+    parser.add_argument('-m', '--method', dest='method', help="Preprocessing method", choices=('bg',), required=True)
+    parser.add_argument('-a', '--args', dest='m_args', help="Preprocessing arguments", nargs='+', required=True)
 
     args = parser.parse_args()
     preprocessing(args.input_path, args.output_path, method=args.method, m_args=args.m_args)
