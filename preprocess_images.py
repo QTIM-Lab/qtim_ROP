@@ -52,7 +52,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-i', '--input-path', dest='input_path', help="Input images to preprocess", required=True)
     parser.add_argument('-o', '--output-path', dest='output_path', help="Path to output processed images", required=True)
-    parser.add_argument('-m', '--method', dest='method', help="Preprocessing method", choices=('bg',), required=True)
+    parser.add_argument('-m', '--method', dest='method', help="Preprocessing method", choices=('bg','resize'), required=True)
     parser.add_argument('-a', '--args', dest='m_args', help="Preprocessing arguments", nargs='+', required=True)
 
     args = parser.parse_args()
