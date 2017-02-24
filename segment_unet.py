@@ -2,7 +2,7 @@
 
 from os.path import isdir, isfile, join, basename, splitext, split
 from common import find_images, imgs_to_unet_array
-from keras.models import model_from_json
+from models import load_model
 
 try:
     from retinaunet.lib.help_functions import *
@@ -13,51 +13,53 @@ except ImportError:
     exit()
 
 
-def segment_unet(input_path, out_dir, model):
+def segment_unet(input_path, out_dir, unet_dir):
+
+    # Load model
+    model = load_model(unet_dir)
 
     # Get list of images to segment
-    im_list = []
+    data = []
     if isdir(input_path):
-        im_list.extend(find_images(input_path))
+        data.extend(find_images(input_path))
     elif isfile(input_path):
-        im_list.append(input_path)
+        data.append(input_path)
     else:
         raise IOError("Please specify a valid image path or folder of images")
 
-    # Load images and create masks
-    imgs_original, masks = imgs_to_unet_array(im_list)
+    # Loop through chunks of the data, as there may be thousands of images to segment
+    chunks = [data[x:x + 100] for x in xrange(0, len(data), 100)]
 
-    # Pre-process the images, and return as patches
-    stride_x, stride_y = 6, 6
-    img_patches, new_height, new_width, img_masks = preprocess_images(imgs_original, masks, 48, 48, stride_x, stride_y)
+    for chunk_no, img_list in enumerate(chunks):
 
-    # Define model
-    _, model_basename = split(model)
-    model_arch = join(model, model_basename + '_architecture.json')
-    model_weights = join(model, model_basename + '_best_weights.h5')
+        print "Segmenting batch {} of {} ".format(chunk_no + 1, len(chunks))
 
-    model = model_from_json(open(model_arch).read())
-    model.load_weights(model_weights)
+        # Load images and create masks
+        imgs_original, masks = imgs_to_unet_array(img_list)
 
-    # Get predictions
-    print "Running predictions..."
-    predictions = model.predict(img_patches, batch_size=32, verbose=2)
-    pred_imgs = pred_to_imgs(predictions)
+        # Pre-process the images, and return as patches
+        stride_x, stride_y = 6, 6
+        img_patches, new_height, new_width, padded_masks = preprocess_images(imgs_original, masks, 48, 48, stride_x, stride_y)
 
-    # Reconstruct images
-    segmentations = recompone_overlap(pred_imgs, new_height, new_width, stride_x, stride_y)  # not sure about the stride widths
+        # Get predictions
+        print "Running predictions..."
+        predictions = model.predict(img_patches, batch_size=32, verbose=2)
+        pred_imgs = pred_to_imgs(predictions)
 
-    for im_name, seg, mask in zip(im_list, segmentations, img_masks):
+        # Reconstruct images
+        img_segs = recompone_overlap(pred_imgs, new_height, new_width, stride_x, stride_y)  # not sure about the stride widths
 
-        # Mask the segmentation and transpose
-        seg[np.invert(mask.astype(np.bool))] = 0
-        seg_T = np.transpose(seg, (1, 2, 0))
+        for im_name, seg, mask in zip(img_list, img_segs, padded_masks):
 
-        # Save masked segmentation
-        name, ext = splitext(basename(im_name))
-        filename = join(out_dir, name + '_seg')
-        print "Writing {}".format(filename)
-        visualize(seg_T, filename)
+            # Mask the segmentation and transpose
+            seg[np.invert(mask.astype(np.bool))] = 0
+            seg_T = np.transpose(seg, (1, 2, 0))
+
+            # Save masked segmentation
+            name, ext = splitext(basename(im_name))
+            filename = join(out_dir, name + '_seg')
+            print "Writing {}".format(filename)
+            visualize(seg_T, filename)
 
 
 def preprocess_images(imgs_original, masks, patch_height, patch_width, stride_height, stride_width):
