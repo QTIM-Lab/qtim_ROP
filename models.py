@@ -3,6 +3,7 @@ from keras.models import model_from_json
 
 
 def load_model(model):
+
     # Load model
     _, model_basename = split(model)
     model_arch = join(model, model_basename + '_architecture.json')
@@ -10,4 +11,6 @@ def load_model(model):
 
     model = model_from_json(open(model_arch).read())
     model.load_weights(model_weights)
+
+    return model
 
