@@ -84,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--images', help="Image or folder of images", dest='images', required=True)
     parser.add_argument('-o', '--out-dir', help="Output directory", dest="out_dir", required=True)
     parser.add_argument('-u', '--unet', help='retina-unet dir', dest='model', required=True)
-    parser.add_argument('-s', '--stride', help="Stride dimensions (width, height)", nargs='2', default=(8, 8))
+    parser.add_argument('-s', '--stride', help="Stride dimensions (width, height)", nargs='*', default=(8, 8))
     args = parser.parse_args()
 
     segment_unet(args.images, args.out_dir, args.model, stride=args.stride)
