@@ -13,7 +13,7 @@ except ImportError:
     exit()
 
 
-def segment_unet(input_path, out_dir, unet_dir):
+def segment_unet(input_path, out_dir, unet_dir, stride=(8, 8)):
 
     # Load model
     model = load_model(unet_dir)
@@ -37,8 +37,8 @@ def segment_unet(input_path, out_dir, unet_dir):
         # Load images and create masks
         imgs_original, masks = imgs_to_unet_array(img_list)
 
-        # Pre-process the images, and return as patches
-        stride_x, stride_y = 6, 6
+        # Pre-process the images, and return as patches (TODO: get patch size from the model)
+        stride_x, stride_y = stride[0], stride[1]
         img_patches, new_height, new_width, padded_masks = preprocess_images(imgs_original, masks, 48, 48, stride_x, stride_y)
 
         # Get predictions
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--images', help="Image or folder of images", dest='images', required=True)
     parser.add_argument('-o', '--out-dir', help="Output directory", dest="out_dir", required=True)
     parser.add_argument('-u', '--unet', help='retina-unet dir', dest='model', required=True)
+    parser.add_argument('-s', '--stride', help="Stride dimensions (width, height)", nargs='2', default=(8, 8))
     args = parser.parse_args()
 
-    segment_unet(args.images, args.out_dir, args.model)
+    segment_unet(args.images, args.out_dir, args.model, stride=args.stride)
