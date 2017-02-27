@@ -5,6 +5,8 @@ from PIL import Image
 import numpy as np
 from mask_retina import create_mask
 
+CLASSES = ['No', 'Pre-Plus', 'Plus']
+
 
 def find_images(im_path):
 
