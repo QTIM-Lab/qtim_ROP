@@ -37,11 +37,11 @@ class Pipeline(object):
 
         # Create augmenter
         self.augmenter = ImageDataGenerator(
-            rotation_range=20,
+            rotation_range=10,
             width_shift_range=float(self.resize['width']) * 1e-5,
             height_shift_range=float(self.resize['height']) * 1e-5,
             # rescale=1. / 255,
-            shear_range=0.01,
+            shear_range=0.001,
             zoom_range=0.05,
             horizontal_flip=True,
             vertical_flip=True,
