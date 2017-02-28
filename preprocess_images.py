@@ -73,6 +73,7 @@ class Pipeline(object):
 
         for class_ in CLASSES:
 
+            train_total, val_total = 0, 0
             train_ids, val_ids = [], []
 
             im_list = find_images(join(self.input_dir, class_))
@@ -92,12 +93,16 @@ class Pipeline(object):
 
                 # Add to training or validation
                 r = uniform(0, 1)
-                if r < self.train_split and sid not in val_ids:
+                if r < self.train_split and sid not in val_ids and train_total < self.train_size:
                     out_dir = self.training_dir
                     train_ids.append(sid)
-                else:
+                    train_total += 1
+                elif r > self.train_split and sid not in train_ids and val_total < self.val_size:
                     out_dir = self.validation_dir
                     val_ids.append(sid)
+                    train_total += 1
+                else:
+                    continue
 
                 # Resize again and augment
                 img = np.transpose(np.expand_dims(preprocessed_im, 0), (0, 3, 1, 2))
