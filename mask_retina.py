@@ -27,6 +27,12 @@ def create_mask(im_arr, erode=None):
     return seg_arr.astype(np.bool)
 
 
+def apply_mask(im, mask):
+
+    im[np.invert(mask.astype(np.bool))] = 0
+    return np.transpose(im, (1, 2, 0))
+
+
 if __name__ == "__main__":
 
     import sys

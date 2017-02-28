@@ -1,5 +1,7 @@
 from glob import glob
-from os.path import join
+from os import mkdir
+from os.path import join, isdir
+
 import h5py
 from PIL import Image
 import numpy as np
@@ -7,6 +9,14 @@ from mask_retina import create_mask
 
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 
+
+def make_sub_dir(dir_, sub):
+
+    sub_dir = join(dir_, sub)
+    if not isdir(sub_dir):
+        mkdir(sub_dir)
+
+    return sub_dir
 
 def find_images(im_path):
 
