@@ -92,14 +92,17 @@ class Pipeline(object):
                 preprocessed_im = kaggle_BG(resized_im, 128)
 
                 # Add to training or validation
-                if sid not in train_ids and val_total < self.val_size:
+                r = uniform(0, 1)
+                if r > self.train_split and sid not in train_ids and val_total < self.val_size:
                     out_dir = self.validation_dir
                     val_ids.append(sid)
                     val_total += 1
-                else:
+                elif r < self.train_split and sid not in val_ids and val_total < self.val_size:
                     out_dir = self.training_dir
                     train_ids.append(sid)
                     train_total += 1
+                else:
+                    continue
 
                 # Resize again and augment
                 img = np.transpose(np.expand_dims(preprocessed_im, 0), (0, 3, 1, 2))
