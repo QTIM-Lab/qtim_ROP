@@ -6,6 +6,7 @@ from shutil import copytree, rmtree
 import h5py
 from PIL import Image
 import numpy as np
+import yaml
 from mask_retina import create_mask
 
 CLASSES = ['No', 'Pre-Plus', 'Plus']
@@ -63,6 +64,12 @@ def imgs_to_unet_array(img_list):
 def write_hdf5(arr, outfile):
     with h5py.File(outfile, "w") as f:
         f.create_dataset("image", data=arr, dtype=arr.dtype)
+
+
+def parse_yaml(conf_file):
+
+    with open(conf_file, 'r') as f:
+        return yaml.load(f)
 
 
 if __name__ == '__main__':
