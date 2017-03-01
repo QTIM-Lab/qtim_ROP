@@ -8,7 +8,7 @@ import numpy as np
 from os.path import split, join, splitext
 
 
-def create_mask(im_arr, erode=None):
+def create_mask(im_arr, erode=3):
 
     if im_arr.shape[2] == 3:
         im_arr = rgb2gray(im_arr)

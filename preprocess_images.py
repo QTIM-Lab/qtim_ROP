@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 
-from os import mkdir, listdir
+from os import listdir, remove
 from os.path import join, isdir, basename, splitext, dirname
-from random import shuffle, uniform
+from multiprocessing.pool import Pool
+from functools import partial
+from collections import defaultdict
+
 import yaml
 from scipy.misc import imresize
 from keras.preprocessing.image import ImageDataGenerator
+import pandas as pd
 
 from common import find_images, make_sub_dir
 from methods import *
@@ -13,7 +17,6 @@ from segmentation import SegmentUnet
 from retinaunet.lib.extract_patches import visualize
 
 CLASSES = ['No', 'Pre-Plus', 'Plus']
-SCALE = 256
 
 
 class Pipeline(object):
@@ -27,26 +30,17 @@ class Pipeline(object):
         largest_class = max(self.class_distribution, key=lambda k: self.class_distribution[k])
         class_size = self.class_distribution[largest_class]
 
-        self.train_size = np.round(float(class_size) * self.train_split)
-        self.val_size = np.round(float(class_size) * (1 - self.train_split))
-        self.augment_rate = {k: int(np.ceil(1.0 / (float(v) / class_size))) for k, v in self.class_distribution.items()}
-
         # Make directories for intermediate steps
-        self.training_dir = make_sub_dir(self.out_dir, 'training')
-        self.validation_dir = make_sub_dir(self.out_dir, 'validation')
+        self.augment_dir = make_sub_dir(self.out_dir, 'augmented', tree=self.input_dir)
+        self.train_dir = make_sub_dir(self.out_dir, 'training', tree=self.input_dir)
+        self.val_dir = make_sub_dir(self.out_dir, 'validation', tree=self.input_dir)
 
         # Create augmenter
-        self.augmenter = ImageDataGenerator(
-            rotation_range=10,
-            width_shift_range=float(self.resize['width']) * 1e-5,
-            height_shift_range=float(self.resize['height']) * 1e-5,
-            # rescale=1. / 255,
-            shear_range=0.001,
-            zoom_range=0.05,
-            horizontal_flip=True,
-            vertical_flip=True,
-            fill_mode='constant',
-            cval=128)
+        self.augmenter = ImageDataGenerator(rotation_range=5, width_shift_range=float(self.resize['width']) * 1e-5,
+            height_shift_range=float(self.resize['height']) * 1e-5, zoom_range=0.05, horizontal_flip=True,
+            vertical_flip=True, fill_mode='constant')
+
+        self.processes = 30
 
     def _parse_config(self, config):
 
@@ -55,15 +49,17 @@ class Pipeline(object):
 
                 conf_dict = yaml.load(c)
                 self.input_dir = join(dirname(config), conf_dict['input_dir'])
-
-                if not isdir(self.input_dir):
-                    print "Input {} is not a directory!".format(self.out_dir)
-                    exit()
-
                 self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
 
+                if not isdir(self.input_dir):
+                    print "Input {} is not a directory!".format(self.input_dir)
+                    exit()
+
+                # Extract pipeline parameters or set defaults
                 options = conf_dict['pipeline']
-                self.resize, self.unet, self.train_split = options['resize'], options['unet'], options['train_split']
+                self.resize = options['resize']
+                self.train_split = options['train_split']
+                self.augment_size = options.get('augment_size', 20)
 
         except KeyError as e:
             print "Invalid config entry {}".format(e)
@@ -71,58 +67,107 @@ class Pipeline(object):
 
     def run(self):
 
+        # Get paths to all images
+        im_files = find_images(join(self.input_dir, '*'))
+        assert (len(im_files) > 0)
+
+        print "Staring preprocessing ({} processes)".format(self.processes)
+        optimization_pool = Pool(self.processes)
+        subprocess = partial(preprocess, params=self)
+        results = optimization_pool.map(subprocess, im_files)
+
+        if not all(results):
+            print "Some images failed to process..."
+
+        # Create training and validation (imbalanced)
+        train_imgs, val_imgs = self.train_val_split()
+        self.random_sample(train_imgs, val_imgs)
+
+    def train_val_split(self):
+
+        train_imgs, val_imgs = defaultdict(list), defaultdict(list)
+
         for class_ in CLASSES:
 
-            train_total, val_total = 0, 0
-            train_ids, val_ids = [], []
+            # Get all augmented images per class
+            aug_imgs = find_images(join(self.augment_dir, class_))
 
-            im_list = find_images(join(self.input_dir, class_))
-            shuffle(im_list)
-            assert(len(im_list) > 0)
+            # Create dataframe
+            patient_metadata = [image_to_metadata(img) for img in aug_imgs]
+            patient_metadata = pd.DataFrame(data=patient_metadata)
 
-            for im in im_list:
+            # Group images by patient and sorted by total images per patient
+            grouped = [(data, len(data)) for _, data in patient_metadata.groupby('subjectID')]
+            grouped = sorted(grouped, key=lambda x: x[1])
 
-                im_name = basename(im)
-                metadata = image_to_metadata(im_name)
-                sid = metadata['subjectID']
+            # Calculate how many patients to add to validation before switching to training
+            total_images = len(aug_imgs)
+            no_val_imgs = np.ceil(float(total_images) * (1.0 - self.train_split))
+            cum_sum = np.cumsum([g[1] for g in grouped])
+            no_val_patients = next(x[0] for x in enumerate(cum_sum) if x[1] > no_val_imgs)
 
-                # Resize, preprocess and augment
-                im_arr = cv2.imread(im)
-                resized_im = imresize(im_arr, (self.resize['width'], self.resize['height']), interp='bicubic')
-                preprocessed_im = kaggle_BG(resized_im, 128)
+            # Create validation and training sets
+            for idx, group in enumerate(grouped):
 
-                # Add to training or validation
-                r = uniform(0, 1)
-                if r > self.train_split and sid not in train_ids and val_total < self.val_size:
-                    out_dir = self.validation_dir
-                    val_ids.append(sid)
-                    val_total += 1
-                elif r < self.train_split and sid not in val_ids and val_total < self.val_size:
-                    out_dir = self.training_dir
-                    train_ids.append(sid)
-                    train_total += 1
+                if idx < no_val_patients:
+                    val_imgs[class_].extend([x['image'] for x in group[0].to_dict(orient='records')])
                 else:
-                    continue
+                    train_imgs[class_].extend([x['image'] for x in group[0].to_dict(orient='records')])
 
-                # Resize again and augment
-                img = np.transpose(np.expand_dims(preprocessed_im, 0), (0, 3, 1, 2))
-                self.augment(img, splitext(im_name)[0], out_dir, class_)
+        return train_imgs, val_imgs
 
-    def augment(self, img, im_name, out_dir, class_):
+    def random_sample(self, train_imgs, val_imgs):
 
-        class_dir = make_sub_dir(out_dir, class_)
+        train_class_sizes = [len(x) for x in train_imgs.values()]
+        val_class_sizes = [len(x) for x in val_imgs.values()]
 
-        i = 0
-        for _ in self.augmenter.flow(img, batch_size=1, save_to_dir=class_dir, save_prefix=im_name, save_format='bmp'):
-            i += 1
-            if i >= self.augment_rate[class_]:
-                break
+        for class_idx, classname in enumerate(CLASSES):
+
+            removal_num = train_class_sizes[class_idx] - int(
+                (float(min(train_class_sizes)) / float(train_class_sizes[class_idx])) * train_class_sizes[class_idx])
+
+            if removal_num > 0:
+                removed_images = np.random.choice(train_imgs[classname], removal_num, replace=False)
+                for removed_image in removed_images:
+                    remove(removed_image)
+
+            removal_num = val_class_sizes[class_idx] - int(
+                (float(min(val_class_sizes)) / float(val_class_sizes[class_idx])) * val_class_sizes[class_idx])
+
+            if removal_num > 0:
+                removed_images = np.random.choice(val_imgs[classname], removal_num, replace=False)
+                for removed_image in removed_images:
+                    remove(removed_image)
+
+def preprocess(im, params):
+
+    # Extract metadata
+    meta = image_to_metadata(im)
+
+    # Resize, preprocess and augment
+    im_arr = cv2.imread(im)[:, :, ::-1]
+    resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp='bicubic')
+    preprocessed_im = normalize_channels(resized_im)
+
+    img = np.expand_dims(np.transpose(preprocessed_im, (2, 0, 1)), 0)
+    class_dir = join(params.augment_dir, meta['class'])  # this should already exist
+
+    i = 0
+    for _ in params.augmenter.flow(img, batch_size=1, save_to_dir=class_dir, save_prefix=meta['prefix'], save_format='bmp'):
+        i += 1
+        if i >= params.augment_size:
+            break
+
+    return True
 
 
-def image_to_metadata(im_str):
+def image_to_metadata(im_path):
 
+    im_name = basename(im_path)
+    im_str = splitext(im_name)[0]
     subject_id, _, im_id, session, _, eye, class_ = im_str.split('_')[:7]
-    return {'subjectID': subject_id, 'session': session, 'eye': eye, 'class': class_}
+    return {'subjectID': subject_id, 'session': session, 'eye': eye, 'class': class_, 'image': im_path, 'prefix': im_str}
+
 
 if __name__ == '__main__':
 

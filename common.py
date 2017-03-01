@@ -1,6 +1,7 @@
 from glob import glob
 from os import mkdir
-from os.path import join, isdir
+from os.path import join, isdir, isfile
+from shutil import copytree, rmtree
 
 import h5py
 from PIL import Image
@@ -10,13 +11,22 @@ from mask_retina import create_mask
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 
 
-def make_sub_dir(dir_, sub):
+def make_sub_dir(dir_, sub, tree=None):
 
     sub_dir = join(dir_, sub)
     if not isdir(sub_dir):
-        mkdir(sub_dir)
+
+        if tree:
+            copytree(tree, sub_dir, ignore=ignore_files)
+        else:
+            mkdir(sub_dir)
 
     return sub_dir
+
+
+def ignore_files(dir, files):
+    return [f for f in files if isfile(join(dir, f))]
+
 
 def find_images(im_path):
 
