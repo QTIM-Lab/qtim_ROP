@@ -3,8 +3,8 @@
 from os import listdir, remove
 from os.path import join, isdir, basename, splitext, dirname
 from multiprocessing.pool import Pool
+from multiprocessing import cpu_count
 from functools import partial
-from collections import defaultdict
 from shutil import move
 
 import yaml
@@ -40,7 +40,8 @@ class Pipeline(object):
             height_shift_range=float(self.resize['height']) * 1e-5, zoom_range=0.05, horizontal_flip=True,
             vertical_flip=True, fill_mode='constant')
 
-        self.processes = 30
+        # Number of processes
+        self.processes = int(cpu_count() * .7)
 
     def _parse_config(self, config):
 
@@ -59,7 +60,7 @@ class Pipeline(object):
                 options = conf_dict['pipeline']
                 self.resize = options['resize']
                 self.train_split = options['train_split']
-                self.augment_size = options.get('augment_size', 20)
+                self.augment_size = options['augment_size']
 
         except KeyError as e:
             print "Invalid config entry {}".format(e)
@@ -76,10 +77,8 @@ class Pipeline(object):
         subprocess = partial(preprocess, params=self)
         results = optimization_pool.map(subprocess, im_files)
 
-        if not all(results):
-            print "Some images failed to process..."
-
         # Create training and validation (imbalanced)
+        print "Splitting into training/validation"
         train_imgs, val_imgs = self.train_val_split()
         self.random_sample(train_imgs, val_imgs)
 
@@ -131,8 +130,6 @@ class Pipeline(object):
                 (float(min(train_class_sizes)) / float(train_class_sizes[cidx])) * train_class_sizes[cidx])
 
             if removal_num > 0:
-                #removed_images = np.random.choice(train_imgs[cidx], removal_num, replace=False)
-                #train_imgs[cidx] = list(set(train_imgs[cidx]) - set(removed_images))
                 train_imgs[cidx] = self.preserve_originals(train_imgs[cidx], removal_num)
 
             for ti in train_imgs[cidx]:
@@ -142,8 +139,6 @@ class Pipeline(object):
                 (float(min(val_class_sizes)) / float(val_class_sizes[cidx])) * val_class_sizes[cidx])
 
             if removal_num > 0:
-                # removed_images = np.random.choice(val_imgs[cidx], removal_num, replace=False)
-                # val_imgs[cidx] = list(set(val_imgs[cidx]) - set(removed_images))
                 val_imgs[cidx] = self.preserve_originals(val_imgs[cidx], removal_num)
 
             for vi in val_imgs[cidx]:
@@ -173,7 +168,10 @@ class Pipeline(object):
 
         return subsampled
 
+
 def preprocess(im, params):
+
+    print "Preprocessing {}".format(im)
 
     # Extract metadata
     meta = image_to_metadata(im)
