@@ -121,23 +121,26 @@ class Pipeline(object):
         train_class_sizes = [len(x) for x in train_imgs.values()]
         val_class_sizes = [len(x) for x in val_imgs.values()]
 
-        for class_idx, classname in enumerate(CLASSES):
+        train_sample = dict
+
+        for class_idx, class_ in enumerate(CLASSES):
 
             removal_num = train_class_sizes[class_idx] - int(
                 (float(min(train_class_sizes)) / float(train_class_sizes[class_idx])) * train_class_sizes[class_idx])
 
             if removal_num > 0:
-                removed_images = np.random.choice(train_imgs[classname], removal_num, replace=False)
-                for removed_image in removed_images:
-                    remove(removed_image)
+                removed_images = np.random.choice(train_imgs[class_], removal_num, replace=False)
+                train_imgs[class_] = list(set(train_imgs[class_]) - set(removed_images))
 
             removal_num = val_class_sizes[class_idx] - int(
                 (float(min(val_class_sizes)) / float(val_class_sizes[class_idx])) * val_class_sizes[class_idx])
 
             if removal_num > 0:
-                removed_images = np.random.choice(val_imgs[classname], removal_num, replace=False)
-                for removed_image in removed_images:
-                    remove(removed_image)
+                removed_images = np.random.choice(val_imgs[class_], removal_num, replace=False)
+                val_imgs[class_] = list(set(val_imgs[class_]) - set(removed_images))
+
+            print "Training ({}): {}".format(class_, len(train_imgs[class_]))
+            print "Validation ({}): {}".format(class_, len(val_imgs[class_]))
 
 def preprocess(im, params):
 
