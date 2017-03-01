@@ -5,6 +5,7 @@ from os.path import join, isdir, basename, splitext, dirname
 from multiprocessing.pool import Pool
 from functools import partial
 from collections import defaultdict
+from shutil import move
 
 import yaml
 from scipy.misc import imresize
@@ -13,8 +14,7 @@ import pandas as pd
 
 from common import find_images, make_sub_dir
 from methods import *
-from segmentation import SegmentUnet
-from retinaunet.lib.extract_patches import visualize
+from mask_retina import *
 
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 
@@ -85,9 +85,10 @@ class Pipeline(object):
 
     def train_val_split(self):
 
-        train_imgs, val_imgs = defaultdict(list), defaultdict(list)
+        train_imgs = [[], [], []]
+        val_imgs = [[], [], []]
 
-        for class_ in CLASSES:
+        for cidx, class_ in enumerate(CLASSES):
 
             # Get all augmented images per class
             aug_imgs = find_images(join(self.augment_dir, class_))
@@ -110,37 +111,67 @@ class Pipeline(object):
             for idx, group in enumerate(grouped):
 
                 if idx < no_val_patients:
-                    val_imgs[class_].extend([x['image'] for x in group[0].to_dict(orient='records')])
+                    val_imgs[cidx].extend([x['image'] for x in group[0].to_dict(orient='records')])
                 else:
-                    train_imgs[class_].extend([x['image'] for x in group[0].to_dict(orient='records')])
+                    train_imgs[cidx].extend([x['image'] for x in group[0].to_dict(orient='records')])
 
         return train_imgs, val_imgs
 
     def random_sample(self, train_imgs, val_imgs):
 
-        train_class_sizes = [len(x) for x in train_imgs.values()]
-        val_class_sizes = [len(x) for x in val_imgs.values()]
+        train_class_sizes = [len(x) for x in train_imgs]
+        val_class_sizes = [len(x) for x in val_imgs]
 
-        train_sample = dict
+        for cidx, class_ in enumerate(CLASSES):
 
-        for class_idx, class_ in enumerate(CLASSES):
+            train_class_dir = join(self.train_dir, class_)
+            val_class_dir = join(self.val_dir, class_)
 
-            removal_num = train_class_sizes[class_idx] - int(
-                (float(min(train_class_sizes)) / float(train_class_sizes[class_idx])) * train_class_sizes[class_idx])
-
-            if removal_num > 0:
-                removed_images = np.random.choice(train_imgs[class_], removal_num, replace=False)
-                train_imgs[class_] = list(set(train_imgs[class_]) - set(removed_images))
-
-            removal_num = val_class_sizes[class_idx] - int(
-                (float(min(val_class_sizes)) / float(val_class_sizes[class_idx])) * val_class_sizes[class_idx])
+            removal_num = train_class_sizes[cidx] - int(
+                (float(min(train_class_sizes)) / float(train_class_sizes[cidx])) * train_class_sizes[cidx])
 
             if removal_num > 0:
-                removed_images = np.random.choice(val_imgs[class_], removal_num, replace=False)
-                val_imgs[class_] = list(set(val_imgs[class_]) - set(removed_images))
+                #removed_images = np.random.choice(train_imgs[cidx], removal_num, replace=False)
+                #train_imgs[cidx] = list(set(train_imgs[cidx]) - set(removed_images))
+                train_imgs[cidx] = self.preserve_originals(train_imgs[cidx], removal_num)
 
-            print "Training ({}): {}".format(class_, len(train_imgs[class_]))
-            print "Validation ({}): {}".format(class_, len(val_imgs[class_]))
+            for ti in train_imgs[cidx]:
+                move(ti, train_class_dir)
+
+            removal_num = val_class_sizes[cidx] - int(
+                (float(min(val_class_sizes)) / float(val_class_sizes[cidx])) * val_class_sizes[cidx])
+
+            if removal_num > 0:
+                # removed_images = np.random.choice(val_imgs[cidx], removal_num, replace=False)
+                # val_imgs[cidx] = list(set(val_imgs[cidx]) - set(removed_images))
+                val_imgs[cidx] = self.preserve_originals(val_imgs[cidx], removal_num)
+
+            for vi in val_imgs[cidx]:
+                move(vi, val_class_dir)
+
+            print '---'
+            print "Training ({}): {}".format(class_, len(train_imgs[cidx]))
+            print "Validation ({}): {}".format(class_, len(val_imgs[cidx]))
+
+    def preserve_originals(self, imgs, to_remove):
+
+        # Sort the augmented images alphabetically and split into chunks (of augment_size)
+        imgs = sorted(imgs)
+        unique_chunks = [imgs[i:i+self.augment_size] for i in xrange(0, len(imgs), self.augment_size)]
+
+        # Calculate how many images we need to remove in each chunk
+        total_proportion = float(to_remove) / float(len(imgs))
+        remove_per_chunk = int(len(unique_chunks[0]) * total_proportion)
+
+        # Loop through each chunk and sample the images needed
+        subsampled = []
+        for chunk in unique_chunks:
+
+            # 4. Randomly sample the chunk for image to keep
+            sub_chunk = np.random.choice(chunk, self.augment_size - remove_per_chunk, replace=False)
+            subsampled.extend(sub_chunk)
+
+        return subsampled
 
 def preprocess(im, params):
 
@@ -149,6 +180,8 @@ def preprocess(im, params):
 
     # Resize, preprocess and augment
     im_arr = cv2.imread(im)[:, :, ::-1]
+
+    # Resize and preprocess
     resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp='bicubic')
     preprocessed_im = normalize_channels(resized_im)
 
