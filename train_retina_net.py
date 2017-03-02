@@ -107,7 +107,7 @@ class RetiNet(object):
         plot(model, join(self.experiment_dir, 'top_model.png'))
 
         model.fit(train_data, train_labels,
-                  nb_epoch=nb_epoch, batch_size=self.nb_train_samples / 10,
+                  nb_epoch=nb_epoch, batch_size=32,
                   validation_data=(val_data, val_labels))
 
         model.save_weights(join(self.experiment_dir, 'best_weights.h5'))
