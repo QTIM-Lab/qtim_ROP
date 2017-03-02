@@ -90,7 +90,7 @@ class RetiNet(object):
 
         return features_out, labels_out
 
-    def train_top_model(self, train_path, val_path, train_labels, val_labels, nb_epoch=50):
+    def train_top_model(self, train_path, val_path, train_labels, val_labels):
 
         # Load data and labels (converting the latter to categorical)
         train_data, train_labels = np.load(open(train_path)), to_categorical(np.load(open(train_labels)))
@@ -108,7 +108,7 @@ class RetiNet(object):
         plot(model, join(self.experiment_dir, 'top_model.png'))
 
         model.fit(train_data, train_labels,
-                  nb_epoch=nb_epoch, batch_size=32,
+                  nb_epoch=self.epochs, batch_size=32,
                   validation_data=(val_data, val_labels))
 
         model.save_weights(join(self.experiment_dir, 'best_weights.h5'))
