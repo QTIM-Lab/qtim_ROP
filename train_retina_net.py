@@ -3,8 +3,9 @@
 from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
 
-from keras.models import Sequential
-from keras.layers import Dropout, Dense, Flatten
+from keras.optimizers import SGD
+from keras.models import Sequential, Model
+from keras.layers import Dropout, Dense, Flatten, Activation
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.visualize_util import plot
 from keras.utils.np_utils import to_categorical
@@ -46,7 +47,7 @@ class RetiNet(object):
 
             from keras.applications.vgg16 import VGG16
             print "Loading pre-trained VGG model"
-            self.model = VGG16(weights='imagenet', input_shape=(3, 256, 256), include_top=False)
+            self.model = VGG16(weights='imagenet', input_shape=(3, 227, 227), include_top=False)
 
         elif 'resnet' in type_:
 
@@ -54,76 +55,49 @@ class RetiNet(object):
             print "Loading pre-trained ResNet"
             self.model = ResNet50(weights='imagenet', input_shape=(3, 256, 256), include_top=False)
 
+        elif 'alex' in type_:
+
+            from convnetskeras.convnets import convnet
+            alexnet = convnet('alexnet')  #, weights_path='alexnet_weights.h5')
+
+            input = alexnet.input
+            img_representation = alexnet.get_layer("dense_2").output
+
+            classifier = Dense(3, name='classifier')(img_representation)
+            classifier = Activation("softmax", name="softmax")(classifier)
+            model = Model(input=input, output=classifier)
+            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=["accuracy"])
+
+            print model.get_layer('softmax').output_shape
+
+            self.model = model
+
         plot(self.model, join(self.experiment_dir, 'model_{}.png'.format(type_)))
 
-    def train(self, scratch=False):
+    def train(self, fine_tune=False):
 
-        if scratch:
-            raise NotImplementedError("Not implemented")
-        else:
+        # Train
+        input_shape = self.model.input_shape[1:]
+        train_gen = self.create_generator(self.train_dir, input_shape, mode='categorical')
+        val_gen = self.create_generator(self.val_dir, input_shape, mode='categorical')
 
-            # Extract features from training/testing data
-            train_features, train_labels = self.predict()
-            val_features, val_labels = self.predict(train=False)
+        self.model.fit_generator(
+            train_gen,
+            samples_per_epoch=self.nb_train_samples,
+            nb_epoch=self.epochs,
+            validation_data=val_gen,
+            nb_val_samples=self.nb_val_samples)
 
-            # Train our next top model...
-            self.train_top_model(train_features, val_features, train_labels, val_labels)
+        self.model.save_weights(join(self.experiment_dir, 'best_weights.h5'))
 
-    def predict(self, train=True):
-
-        data_path, suffix = (self.train_dir, 'train') if train else (self.val_dir, 'validation')
-
-        features_out = join(self.experiment_dir, 'cnn_features_{}.npy'.format(suffix))
-        labels_out = join(self.experiment_dir, 'labels_{}.npy'.format(suffix))
-
-        no_examples = len(find_images(join(data_path, '*')))
-
-        if not (isfile(features_out) and isfile(labels_out)):
-
-            generator = self.create_generator(data_path)
-
-            print "Performing forward pass to generate {} features".format(suffix)
-            cnn_features = self.model.predict_generator(generator, no_examples)  # are these always flattened?
-            labels = generator.classes
-            np.save(open(features_out, 'w'), cnn_features)
-            np.save(open(labels_out, 'w'), labels)
-
-        return features_out, labels_out
-
-    def train_top_model(self, train_path, val_path, train_labels, val_labels):
-
-        # Load data and labels (converting the latter to categorical)
-        train_data, train_labels = np.load(open(train_path)), to_categorical(np.load(open(train_labels)))
-        val_data, val_labels = np.load(open(val_path)), to_categorical(np.load(open(val_labels)))
-
-        print "Train features shape: {}".format(train_data.shape)
-
-        model = Sequential()
-        model.add(Flatten(input_shape=train_data.shape[1:]))
-        model.add(Dense(256, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(3, activation='sigmoid'))
-
-        model.compile(optimizer='rmsprop', loss='mse', metrics=['accuracy'])
-        plot(model, join(self.experiment_dir, 'top_model.png'))
-
-        model.fit(train_data, train_labels,
-                  nb_epoch=self.epochs, batch_size=32,
-                  validation_data=(val_data, val_labels))
-
-        model.save_weights(join(self.experiment_dir, 'best_weights.h5'))
-
-    def create_generator(self, data_path):
-
-        input_shape = self.model.input_shape[2:]
+    def create_generator(self, data_path, input_shape, mode=None):
 
         datagen = ImageDataGenerator()
         generator = datagen.flow_from_directory(
             data_path,
-            target_size=input_shape,
+            target_size=input_shape[1:],
             batch_size=32,
-            class_mode=None,
-            shuffle=False)
+            class_mode=mode)
 
         return generator
 
@@ -136,4 +110,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     r = RetiNet(args.config)
-    r.train(scratch=False)
+    r.train()
