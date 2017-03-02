@@ -1,8 +1,8 @@
 from os import listdir
-from os.path import dirname, basename, splitext
+from os.path import dirname, basename, splitext, abspath
 
 from keras.models import Sequential
-from keras.layers import Dropout, Flatten, Dense
+from keras.layers import Dropout, Dense
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.visualize_util import plot
 from keras.utils.np_utils import to_categorical
@@ -17,10 +17,11 @@ class RetinaResNet(object):
 
         # Parse config and create output dir
         config = parse_yaml(conf_file)
+        conf_dir = dirname(conf_file)
         experiment_name = splitext(basename(conf_file))[0]
-        self.experiment_dir = make_sub_dir(dirname(conf_file), experiment_name)
-        self.train_dir = config['training_dir']
-        self.val_dir = config['validation_dir']
+        self.experiment_dir = make_sub_dir(conf_dir, experiment_name)
+        self.train_dir = abspath(join(conf_dir, config['training_dir']))
+        self.val_dir = abspath(join(conf_dir, config['validation_dir']))
 
         self.no_classes = listdir(self.train_dir)
         self.nb_train_samples = len(find_images(join(self.train_dir, '*')))
@@ -62,7 +63,7 @@ class RetinaResNet(object):
                 shuffle=False)
 
             print "Performing forward pass to generate CNN features"
-            cnn_features = model.predict_generator(generator, no_examples)
+            cnn_features = model.predict_generator(generator, no_examples)  # are these always flattened?
             labels = generator.classes
             np.save(open(features_out, 'w'), cnn_features)
             np.save(open(labels_out, 'w'), labels)
