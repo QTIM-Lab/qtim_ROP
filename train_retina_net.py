@@ -3,10 +3,8 @@
 from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
 
-import keras.backend as K
 from keras.models import Sequential
 from keras.layers import Dropout, Dense, Flatten
-from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.visualize_util import plot
 from keras.utils.np_utils import to_categorical
@@ -51,10 +49,9 @@ class RetiNet(object):
 
         elif 'resnet' in type_:
 
-            from resnet50 import ResNet50
+            from keras.applications.resnet50 import ResNet50
             print "Loading pre-trained ResNet"
-            self.model = ResNet50(weights=weights if weights else 'imagenet')
-            self.model.layers.pop()
+            self.model = ResNet50(weights='imagenet', input_shape=(3, 256, 256), include_top=False)
 
         plot(self.model, join(self.experiment_dir, 'model_{}.png'.format(type_)))
 
@@ -106,11 +103,11 @@ class RetiNet(object):
         model.add(Dropout(0.5))
         model.add(Dense(3, activation='sigmoid'))
 
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='rmsprop', loss='mse', metrics=['accuracy'])
         plot(model, join(self.experiment_dir, 'top_model.png'))
 
         model.fit(train_data, train_labels,
-                  nb_epoch=nb_epoch, batch_size=32,
+                  nb_epoch=nb_epoch, batch_size=self.nb_train_samples / 10,
                   validation_data=(val_data, val_labels))
 
         model.save_weights(join(self.experiment_dir, 'best_weights.h5'))
