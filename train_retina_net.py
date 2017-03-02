@@ -38,6 +38,7 @@ class RetiNet(object):
 
     def _configure_network(self):
 
+        self.epochs = self.config.get('epochs', 50)
         network = self.config['network']
         type_, weights = network['type'].lower(), network['weights']
 
