@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os import listdir, remove
-from os.path import join, isdir, basename, splitext, dirname
+from os.path import join, isdir, basename, abspath, dirname
 from multiprocessing.pool import Pool
 from multiprocessing import cpu_count
 from functools import partial
@@ -37,10 +37,9 @@ class Pipeline(object):
 
         # Create augmenter
         self.augmenter = ImageDataGenerator(
-            width_shift_range=float(self.resize['width']) * 1e-5,
-            height_shift_range=float(self.resize['height']) * 1e-5,
-            zoom_range=0.01, horizontal_flip=True,
-            vertical_flip=True, fill_mode='constant')
+            width_shift_range=float(self.resize['width']) * 1e-4,
+            height_shift_range=float(self.resize['height']) * 1e-4,
+            zoom_range=0.05, horizontal_flip=True, vertical_flip=True, fill_mode='constant')
 
         # Number of processes
         self.processes = int(cpu_count() * .7)
@@ -51,7 +50,7 @@ class Pipeline(object):
             with open(config, 'rb') as c:
 
                 conf_dict = yaml.load(c)
-                self.input_dir = join(dirname(config), conf_dict['input_dir'])
+                self.input_dir = abspath(join(dirname(config), conf_dict['input_dir']))
                 self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
 
                 if not isdir(self.input_dir):
@@ -182,7 +181,7 @@ def preprocess(im, params):
     im_arr = cv2.imread(im)[:, :, ::-1]
 
     # Resize and preprocess
-    resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp='bicubic')
+    resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp='bilinear')
     preprocessed_im = normalize_channels(resized_im)
 
     img = np.expand_dims(np.transpose(preprocessed_im, (2, 0, 1)), 0)
