@@ -36,8 +36,10 @@ class Pipeline(object):
         self.val_dir = make_sub_dir(self.out_dir, 'validation', tree=self.input_dir)
 
         # Create augmenter
-        self.augmenter = ImageDataGenerator(rotation_range=5, width_shift_range=float(self.resize['width']) * 1e-5,
-            height_shift_range=float(self.resize['height']) * 1e-5, zoom_range=0.05, horizontal_flip=True,
+        self.augmenter = ImageDataGenerator(
+            width_shift_range=float(self.resize['width']) * 1e-5,
+            height_shift_range=float(self.resize['height']) * 1e-5,
+            zoom_range=0.01, horizontal_flip=True,
             vertical_flip=True, fill_mode='constant')
 
         # Number of processes
