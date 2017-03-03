@@ -5,7 +5,7 @@ from os.path import join, isdir, basename, abspath, dirname
 from multiprocessing.pool import Pool
 from multiprocessing import cpu_count
 from functools import partial
-from shutil import move
+from shutil import copy
 import itertools
 
 import yaml
@@ -65,8 +65,9 @@ class Pipeline(object):
                 options = conf_dict['pipeline']
                 self.resize = options['resize']
                 self.train_split = options['train_split']
-                self.augment_size = options['augment_size']
+
                 self.augment_method = options['augment_method']
+                self.augment_size = options['augment_size']
 
         except KeyError as e:
             print "Invalid config entry {}".format(e)
@@ -78,10 +79,13 @@ class Pipeline(object):
         im_files = find_images(join(self.input_dir, '*'))
         assert (len(im_files) > 0)
 
-        print "Staring preprocessing ({} processes)".format(self.processes)
-        optimization_pool = Pool(self.processes)
-        subprocess = partial(preprocess, params=self)
-        results = optimization_pool.map(subprocess, im_files)
+        if self.augment_method is not None:
+            print "Starting preprocessing ({} processes)".format(self.processes)
+            optimization_pool = Pool(self.processes)
+            subprocess = partial(preprocess, params=self)
+            results = optimization_pool.map(subprocess, im_files)
+        else:
+            print "Using previously augmented data"
 
         # Create training and validation (imbalanced)
         print "Splitting into training/validation"
@@ -168,7 +172,7 @@ class Pipeline(object):
                 train_imgs[cidx] = self.preserve_originals(train_imgs[cidx], removal_num)
 
             for ti in train_imgs[cidx]:
-                move(ti, train_class_dir)
+                copy(ti, train_class_dir)
 
             removal_num = val_class_sizes[cidx] - int(
                 (float(min(val_class_sizes)) / float(val_class_sizes[cidx])) * val_class_sizes[cidx])
@@ -177,7 +181,7 @@ class Pipeline(object):
                 val_imgs[cidx] = self.preserve_originals(val_imgs[cidx], removal_num)
 
             for vi in val_imgs[cidx]:
-                move(vi, val_class_dir)
+                copy(vi, val_class_dir)
 
             print '\n---'
             print "Training ({}): {}".format(class_, len(train_imgs[cidx]))
