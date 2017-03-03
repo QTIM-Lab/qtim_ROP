@@ -105,6 +105,8 @@ class Pipeline(object):
             # Group images by patient and sorted by total images per patient
             grouped = [(data, len(data)) for _, data in patient_metadata.groupby('subjectID')]
             grouped = sorted(grouped, key=lambda x: x[1])
+
+            print "Class: {}".format(class_)
             print "Number of subjects: {}".format(len(grouped))
 
             # Calculate how many patients to add to each group
