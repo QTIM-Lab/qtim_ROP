@@ -6,7 +6,7 @@ from multiprocessing.pool import Pool
 from multiprocessing import cpu_count
 from functools import partial
 from shutil import copy
-import itertools
+from itertools import cycle
 
 import yaml
 from scipy.misc import imresize
@@ -17,6 +17,7 @@ from common import find_images, make_sub_dir
 from methods import *
 from mask_retina import *
 
+CLASSES = ['No', 'Pre-Plus', 'Plus']
 
 class Pipeline(object):
 
@@ -25,8 +26,7 @@ class Pipeline(object):
         self._parse_config(config)
 
         # Calculate class distribution and train/val split
-        self.class_distribution = {c: len(listdir(join(self.input_dir, c))) for c in ['No', 'Pre-Plus', 'Plus']}
-        self.classes = sorted(self.class_distribution, key=self.class_distribution.get)
+        self.class_distribution = {c: len(listdir(join(self.input_dir, c))) for c in CLASSES}
 
         largest_class = max(self.class_distribution, key=lambda k: self.class_distribution[k])
         class_size = self.class_distribution[largest_class]
@@ -97,10 +97,11 @@ class Pipeline(object):
         train_imgs = [[], [], []]
         val_imgs = [[], [], []]
 
-        for cidx, class_ in enumerate(self.classes):
+        for cidx, class_ in enumerate(CLASSES):
 
             # Get all augmented images per class
             aug_imgs = find_images(join(self.augment_dir, class_))
+            assert(len(aug_imgs) > 0)
 
             # Create dataframe
             patient_metadata = [image_to_metadata(img) for img in aug_imgs]
@@ -108,46 +109,21 @@ class Pipeline(object):
 
             # Group images by patient and sorted by total images per patient
             grouped = [(data, len(data)) for _, data in patient_metadata.groupby('subjectID')]
-            grouped = sorted(grouped, key=lambda x: x[1])
+            grouped = sorted(grouped, key=lambda x: x[1], reverse=True)
 
-            print "Class: {}".format(class_)
-            print "Number of subjects: {}".format(len(grouped))
-
-            # Calculate how many patients to add to each group
+            # Calculate how many patients to add to training
             total_images = len(aug_imgs)
-            no_val_imgs = np.round(float(total_images) * (1.0 - self.train_split))
-            no_train_imgs = np.round(float(total_images) * (self.train_split))
+            no_train_imgs = np.floor(float(total_images) * self.train_split)
+            cum_sum = np.cumsum([g[1] for g in grouped])
+            no_train_patients = next(x[0] for x in enumerate(cum_sum) if x[1] > no_train_imgs)
 
-            # Generate all possible permutations of the grouped data
-            best_error = np.iinfo(np.int16)
-            best_t, best_v = None, None
+            # Create validation and training
+            for idx, group in enumerate(grouped):
 
-            for perm in itertools.permutations(range(0, len(grouped))):
-
-                # Permute the groups
-                perm_g = [grouped[i] for i in perm]
-
-                # Try to assign all possible subsets of this permutation to training/validation
-                for i in range(1, len(perm) - 1):
-
-                    t_sub = perm_g[:i]  # training subset
-                    v_sub = perm_g[i:]  # validation subset
-
-                    t_err = abs(sum([g[1] for g in t_sub]) - no_train_imgs)
-                    v_err = abs(sum([g[1] for g in v_sub]) - no_val_imgs)
-                    total_err = t_err + v_err  # how far off we from having a balance training/validation
-
-                    if total_err < best_error:  # keep this t/v division if better than previous
-                        best_error = total_err
-                        best_t = t_sub
-                        best_v = v_sub
-
-            # Create validation and training sets based on optimal split
-            for idx, group in enumerate(best_t):
-                train_imgs[cidx].extend([x['image'] for x in group[0].to_dict(orient='records')])
-
-            for idx, group in enumerate(best_v):
-                val_imgs[cidx].extend([x['image'] for x in group[0].to_dict(orient='records')])
+                if idx >= no_train_patients:
+                    val_imgs[cidx].extend([x['image'] for x in group[0].to_dict(orient='records')])
+                else:
+                    train_imgs[cidx].extend([x['image'] for x in group[0].to_dict(orient='records')])
 
         # Ensure that we ended up with some data in both groups
         assert(all(len(tr_class) > 0 for tr_class in train_imgs))
@@ -160,7 +136,7 @@ class Pipeline(object):
         train_class_sizes = [len(x) for x in train_imgs]
         val_class_sizes = [len(x) for x in val_imgs]
 
-        for cidx, class_ in enumerate(self.classes):
+        for cidx, class_ in enumerate(CLASSES):
 
             train_class_dir = join(self.train_dir, class_)
             val_class_dir = join(self.val_dir, class_)
@@ -169,7 +145,8 @@ class Pipeline(object):
                 (float(min(train_class_sizes)) / float(train_class_sizes[cidx])) * train_class_sizes[cidx])
 
             if removal_num > 0:
-                train_imgs[cidx] = self.preserve_originals(train_imgs[cidx], removal_num)
+                random_train = self.choose_random(train_imgs[cidx], removal_num)
+                train_imgs[cidx] = random_train
 
             for ti in train_imgs[cidx]:
                 copy(ti, train_class_dir)
@@ -178,7 +155,8 @@ class Pipeline(object):
                 (float(min(val_class_sizes)) / float(val_class_sizes[cidx])) * val_class_sizes[cidx])
 
             if removal_num > 0:
-                val_imgs[cidx] = self.preserve_originals(val_imgs[cidx], removal_num)
+                random_val = self.choose_random(val_imgs[cidx], removal_num)
+                val_imgs[cidx] = random_val
 
             for vi in val_imgs[cidx]:
                 copy(vi, val_class_dir)
@@ -186,6 +164,10 @@ class Pipeline(object):
             print '\n---'
             print "Training ({}): {}".format(class_, len(train_imgs[cidx]))
             print "Validation ({}): {}".format(class_, len(val_imgs[cidx]))
+
+    def choose_random(self, imgs, to_remove):
+
+        return np.random.choice(imgs, len(imgs) - to_remove, replace=False)
 
     def preserve_originals(self, imgs, to_remove):
 
@@ -196,14 +178,14 @@ class Pipeline(object):
 
         # Calculate how many images we need to remove in each chunk (some chunks likely smaller than others)
         total_proportion = float(to_remove) / float(len(imgs))
-        remove_per_chunk = [int(np.ceil(len(x) * total_proportion)) for x in unique_chunks]
+        remove_per_chunk = int(np.ceil(len(unique_chunks[0]) * total_proportion))
 
         # Loop through each chunk and sample the images needed
         subsampled = []
-        for chunk, to_remove in zip(unique_chunks, remove_per_chunk):
+        for chunk in unique_chunks:
 
             # Randomly sample the chunk for image to keep
-            sub_chunk = np.random.choice(chunk, len(chunk) - to_remove, replace=False)
+            sub_chunk = np.random.choice(chunk, self.augment_size - remove_per_chunk, replace=False)
             subsampled.extend(sub_chunk)
 
         return subsampled
