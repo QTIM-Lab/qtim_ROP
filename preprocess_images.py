@@ -36,10 +36,13 @@ class Pipeline(object):
         self.val_dir = make_sub_dir(self.out_dir, 'validation', tree=self.input_dir)
 
         # Create augmenter
-        self.augmenter = ImageDataGenerator(
-            width_shift_range=float(self.resize['width']) * 1e-4,
-            height_shift_range=float(self.resize['height']) * 1e-4,
-            zoom_range=0.05, horizontal_flip=True, vertical_flip=True, fill_mode='constant')
+        if self.augment_method == 'keras':
+            self.augmenter = ImageDataGenerator(
+                width_shift_range=float(self.resize['width']) * 1e-4,
+                height_shift_range=float(self.resize['height']) * 1e-4,
+                zoom_range=0.05, horizontal_flip=True, vertical_flip=True, fill_mode='constant')
+        else:
+            self.augmenter = None
 
         # Number of processes
         self.processes = int(cpu_count() * .7)
@@ -62,6 +65,7 @@ class Pipeline(object):
                 self.resize = options['resize']
                 self.train_split = options['train_split']
                 self.augment_size = options['augment_size']
+                self.augment_method = options['augment_method']
 
         except KeyError as e:
             print "Invalid config entry {}".format(e)
@@ -184,14 +188,37 @@ def preprocess(im, params):
     resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp='bilinear')
     preprocessed_im = normalize_channels(resized_im)
 
-    img = np.expand_dims(np.transpose(preprocessed_im, (2, 0, 1)), 0)
     class_dir = join(params.augment_dir, meta['class'])  # this should already exist
 
-    i = 0
-    for _ in params.augmenter.flow(img, batch_size=1, save_to_dir=class_dir, save_prefix=meta['prefix'], save_format='bmp'):
-        i += 1
-        if i >= params.augment_size:
-            break
+    if params.augmenter:
+
+        img = np.expand_dims(np.transpose(preprocessed_im, (2, 0, 1)), 0)
+
+        i = 0
+        for _ in params.augmenter.flow(img, batch_size=1, save_to_dir=class_dir, save_prefix=meta['prefix'], save_format='jpg'):
+            i += 1
+            if i >= params.augment_size:
+                break
+
+    else:
+
+        img = preprocessed_im
+        outfile = join(class_dir, meta['prefix'] + '.jpg')
+        flipnames = ['noflip', 'flip']
+        rotatenames = ['0', '90', '180', '270']
+
+        for flip in [0, 1]:
+            for rotate in [0, 1, 2, 3]:
+                new_img = np.copy(img)
+                if rotate > 0:
+                    for i in xrange(rotate):
+                        new_img = np.rot90(new_img)
+                if flip == 1:
+                    new_img = np.fliplr(new_img)
+                im = Image.fromarray(new_img)
+                splitfile = str.split(outfile, '.')
+                new_outfile = splitfile[0] + '_' + flipnames[flip] + '_' + rotatenames[rotate] + '.' + splitfile[-1]
+                im.save(new_outfile)
 
     return True
 
