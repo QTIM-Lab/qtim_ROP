@@ -128,6 +128,8 @@ class Pipeline(object):
 
         for cidx, class_ in enumerate(CLASSES):
 
+            print "Sampling class '{}'".format(class_)
+
             train_class_dir = join(self.train_dir, class_)
             val_class_dir = join(self.val_dir, class_)
 
@@ -159,16 +161,16 @@ class Pipeline(object):
         imgs = sorted(imgs)
         unique_chunks = [imgs[i:i+self.augment_size] for i in xrange(0, len(imgs), self.augment_size)]
 
-        # Calculate how many images we need to remove in each chunk
+        # Calculate how many images we need to remove in each chunk (some chunks likely smaller than others)
         total_proportion = float(to_remove) / float(len(imgs))
-        remove_per_chunk = int(len(unique_chunks[0]) * total_proportion)
+        remove_per_chunk = [int(np.floor(len(x) * total_proportion)) for x in unique_chunks]
 
         # Loop through each chunk and sample the images needed
         subsampled = []
-        for chunk in unique_chunks:
+        for chunk, to_remove in zip(unique_chunks, remove_per_chunk):
 
-            # 4. Randomly sample the chunk for image to keep
-            sub_chunk = np.random.choice(chunk, self.augment_size - remove_per_chunk, replace=False)
+            # Randomly sample the chunk for image to keep
+            sub_chunk = np.random.choice(chunk, len(chunk) - to_remove, replace=False)
             subsampled.extend(sub_chunk)
 
         return subsampled
@@ -197,7 +199,7 @@ def preprocess(im, params):
         i = 0
         for _ in params.augmenter.flow(img, batch_size=1, save_to_dir=class_dir, save_prefix=meta['prefix'], save_format='jpg'):
             i += 1
-            if i >= params.augment_size:
+            if i > params.augment_size:
                 break
 
     else:
