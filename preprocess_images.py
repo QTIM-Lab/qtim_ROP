@@ -6,6 +6,7 @@ from multiprocessing.pool import Pool
 from multiprocessing import cpu_count
 from functools import partial
 from shutil import move
+import itertools
 
 import yaml
 from scipy.misc import imresize
@@ -104,6 +105,7 @@ class Pipeline(object):
             # Group images by patient and sorted by total images per patient
             grouped = [(data, len(data)) for _, data in patient_metadata.groupby('subjectID')]
             grouped = sorted(grouped, key=lambda x: x[1])
+            print "Number of subjects: {}".format(len(grouped))
 
             # Calculate how many patients to add to each group
             total_images = len(aug_imgs)
@@ -114,7 +116,6 @@ class Pipeline(object):
             best_error = np.iinfo(np.int16)
             best_t, best_v = None, None
 
-            import itertools
             for perm in itertools.permutations(range(0, len(grouped))):
 
                 # Permute the groups
