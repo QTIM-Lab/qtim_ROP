@@ -1,6 +1,6 @@
 import cv2, numpy as np
 from mask_retina import create_mask
-
+from skimage.morphology import binary_erosion, selem
 
 # https://github.com/btgraham/SparseConvNet/blob/kaggle_Diabetic_Retinopathy_competition/Data/
 # kaggleDiabeticRetinopathy/preprocessImages.py
@@ -41,3 +41,43 @@ def image_histogram_equalization(image, number_bins=256):
     image_equalized = np.interp(image.flatten(), bins[:-1], cdf)
 
     return image_equalized.reshape(image.shape)
+
+
+def binary_morph(img, min_size=None):
+
+    if min_size is None:  # default to 10% of largest image dimension
+        min_size = float(max(img.shape)) * .1
+
+    if len(img.shape) == 3:  # flatten if RGB image
+        img = np.mean(img, 2).astype(np.uint8)
+
+    # Apply binary threshold and erode
+    ret, thresh_im = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+
+    # Connected component labelling
+    n, labels, stats, centroids = cv2.connectedComponentsWithStats(thresh_im)
+    mask = np.zeros_like(labels)
+
+    # Loop through areas in order of size
+    areas = [s[4] for s in stats]
+    sorted_idx = np.argsort(areas)
+
+    for lidx, cc in zip(sorted_idx, [areas[s] for s in sorted_idx][:-1]):
+
+        if cc > min_size:
+            mask[labels == lidx] = 1
+
+    return np.dstack([img * mask] * 3).astype(np.uint8)
+
+
+if __name__ == '__main__':
+
+    import sys
+    from os.path import dirname, join
+
+    img = cv2.imread(sys.argv[1])
+
+    for ms in range(150, 250, 10):
+
+        masked_img = binary_morph(img, ms)
+        cv2.imwrite(join(dirname(sys.argv[1]), 'seg_m{}.bmp'.format(ms)), masked_img)

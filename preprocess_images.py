@@ -19,7 +19,7 @@ from mask_retina import *
 from keras.preprocessing.image import ImageDataGenerator
 
 
-METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment}
+METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment, 'morphology': binary_morph}
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 
 
