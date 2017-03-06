@@ -37,41 +37,49 @@ class RetiNet(object):
         # Create the network based on params
         self._configure_network()
 
-    def _configure_network(self):
+    def _configure_network(self, fine_tune=False):
 
         self.epochs = self.config.get('epochs', 50)
         network = self.config['network']
-        type_, weights = network['type'].lower(), network['weights']
+        type_, weights = network['type'].lower(), network.get('weights', None)
 
         if 'vgg' in type_:
 
             from keras.applications.vgg16 import VGG16
             print "Loading pre-trained VGG model"
-            self.model = VGG16(weights='imagenet', input_shape=(3, 227, 227), include_top=False)
+            self.model = VGG16(weights=weights, input_shape=(3, 227, 227), include_top=not fine_tune)
 
         elif 'resnet' in type_:
 
             from keras.applications.resnet50 import ResNet50
             print "Loading pre-trained ResNet"
-            self.model = ResNet50(weights='imagenet', input_shape=(3, 256, 256), include_top=False)
+            self.model = ResNet50(weights=weights, input_shape=(3, 256, 256), include_top=not fine_tune)
 
-        elif 'alex' in type_:
+        elif 'inception' in type_:
 
-            from convnetskeras.convnets import convnet
-            alexnet = convnet('alexnet')  #, weights_path='alexnet_weights.h5')
+            from keras.applications.inception_v3 import InceptionV3
+            self.model = InceptionV3(weights=weights, input_shape=(3, 299, 299), include_top=not fine_tune)
 
-            input = alexnet.input
-            img_representation = alexnet.get_layer("dense_2").output
+        # elif 'alex' in type_:
+        #
+        #     from convnetskeras.convnets import convnet
+        #     alexnet = convnet('alexnet')  #, weights_path='alexnet_weights.h5')
+        #
+        #     input = alexnet.input
+        #     img_representation = alexnet.get_layer("dense_2").output
+        #
+        #     classifier = Dense(3, name='classifier')(img_representation)
+        #     classifier = Activation("softmax", name="softmax")(classifier)
+        #     model = Model(input=input, output=classifier)
+        #     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=["accuracy"])
+        #
+        #     print model.get_layer('softmax').output_shape
+        #     self.model = model
 
-            classifier = Dense(3, name='classifier')(img_representation)
-            classifier = Activation("softmax", name="softmax")(classifier)
-            model = Model(input=input, output=classifier)
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=["accuracy"])
+        else:
+            raise KeyError("Invalid network type '{}'".format(type_))
 
-            print model.get_layer('softmax').output_shape
-
-            self.model = model
-
+        self.model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
         plot(self.model, join(self.experiment_dir, 'model_{}.png'.format(type_)))
 
     def train(self, fine_tune=False):
