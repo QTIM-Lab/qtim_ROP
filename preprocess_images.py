@@ -41,17 +41,19 @@ class Pipeline(object):
         self.val_dir = make_sub_dir(self.out_dir, 'validation', tree=self.input_dir)
 
         # Define preprocessor
-        method = self.pipeline.preprocessing['method']
-        self.preprocessor = METHODS.get(method, None)
-        if not self.preprocessor:
-            raise ValueError("Invalid pre-processing type '{}'".format(method))
+        if self.pipeline.preprocessing:
 
-        p_args = self.pipeline.preprocessing['args']
+            method = self.pipeline.preprocessing['method']
+            self.preprocessor = METHODS.get(method, None)
+            p_args = self.pipeline.preprocessing['args']
 
-        if method == 'segment_vessels':  # pre-instantiate retina-unet
-            self.p_args = [SegmentUnet(None, *p_args)]
+            if method == 'segment_vessels':  # pre-instantiate retina-unet
+                self.p_args = [SegmentUnet(None, *p_args)]
+            else:
+                self.p_args = p_args
+
         else:
-            self.p_args = p_args
+            self.preprocessor = None
 
         # Create augmenter
         if self.pipeline.augmentation['method'] == 'keras':
@@ -217,7 +219,11 @@ def preprocess(im, params):
 
     # Resize and preprocess
     resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp='bilinear')
-    preprocessed_im = params.preprocessor(resized_im, *params.p_args)
+
+    if params.preprocessor:
+        preprocessed_im = params.preprocessor(resized_im, *params.p_args)
+    else:
+        preprocessed_im = resized_im
 
     class_dir = join(params.augment_dir, meta['class'])  # this should already exist
 
