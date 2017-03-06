@@ -218,7 +218,7 @@ def preprocess(im, params):
     im_arr = cv2.imread(im)[:, :, ::-1]
 
     # Resize and preprocess
-    interp = params.get('interp', 'bilinear')
+    interp = params.resize.get('interp', 'bilinear')
     resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp=interp)
 
     if params.preprocessor:
