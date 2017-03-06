@@ -6,18 +6,22 @@ from multiprocessing.pool import Pool
 from multiprocessing import cpu_count
 from functools import partial
 from shutil import copy
-from itertools import cycle
+import addict
 
 import yaml
 from scipy.misc import imresize
-from keras.preprocessing.image import ImageDataGenerator
 import pandas as pd
 
 from common import find_images, make_sub_dir
 from methods import *
+from segmentation import segment, SegmentUnet
 from mask_retina import *
+from keras.preprocessing.image import ImageDataGenerator
 
+
+METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment}
 CLASSES = ['No', 'Pre-Plus', 'Plus']
+
 
 class Pipeline(object):
 
@@ -36,8 +40,21 @@ class Pipeline(object):
         self.train_dir = make_sub_dir(self.out_dir, 'training', tree=self.input_dir)
         self.val_dir = make_sub_dir(self.out_dir, 'validation', tree=self.input_dir)
 
+        # Define preprocessor
+        method = self.pipeline.preprocessing['method']
+        self.preprocessor = METHODS.get(method, None)
+        if not self.preprocessor:
+            raise ValueError("Invalid pre-processing type '{}'".format(method))
+
+        p_args = self.pipeline.preprocessing['args']
+
+        if method == 'segment_vessels':  # pre-instantiate retina-unet
+            self.p_args = [SegmentUnet(None, *p_args)]
+        else:
+            self.p_args = p_args
+
         # Create augmenter
-        if self.augment_method == 'keras':
+        if self.pipeline.augmentation['method'] == 'keras':
             self.augmenter = ImageDataGenerator(
                 width_shift_range=float(self.resize['width']) * 1e-4,
                 height_shift_range=float(self.resize['height']) * 1e-4,
@@ -62,15 +79,12 @@ class Pipeline(object):
                     exit()
 
                 # Extract pipeline parameters or set defaults
-                options = conf_dict['pipeline']
-                self.resize = options['resize']
-                self.train_split = options['train_split']
-
-                self.augment_method = options['augment_method']
-                self.augment_size = options['augment_size']
+                self.pipeline = addict.Dict(conf_dict['pipeline'])
+                self.augment_size = self.pipeline.augmentation['size']
+                self.resize = self.pipeline['resize']
 
         except KeyError as e:
-            print "Invalid config entry {}".format(e)
+            print "Missing config entry {}".format(e)
             exit()
 
     def run(self):
@@ -79,7 +93,7 @@ class Pipeline(object):
         im_files = find_images(join(self.input_dir, '*'))
         assert (len(im_files) > 0)
 
-        if self.augment_method is not None:
+        if 'augmentation' in self.pipeline.keys():
             print "Starting preprocessing ({} processes)".format(self.processes)
             optimization_pool = Pool(self.processes)
             subprocess = partial(preprocess, params=self)
@@ -113,7 +127,7 @@ class Pipeline(object):
 
             # Calculate how many patients to add to training
             total_images = len(aug_imgs)
-            no_train_imgs = np.floor(float(total_images) * self.train_split)
+            no_train_imgs = np.floor(float(total_images) * self.pipeline.train_split)
             cum_sum = np.cumsum([g[1] for g in grouped])
             no_train_patients = next(x[0] for x in enumerate(cum_sum) if x[1] > no_train_imgs)
 
@@ -203,7 +217,7 @@ def preprocess(im, params):
 
     # Resize and preprocess
     resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp='bilinear')
-    preprocessed_im = normalize_channels(resized_im)
+    preprocessed_im = params.preprocessor(resized_im, *params.p_args)
 
     class_dir = join(params.augment_dir, meta['class'])  # this should already exist
 

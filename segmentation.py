@@ -23,8 +23,6 @@ class SegmentUnet(object):
         self.stride_x, self.stride_y = stride[0], stride[1]
         self.patch_x, self.patch_y = 48, 48
 
-        self.process = self.segment_one
-
     def segment_batch(self, data):
 
         # Loop through chunks of the data, as there may be thousands of images to segment
@@ -59,23 +57,6 @@ class SegmentUnet(object):
                 print "Writing {}".format(filename)
                 visualize(seg_masked, filename)
 
-    def segment_one(self, im_arr):
-
-        assert(len(im_arr.shape) == 3)
-        mask = create_mask(im_arr)
-
-        im_arr = np.expand_dims(im_arr, 0).transpose((0, 3, 1, 2))
-        im_mask = np.zeros((1, 1, mask.shape[0],  mask.shape[1]))
-        im_mask[0, :, :, :] = np.expand_dims(mask, 0)
-
-        img_patches, h, w, padded_mask = self.pre_process(im_arr, im_mask)
-        predictions = self.model.predict(img_patches, batch_size=32, verbose=2)
-        pred_imgs = pred_to_imgs(predictions)
-        seg = recompone_overlap(pred_imgs, h, w, self.stride_x, self.stride_y)
-
-        # Remove singleton dimensions and apply mask
-        return apply_mask(seg[0], im_mask[0])
-
     def pre_process(self, imgs_original, masks):
 
         test_imgs = my_PreProc(imgs_original)
@@ -89,6 +70,23 @@ class SegmentUnet(object):
 
         return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3], test_masks
 
+
+def segment(im_arr, unet):  # static method
+
+    assert(len(im_arr.shape) == 3)
+    mask = create_mask(im_arr)
+
+    im_arr = np.expand_dims(im_arr, 0).transpose((0, 3, 1, 2))
+    im_mask = np.zeros((1, 1, mask.shape[0],  mask.shape[1]))
+    im_mask[0, :, :, :] = np.expand_dims(mask, 0)
+
+    img_patches, h, w, padded_mask = unet.pre_process(im_arr, im_mask)
+    predictions = unet.model.predict(img_patches, batch_size=32, verbose=2)
+    pred_imgs = pred_to_imgs(predictions)
+    seg = recompone_overlap(pred_imgs, h, w, unet.stride_x, unet.stride_y)
+
+    # Remove singleton dimensions and apply mask
+    return apply_mask(seg[0], im_mask[0])
 
 if __name__ == "__main__":
 

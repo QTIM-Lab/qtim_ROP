@@ -12,7 +12,7 @@ def kaggle_BG(a, scale):
     b = create_mask(a, erode=None)
     b = np.stack([b]*3, axis=2)
     aa = cv2.addWeighted(a, 4, cv2.GaussianBlur(a, (0, 0), scale / 30), -4, 128) * b + 128 * (1 - b)
-    return aa
+    return aa.astype(np.uint8)
 
 
 # https://github.com/btgraham/SparseConvNet/blob/kaggle_Diabetic_Retinopathy_competition/Data/
