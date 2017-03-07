@@ -5,7 +5,7 @@ from os.path import dirname, basename, splitext, abspath
 
 from keras.optimizers import SGD
 from keras.models import Sequential, Model
-from keras.layers import Dropout, Dense, Flatten, Activation
+from keras.layers import Dropout, Dense, Activation
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.visualize_util import plot
 from keras.utils.np_utils import to_categorical
@@ -37,7 +37,7 @@ class RetiNet(object):
         # Create the network based on params
         self._configure_network()
 
-    def _configure_network(self, fine_tune=False):
+    def _configure_network(self):
 
         self.epochs = self.config.get('epochs', 50)
         network = self.config['network']
@@ -47,48 +47,42 @@ class RetiNet(object):
 
             from keras.applications.vgg16 import VGG16
             print "Loading pre-trained VGG model"
-            self.model = VGG16(weights=weights, input_shape=(3, 227, 227), include_top=not fine_tune)
+            self.model = VGG16(weights=weights, input_shape=(3, 227, 227), include_top=True)
+            self.no_outputs = 1
 
         elif 'resnet' in type_:
 
             from keras.applications.resnet50 import ResNet50
             print "Loading pre-trained ResNet"
-            self.model = ResNet50(weights=weights, input_shape=(3, 256, 256), include_top=not fine_tune)
+            self.model = ResNet50(weights=weights, input_shape=(3, 256, 256), include_top=True)
+            self.no_outputs = 1
 
-        elif 'inception' in type_:
+        elif 'googlenet' in type_:
 
-            from keras.applications.inception_v3 import InceptionV3
-            self.model = InceptionV3(weights=weights, input_shape=(3, 299, 299), include_top=not fine_tune)
+            from googlenet_custom_layers import PoolHelper, LRN
+            from keras.models import model_from_json
 
-        # elif 'alex' in type_:
-        #
-        #     from convnetskeras.convnets import convnet
-        #     alexnet = convnet('alexnet')  #, weights_path='alexnet_weights.h5')
-        #
-        #     input = alexnet.input
-        #     img_representation = alexnet.get_layer("dense_2").output
-        #
-        #     classifier = Dense(3, name='classifier')(img_representation)
-        #     classifier = Activation("softmax", name="softmax")(classifier)
-        #     model = Model(input=input, output=classifier)
-        #     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=["accuracy"])
-        #
-        #     print model.get_layer('softmax').output_shape
-        #     self.model = model
+            arch = network.get('arch', None)
+            self.model = model_from_json(open(arch).read(), custom_objects={"PoolHelper": PoolHelper, "LRN": LRN})
+            self.model.compile('sgd', 'categorical_crossentropy', metrics=['accuracy'])
+            self.no_outputs = 3
 
         else:
             raise KeyError("Invalid network type '{}'".format(type_))
 
-        self.model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
-        plot(self.model, join(self.experiment_dir, 'model_{}.png'.format(type_)))
+        plot(self.model, join(self.experiment_dir, 'model_final_{}.png'.format(type_)))
 
-    def train(self, fine_tune=False):
+    def train(self):
 
         # Train
         input_shape = self.model.input_shape[1:]
         train_gen = self.create_generator(self.train_dir, input_shape, mode='categorical')
         val_gen = self.create_generator(self.val_dir, input_shape, mode='categorical')
 
+        if self.no_outputs > 1:
+            val_gen = zip(*[val_gen] * self.no_outputs)  # fix to deal with three outputs
+
+        print "Fitting..."
         self.model.fit_generator(
             train_gen,
             samples_per_epoch=self.nb_train_samples,
@@ -97,6 +91,10 @@ class RetiNet(object):
             nb_val_samples=self.nb_val_samples)
 
         self.model.save_weights(join(self.experiment_dir, 'best_weights.h5'))
+
+        # Predict validation data
+        predictions = self.model.predict_generator(val_gen, self.nb_val_samples)
+        print predictions
 
     def create_generator(self, data_path, input_shape, mode=None):
 
