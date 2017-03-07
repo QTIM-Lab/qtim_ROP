@@ -48,14 +48,12 @@ class RetiNet(object):
             from keras.applications.vgg16 import VGG16
             print "Loading pre-trained VGG model"
             self.model = VGG16(weights=weights, input_shape=(3, 227, 227), include_top=True)
-            self.no_outputs = 1
 
         elif 'resnet' in type_:
 
             from keras.applications.resnet50 import ResNet50
             print "Loading pre-trained ResNet"
             self.model = ResNet50(weights=weights, input_shape=(3, 256, 256), include_top=True)
-            self.no_outputs = 1
 
         elif 'googlenet' in type_:
 
@@ -65,7 +63,6 @@ class RetiNet(object):
             arch = network.get('arch', None)
             self.model = model_from_json(open(arch).read(), custom_objects={"PoolHelper": PoolHelper, "LRN": LRN})
             self.model.compile('sgd', 'categorical_crossentropy', metrics=['accuracy'])
-            self.no_outputs = 3
 
         else:
             raise KeyError("Invalid network type '{}'".format(type_))
@@ -78,9 +75,6 @@ class RetiNet(object):
         input_shape = self.model.input_shape[1:]
         train_gen = self.create_generator(self.train_dir, input_shape, mode='categorical')
         val_gen = self.create_generator(self.val_dir, input_shape, mode='categorical')
-
-        if self.no_outputs > 1:
-            val_gen = zip(*[val_gen] * self.no_outputs)  # fix to deal with three outputs
 
         print "Fitting..."
         self.model.fit_generator(
