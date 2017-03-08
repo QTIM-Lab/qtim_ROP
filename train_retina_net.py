@@ -89,8 +89,8 @@ class RetiNet(object):
 
         # Train
         input_shape = self.model.input_shape[1:]
-        train_gen = create_generator(self.train_dir, input_shape, mode='categorical')
-        val_gen = create_generator(self.val_dir, input_shape, mode='categorical')
+        train_gen = self.create_generator(self.train_dir, input_shape, mode='categorical')
+        val_gen = self.create_generator(self.val_dir, input_shape, mode='categorical')
 
         # Output
         weights_out = join(self.experiment_dir, 'best_weights.h5')
@@ -115,17 +115,16 @@ class RetiNet(object):
         plot_loss(history, join(self.experiment_dir, 'loss.svg'))
         plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.svg'))
 
+    def create_generator(self, data_path, input_shape, mode=None):
 
-def create_generator(self, data_path, input_shape, mode=None):
+        datagen = ImageDataGenerator()
+        generator = datagen.flow_from_directory(
+            data_path,
+            target_size=input_shape[1:],
+            batch_size=32,
+            class_mode=mode)
 
-    datagen = ImageDataGenerator()
-    generator = datagen.flow_from_directory(
-        data_path,
-        target_size=input_shape[1:],
-        batch_size=32,
-        class_mode=mode)
-
-    return generator
+        return generator
 
 if __name__ == '__main__':
 
