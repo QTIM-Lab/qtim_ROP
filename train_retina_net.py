@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 
 import sys
-from os import listdir, chdir, devnull
+from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
 import logging
 from shutil import copy
 from sklearn.metrics import confusion_matrix
 
-sys.stderr = open(devnull, "w")
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.visualize_util import plot
-sys.stderr = sys.__stderr__
 
 from common import *
 from plotting import *
@@ -21,23 +19,21 @@ class RetiNet(object):
 
     def __init__(self, conf_file):
 
-        # Parse config and create output dir
-        self.config = parse_yaml(conf_file)
         conf_dir = dirname(conf_file)
         experiment_name = splitext(basename(conf_file))[0]
 
-        # Define input and output directories
+        if isdir(join(conf_dir, experiment_name)):
+            print "Folder '{}' already exists!".format(experiment_name)
+            print "Please rename the YAML file, or delete the existing data."
+            exit()
+
+        # Parse config and create output dir
+        self.config = parse_yaml(conf_file)
         self.experiment_dir = make_sub_dir(conf_dir, experiment_name)
         copy(conf_file, self.experiment_dir)
 
-        if self.config.get('logging', True):
-            log_path = join(self.experiment_dir, 'output.log')
-
-            self.log_file = open(log_path, 'a')
-            sys.stdout = self.log_file
-            sys.stderr = self.log_file
-            logging.basicConfig(filename=log_path, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
-
+        # Set up logging
+        setup_log(self.experiment_dir, to_file=self.config.get('logging', False))
         logging.info("Experiment name: {}".format(experiment_name))
 
         chdir(conf_dir)
@@ -57,17 +53,18 @@ class RetiNet(object):
         self.epochs = self.config.get('epochs', 50)
         network = self.config['network']
         type_, weights = network['type'].lower(), network.get('weights', None)
+        fine_tuning = " with pre-trained weights '{}'".format(weights) if weights else " without pre-training"
 
         if 'vgg' in type_:
 
             from keras.applications.vgg16 import VGG16
-            logging.info("Instantiating VGG model")
+            logging.info("Instantiating VGG model" + fine_tuning)
             self.model = VGG16(weights=weights, input_shape=(3, 227, 227), include_top=True)
 
         elif 'resnet' in type_:
 
             from keras.applications.resnet50 import ResNet50
-            logging.info("Instantiating ResNet model")
+            logging.info("Instantiating ResNet model" + fine_tuning)
             self.model = ResNet50(weights=weights, input_shape=(3, 256, 256), include_top=True)
 
         elif 'googlenet' in type_:
@@ -75,15 +72,17 @@ class RetiNet(object):
             from googlenet_custom_layers import PoolHelper, LRN
             from keras.models import model_from_json
 
-            logging.info("Instantiating GoogLeNet model")
+            logging.info("Instantiating GoogLeNet model" + fine_tuning)
             arch = network.get('arch', None)
             self.model = model_from_json(open(arch).read(), custom_objects={"PoolHelper": PoolHelper, "LRN": LRN})
+            if weights:
+                self.model.load_weights(weights, by_name=True)  # TODO check this second argument
             self.model.compile('sgd', 'categorical_crossentropy', metrics=['accuracy'])
 
         else:
             raise KeyError("Invalid network type '{}'".format(type_))
 
-        plot(self.model, join(self.experiment_dir, 'model_final_{}.png'.format(type_)))
+        plot(self.model, join(self.experiment_dir, 'model_architecture{}.svg'.format(type_)))
 
     def train(self):
 
@@ -92,17 +91,17 @@ class RetiNet(object):
         train_gen = self.create_generator(self.train_dir, input_shape, mode='categorical')
         val_gen = self.create_generator(self.val_dir, input_shape, mode='categorical')
 
-        # Output
+        # Make callbacks
         weights_out = join(self.experiment_dir, 'best_weights.h5')
-        check_pointer = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
+        checkpoint_tb = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
 
-        logging.info("Fitting model to training data")
+        logging.info("Training model for {} epochs".format(self.epochs))
         history = self.model.fit_generator(
             train_gen,
             samples_per_epoch=self.nb_train_samples,
             nb_epoch=self.epochs,
             validation_data=val_gen,
-            nb_val_samples=self.nb_val_samples, callbacks=[check_pointer])
+            nb_val_samples=self.nb_val_samples, callbacks=[checkpoint_tb])
 
         # Save final weights
         self.model.save_weights(join(self.experiment_dir, 'final_weights.h5'))

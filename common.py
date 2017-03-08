@@ -1,7 +1,9 @@
 from glob import glob
 from os import mkdir
 from os.path import join, isdir, isfile
-from shutil import copytree, rmtree
+from shutil import copytree
+import logging
+import sys
 
 import h5py
 from PIL import Image
@@ -72,7 +74,20 @@ def parse_yaml(conf_file):
         return yaml.load(f)
 
 
-if __name__ == '__main__':
+def setup_log(out_dir, to_file=False):
 
-    im_list = find_images('/home/james/QTIM/DRIVE/training/images')
-    res = imgs_to_unet_array(im_list)
+    fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    if to_file:
+        log_file = join(out_dir, 'output.log')
+        l_open = open(log_file, 'a')
+        fh = logging.FileHandler(log_file)
+        fh.setFormatter(fmt)
+        logger.addHandler(fh)
+        sys.stdout, sys.stderr = l_open, l_open
+    else:
+        sout = logging.StreamHandler(sys.stdout)
+        sout.setFormatter(fmt)
+        logger.addHandler(sout)
