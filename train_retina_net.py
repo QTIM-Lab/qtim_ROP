@@ -94,16 +94,18 @@ class RetiNet(object):
 
         # Output
         weights_out = join(self.experiment_dir, 'best_weights.h5')
-        checkpointer = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
-
+        check_pointer = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
 
         logging.info("Fitting model to training data")
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=32, # self.nb_train_samples,
+            samples_per_epoch=self.nb_train_samples,
             nb_epoch=self.epochs,
             validation_data=val_gen,
-            nb_val_samples=self.nb_val_samples, callbacks=[checkpointer])
+            nb_val_samples=self.nb_val_samples, callbacks=[check_pointer])
+
+        # Save final weights
+        self.model.save_weights(join(self.experiment_dir, 'final_weights.h5'))
 
         # Predict validation data
         predictions = self.model.predict_generator(val_gen, self.nb_val_samples)
