@@ -89,8 +89,8 @@ class RetiNet(object):
 
         # Train
         input_shape = self.model.input_shape[1:]
-        train_gen = self.create_generator(self.train_dir, input_shape, mode='categorical')
-        val_gen = self.create_generator(self.val_dir, input_shape, mode='categorical')
+        train_gen = create_generator(self.train_dir, input_shape, mode='categorical')
+        val_gen = create_generator(self.val_dir, input_shape, mode='categorical')
 
         # Output
         weights_out = join(self.experiment_dir, 'best_weights.h5')
