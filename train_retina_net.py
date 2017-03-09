@@ -157,7 +157,9 @@ class RetiNet(object):
 
     def create_generator(self, data_path, input_shape, training=True):
 
-        datagen = ImageDataGenerator()
+        zmuv = self.config.get('zmuv', False)
+
+        datagen = ImageDataGenerator(samplewise_center=zmuv, samplewise_std_normalization=zmuv)
         generator = datagen.flow_from_directory(
             data_path,
             target_size=input_shape[1:],
