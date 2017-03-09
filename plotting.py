@@ -32,6 +32,6 @@ def plot_confusion(confusion, classes, out_file):
 
     fig, ax = plt.subplots()
     df_cm = pd.DataFrame(confusion, index=classes, columns=classes)
-    sns.heatmap(df_cm, cmap='Blues', annot=True)
+    sns.heatmap(df_cm, cmap='Blues', annot=True, fmt='g')
     ax.xaxis.tick_top()
     sns.plt.savefig(out_file)
