@@ -82,7 +82,7 @@ class RetiNet(object):
         else:
             raise KeyError("Invalid network type '{}'".format(type_))
 
-        plot(self.model, join(self.experiment_dir, 'model_architecture{}.svg'.format(type_)))
+        plot(self.model, join(self.experiment_dir, 'model_architecture_{}.svg'.format(type_)))
 
     def train(self):
 
