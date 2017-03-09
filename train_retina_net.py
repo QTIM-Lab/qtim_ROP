@@ -9,7 +9,6 @@ from sklearn.metrics import confusion_matrix
 
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
-from keras.utils.visualize_util import plot
 
 from common import *
 from plotting import *
@@ -19,38 +18,48 @@ class RetiNet(object):
 
     def __init__(self, conf_file):
 
-        conf_dir = dirname(conf_file)
-        experiment_name = splitext(basename(conf_file))[0]
-
-        if isdir(join(conf_dir, experiment_name)):
-            print "Folder '{}' already exists!".format(experiment_name)
-            print "Please rename the YAML file, or delete the existing data."
-            exit()
-
-        # Parse config and create output dir
+        # Parse config
+        self.conf_file = conf_file
         self.config = parse_yaml(conf_file)
-        self.experiment_dir = make_sub_dir(conf_dir, experiment_name)
-        copy(conf_file, self.experiment_dir)
 
-        # Set up logging
-        setup_log(self.experiment_dir, to_file=self.config.get('logging', False))
-        logging.info("Experiment name: {}".format(experiment_name))
+        self.conf_dir = dirname(self.conf_file)
+        self.experiment_name = splitext(basename(self.conf_file))[0]
 
-        chdir(conf_dir)
+        chdir(self.conf_dir)
         self.train_dir = abspath(self.config['training_dir'])
         self.val_dir = abspath(self.config['validation_dir'])
 
-        # Get number of classes and samples
-        self.no_classes = listdir(self.train_dir)
-        self.nb_train_samples = len(find_images(join(self.train_dir, '*')))
-        self.nb_val_samples = len(find_images(join(self.val_dir, '*')))
+        try:
+            self.config['mode']
+        except KeyError:
+            print "Please specify a mode 'train' or 'evaluate' in the config file."
+            exit()
 
-        # Create the network based on params
-        self._configure_network()
+        if self.config['mode'] == 'train':
+
+            # Set up logging
+            self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
+            setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
+            logging.info("Experiment name: {}".format(self.experiment_name))
+            self._configure_network()
+
+            # Get number of classes and samples
+            self.no_classes = listdir(self.train_dir)
+            self.nb_train_samples = len(find_images(join(self.train_dir, '*')))
+            self.nb_val_samples = len(find_images(join(self.val_dir, '*')))
+
+            self.train()
+
+        elif self.config['mode'] == 'evaluate':
+
+            # Set up logging
+            setup_log(None)
+            self._configure_network()
+            self.experiment_dir = self.conf_dir
+            self.evaluate(self.config['validation_dir'])  # TODO should be a test set in future
 
     def _configure_network(self):
 
-        self.epochs = self.config.get('epochs', 50)
         network = self.config['network']
         type_, weights = network['type'].lower(), network.get('weights', None)
         fine_tuning = " with pre-trained weights '{}'".format(weights) if weights else " without pre-training"
@@ -75,6 +84,7 @@ class RetiNet(object):
             logging.info("Instantiating GoogLeNet model" + fine_tuning)
             arch = network.get('arch', None)
             self.model = model_from_json(open(arch).read(), custom_objects={"PoolHelper": PoolHelper, "LRN": LRN})
+
             if weights:
                 self.model.load_weights(weights, by_name=True)  # TODO check this second argument
             self.model.compile('sgd', 'categorical_crossentropy', metrics=['accuracy'])
@@ -82,48 +92,78 @@ class RetiNet(object):
         else:
             raise KeyError("Invalid network type '{}'".format(type_))
 
-        plot(self.model, join(self.experiment_dir, 'model_architecture_{}.svg'.format(type_)))
-
     def train(self):
 
         # Train
+        epochs = self.config.get('epochs', 50)  # default to 50 if not specified
         input_shape = self.model.input_shape[1:]
-        train_gen = self.create_generator(self.train_dir, input_shape, mode='categorical')
-        val_gen = self.create_generator(self.val_dir, input_shape, mode='categorical')
+        train_gen = self.create_generator(self.train_dir, input_shape, training=True)
+        val_gen = self.create_generator(self.val_dir, input_shape, training=False)
 
-        # Make callbacks
+        # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
         checkpoint_tb = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
 
-        logging.info("Training model for {} epochs".format(self.epochs))
+        logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
             samples_per_epoch=self.nb_train_samples,
-            nb_epoch=self.epochs,
+            nb_epoch=epochs,
             validation_data=val_gen,
             nb_val_samples=self.nb_val_samples, callbacks=[checkpoint_tb])
 
-        # Save final weights
+        # Save model arch, weighs and history
+        dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
         self.model.save_weights(join(self.experiment_dir, 'final_weights.h5'))
 
-        # Predict validation data
-        predictions = self.model.predict_generator(val_gen, self.nb_val_samples)
-        y_true, y_pred = val_gen.classes, np.argmax(predictions, axis=1)
-        labels = [k[0] for k in sorted(val_gen.class_indices.items(), key=lambda x: x[1])]
+        with open(join(self.experiment_dir, 'model_arch.json'), 'w') as arch:
+            arch.writelines(self.model.to_json())
+
+        # Create modified copy of config file
+        conf_eval = self.update_config()
+        with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'wb') as ce:
+            yaml.dump(conf_eval, ce, default_flow_style=False)
+
+        # Evaluate results
+        self.evaluate(self.val_dir)
+
+    def update_config(self):
+
+        conf_eval = dict(self.config)
+        conf_eval['mode'] = 'evaluate'
+        conf_eval['network']['arch'] = 'model_arch.json'
+        conf_eval['network']['weights'] = 'best_weights.h5'
+        conf_eval['training_dir'] = self.train_dir
+        conf_eval['validation_dir'] = self.val_dir
+        return conf_eval
+
+    def evaluate(self, data_path):
+
+        logging.info("Evaluating model for on {}".format(data_path))
+        history = csv_to_dict(join(self.experiment_dir, "history.csv"))
+        datagen = self.create_generator(data_path, self.model.input_shape[1:], training=False)
+        no_samples = len(find_images(join(data_path, '*')))
+
+        # Predict data
+        predictions = self.model.predict_generator(datagen, no_samples)
+        y_true, y_pred = datagen.classes, np.argmax(predictions, axis=1)
+        labels = [k[0] for k in sorted(datagen.class_indices.items(), key=lambda x: x[1])]
         confusion = confusion_matrix(y_true, y_pred)
+
 
         plot_accuracy(history, join(self.experiment_dir, 'accuracy.svg'))
         plot_loss(history, join(self.experiment_dir, 'loss.svg'))
         plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.svg'))
 
-    def create_generator(self, data_path, input_shape, mode=None):
+    def create_generator(self, data_path, input_shape, training=True):
 
         datagen = ImageDataGenerator()
         generator = datagen.flow_from_directory(
             data_path,
             target_size=input_shape[1:],
             batch_size=32,
-            class_mode=mode)
+            class_mode='categorical',
+            shuffle=training)
 
         return generator
 
@@ -136,4 +176,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     r = RetiNet(args.config)
-    r.train()

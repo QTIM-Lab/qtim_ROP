@@ -4,7 +4,9 @@ from os.path import join, isdir, isfile
 from shutil import copytree
 import logging
 import sys
+import csv
 
+import pandas as pd
 import h5py
 from PIL import Image
 import numpy as np
@@ -74,14 +76,13 @@ def parse_yaml(conf_file):
         return yaml.load(f)
 
 
-def setup_log(out_dir, to_file=False):
+def setup_log(log_file, to_file=False):
 
     fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
     if to_file:
-        log_file = join(out_dir, 'output.log')
         l_open = open(log_file, 'a')
         fh = logging.FileHandler(log_file)
         fh.setFormatter(fmt)
@@ -91,3 +92,13 @@ def setup_log(out_dir, to_file=False):
         sout = logging.StreamHandler(sys.stdout)
         sout.setFormatter(fmt)
         logger.addHandler(sout)
+
+
+def dict_to_csv(my_dict, my_csv):
+
+    pd.DataFrame(my_dict).to_csv(my_csv)
+
+
+def csv_to_dict(my_csv):
+
+    return pd.read_csv(my_csv).to_dict(orient='list')

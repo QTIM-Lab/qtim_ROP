@@ -7,8 +7,8 @@ sns.set_style("darkgrid")
 def plot_accuracy(history, out_file=None):
 
     plt.figure()
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
+    plt.plot(history['acc'])
+    plt.plot(history['val_acc'])
     plt.title('Model accuracy')
     plt.ylabel('Accuracy (%)')
     plt.xlabel('Epoch')
@@ -19,8 +19,8 @@ def plot_accuracy(history, out_file=None):
 def plot_loss(history, out_file=None):
 
     plt.figure()
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
+    plt.plot(history['loss'])
+    plt.plot(history['val_loss'])
     plt.title('Model loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
