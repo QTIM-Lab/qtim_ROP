@@ -21,6 +21,7 @@ class RetiNet(object):
         # Parse config
         self.conf_file = conf_file
         self.config = parse_yaml(conf_file)
+        self.ext = self.config.get('ext', '.png')
 
         self.conf_dir = dirname(self.conf_file)
         self.experiment_name = splitext(basename(self.conf_file))[0]
@@ -151,13 +152,15 @@ class RetiNet(object):
         confusion = confusion_matrix(y_true, y_pred)
 
         # Plots
-        plot_accuracy(history, join(self.experiment_dir, 'accuracy.svg'))
-        plot_loss(history, join(self.experiment_dir, 'loss.svg'))
-        plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.svg'))
+        plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
+        plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
+        plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion' + self.ext))
 
     def create_generator(self, data_path, input_shape, training=True):
 
         zmuv = self.config.get('zmuv', False)
+        if zmuv:
+            logging.info('Normalizing data zero mean, unit variance')
 
         datagen = ImageDataGenerator(samplewise_center=zmuv, samplewise_std_normalization=zmuv)
         generator = datagen.flow_from_directory(
