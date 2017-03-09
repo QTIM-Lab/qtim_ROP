@@ -47,7 +47,6 @@ class RetiNet(object):
             self.no_classes = listdir(self.train_dir)
             self.nb_train_samples = len(find_images(join(self.train_dir, '*')))
             self.nb_val_samples = len(find_images(join(self.val_dir, '*')))
-
             self.train()
 
         elif self.config['mode'] == 'evaluate':
@@ -56,7 +55,7 @@ class RetiNet(object):
             setup_log(None)
             self._configure_network()
             self.experiment_dir = self.conf_dir
-            self.evaluate(self.config['validation_dir'])  # TODO should be a test set in future
+            self.evaluate(self.config['test_dir'])
 
     def _configure_network(self):
 
@@ -133,8 +132,9 @@ class RetiNet(object):
         conf_eval['mode'] = 'evaluate'
         conf_eval['network']['arch'] = 'model_arch.json'
         conf_eval['network']['weights'] = 'best_weights.h5'
-        conf_eval['training_dir'] = self.train_dir
-        conf_eval['validation_dir'] = self.val_dir
+
+        conf_eval['training_dir'] = abspath(self.config['training_dir'])
+        conf_eval['validation_dir'] = abspath(self.config['validation_dir'])
         return conf_eval
 
     def evaluate(self, data_path):
@@ -150,7 +150,7 @@ class RetiNet(object):
         labels = [k[0] for k in sorted(datagen.class_indices.items(), key=lambda x: x[1])]
         confusion = confusion_matrix(y_true, y_pred)
 
-
+        # Plots
         plot_accuracy(history, join(self.experiment_dir, 'accuracy.svg'))
         plot_loss(history, join(self.experiment_dir, 'loss.svg'))
         plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.svg'))
