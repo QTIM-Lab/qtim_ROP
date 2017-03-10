@@ -151,6 +151,9 @@ class RetiNet(object):
         labels = [k[0] for k in sorted(datagen.class_indices.items(), key=lambda x: x[1])]
         confusion = confusion_matrix(y_true, y_pred)
 
+        with open(join(self.experiment_dir, 'confusion.csv'), 'wb') as conf_csv:
+            pd.DataFrame(data=confusion).to_csv(conf_csv)
+
         # Plots
         plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
         plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))

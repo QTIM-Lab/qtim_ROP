@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style("darkgrid")
 
+CLASSES = ['No', 'Pre-Plus', 'Plus']
+
 
 def plot_accuracy(history, out_file=None):
 
@@ -32,6 +34,10 @@ def plot_confusion(confusion, classes, out_file):
 
     fig, ax = plt.subplots()
     df_cm = pd.DataFrame(confusion, index=classes, columns=classes)
+
+    df_cm = df_cm.reindex_axis(CLASSES, axis=0)
+    df_cm = df_cm.reindex_axis(CLASSES, axis=1)
+
     sns.heatmap(df_cm, cmap='Blues', annot=True, fmt='g')
     ax.xaxis.tick_top()
     sns.plt.savefig(out_file)
