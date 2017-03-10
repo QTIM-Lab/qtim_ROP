@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-
+from os import mkdir
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style("darkgrid")
@@ -27,6 +27,8 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
 
     fig1, ax1 = plt.subplots(3, 10, figsize=(fig_width, fig_height), gridspec_kw={'height_ratios': heights})
     fig2, ax2 = plt.subplots(3, 10, figsize=(fig_width, fig_height), gridspec_kw={'height_ratios': heights})
+    fig3, ax3 = plt.subplots(3, 10, figsize=(fig_width, fig_height), gridspec_kw={'height_ratios': heights})
+
     cidx = 0
 
     for (class_, orig_list), (_, seg_list) in zip(orig_dict.items(), seg_dict.items()):
@@ -53,6 +55,15 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
         print "Segmented images: {}".format(sorted_seg.shape)
 
         step = int(np.ceil(sorted_orig.shape[0] / 10.0))
+
+        fewest_dir = join(out_dir, class_ + '_fewest')
+        if not isdir(fewest_dir):
+            mkdir(fewest_dir)
+
+        for j in range(0, step):
+
+            Image.fromarray(sorted_orig[j]).save(join(fewest_dir, '{}.jpg'.format(j)))
+
         sample = range(0, sorted_orig.shape[0], step)
 
         for i, idx in enumerate(sample):
@@ -60,14 +71,22 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
             orig = Image.fromarray(sorted_orig[idx])
             seg = np.invert(Image.fromarray(sorted_seg[idx]))
 
+            bin = (sorted_seg[idx] > (thresh * 255.0)).astype(np.uint8) * 255
+            bin = Image.fromarray(np.dstack([bin] * 3))
+
             if i == 0:
                 ax1[cidx, i].text(1., 1., class_, fontdict=font, verticalalignment='top')
                 ax2[cidx, i].text(1., 1., class_, fontdict=font, verticalalignment='top')
+                ax3[cidx, i].text(1., 1., class_, fontdict=font, verticalalignment='top')
 
             ax1[cidx, i].imshow(orig)
             ax1[cidx, i].axis('off')
+
             ax2[cidx, i].imshow(seg)
             ax2[cidx, i].axis('off')
+
+            ax3[cidx, i].imshow(bin)
+            ax3[cidx, i].axis('off')
 
         cidx += 1
 
@@ -77,17 +96,17 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
     fig2.subplots_adjust(wspace=0, hspace=0, left=0, right=1, bottom=0, top=1)
     fig2.savefig(join(out_dir, 'seg_order.png'))
 
+    fig3.subplots_adjust(wspace=0, hspace=0, left=0, right=1, bottom=0, top=1)
+    fig3.savefig(join(out_dir, 'bin_order.png'))
+
     # Plot histogram
     df = pd.DataFrame({k: pd.Series(v) for k, v in pixel_totals.iteritems()})
     fig, ax = plt.subplots()
     cols = ['r', 'g', 'b']
 
     for (class_, total_pixels), color in zip(pixel_totals.items(), cols):
-        plt.hist(total_pixels, normed=False, stacked=True, color=color, alpha=0.25, label=class_)
+        plt.hist(total_pixels, normed=True, stacked=True, color=color, alpha=0.25, label=class_)
 
-    # plt.title("Total vessel pixels by class")
-    # plt.xlabel("Value")
-    # plt.ylabel("Probability")
     plt.legend(pixel_totals.keys())
     plt.savefig(join(out_dir, 'hist.png'))
 
