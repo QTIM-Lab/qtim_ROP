@@ -32,9 +32,11 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
     for (class_, orig_list), (_, seg_list) in zip(orig_dict.items(), seg_dict.items()):
 
         # Load all original images in this class
+        print "Loading original '{}' images".format(class_)
         orig_images = np.array([np.asarray(Image.open(im)) for im in orig_list])
 
         # Load segmented images and apply threshold
+        print "Loading segmented '{}' images".format(class_)
         seg_images = np.array([np.asarray(Image.open(im)) for im in seg_list])
 
         # Compute total pixels per image
@@ -47,7 +49,11 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
         sorted_orig = orig_images[order]
         sorted_seg = seg_images[order]
 
-        sample = range(0, sorted_orig.shape[0], int(np.floor(sorted_orig.shape[0] / 10.0)))
+        print "Original images: {}".format(sorted_orig.shape)
+        print "Segmented images: {}".format(sorted_seg.shape)
+
+        step = int(np.floor(sorted_orig.shape[0] / 10.0))
+        sample = range(0, sorted_orig.shape[0] - step, step)
 
         for i, idx in enumerate(sample):
 
