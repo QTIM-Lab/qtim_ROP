@@ -82,7 +82,7 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
     cols = ['r', 'g', 'b']
 
     for (class_, total_pixels), color in zip(pixel_totals.items(), cols):
-        plt.hist(total_pixels, bins=50, normed=True, color=color, alpha=0.25, label=class_)
+        plt.hist(total_pixels, bins=50, normed=False, color=color, alpha=0.25, label=class_)
 
     plt.title("Total vessel pixels by class")
     plt.xlabel("Value")
@@ -93,8 +93,8 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
     # Box plot
     fig, ax = plt.subplots()
     df = pd.DataFrame({k : pd.Series(v) for k, v in pixel_totals.iteritems()})
-    sns.boxplot(data=df, order=['No', 'Pre-Plus', 'Plus'])
-    sns.plt.savefig(join(out_dir, 'boxplot.png'))
+    sns.violinplot(data=df, order=['No', 'Pre-Plus', 'Plus'])
+    sns.plt.savefig(join(out_dir, 'violin_plot.png'))
 
 if __name__ == '__main__':
 
