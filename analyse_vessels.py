@@ -92,7 +92,8 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
 
     # Box plot
     fig, ax = plt.subplots()
-    sns.boxplot(pixel_totals, order=['No', 'Pre-Plus', 'Plus'])
+    df = pd.DataFrame({k : pd.Series(v) for k, v in pixel_totals.iteritems()})
+    sns.boxplot(data=df, order=['No', 'Pre-Plus', 'Plus'])
     sns.plt.savefig(join(out_dir, 'boxplot.png'))
 
 if __name__ == '__main__':
