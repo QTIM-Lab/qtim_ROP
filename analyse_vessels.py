@@ -78,21 +78,21 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
     fig2.savefig(join(out_dir, 'seg_order.png'))
 
     # Plot histogram
+    df = pd.DataFrame({k: pd.Series(v) for k, v in pixel_totals.iteritems()})
     fig, ax = plt.subplots()
     cols = ['r', 'g', 'b']
 
     for (class_, total_pixels), color in zip(pixel_totals.items(), cols):
-        plt.hist(total_pixels, bins=50, normed=False, color=color, alpha=0.25, label=class_)
+        plt.hist(total_pixels, normed=False, stacked=True, color=color, alpha=0.25, label=class_)
 
-    plt.title("Total vessel pixels by class")
-    plt.xlabel("Value")
-    plt.ylabel("Probability")
+    # plt.title("Total vessel pixels by class")
+    # plt.xlabel("Value")
+    # plt.ylabel("Probability")
     plt.legend(pixel_totals.keys())
     plt.savefig(join(out_dir, 'hist.png'))
 
     # Box plot
     fig, ax = plt.subplots()
-    df = pd.DataFrame({k : pd.Series(v) for k, v in pixel_totals.iteritems()})
     sns.violinplot(data=df, order=['No', 'Pre-Plus', 'Plus'])
     sns.plt.savefig(join(out_dir, 'violin_plot.png'))
 
