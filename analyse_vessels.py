@@ -52,8 +52,8 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
         print "Original images: {}".format(sorted_orig.shape)
         print "Segmented images: {}".format(sorted_seg.shape)
 
-        step = int(np.floor(sorted_orig.shape[0] / 10.0))
-        sample = range(0, sorted_orig.shape[0] - step, step)
+        step = int(np.ceil(sorted_orig.shape[0] / 10.0))
+        sample = range(0, sorted_orig.shape[0], step)
 
         for i, idx in enumerate(sample):
 
@@ -82,7 +82,7 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
     cols = ['r', 'g', 'b']
 
     for (class_, total_pixels), color in zip(pixel_totals.items(), cols):
-        plt.hist(total_pixels, bins=10, normed=False, color=color, alpha=0.25, label=class_)
+        plt.hist(total_pixels, bins=10, normed=True, color=color, alpha=0.25, label=class_)
 
     plt.title("Total vessel pixels by class")
     plt.xlabel("Value")
