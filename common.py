@@ -4,7 +4,7 @@ from os.path import join, isdir, isfile
 from shutil import copytree
 import logging
 import sys
-import csv
+from collections import defaultdict
 
 import pandas as pd
 import h5py
@@ -41,6 +41,14 @@ def find_images(im_path):
 
     return sorted(files)
 
+
+def find_images_by_class(im_path):
+
+    images = {}
+    for class_ in CLASSES:
+        images[class_] = find_images(join(im_path, class_))
+
+    return images
 
 def imgs_to_unet_array(img_list):
 
