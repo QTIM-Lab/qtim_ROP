@@ -16,11 +16,12 @@ except ImportError:
 
 class SegmentUnet(object):
 
-    def __init__(self, out_dir, unet_dir, stride=(8, 8)):
+    def __init__(self, out_dir, unet_dir, stride=(8, 8), erode=10):
 
         self.model = load_model(unet_dir)
         self.out_dir = out_dir
         self.stride_x, self.stride_y = stride[0], stride[1]
+        self.erode = erode
         self.patch_x, self.patch_y = 48, 48
 
     def segment_batch(self, data):
@@ -33,7 +34,7 @@ class SegmentUnet(object):
             print "Segmenting batch {} of {} ".format(chunk_no + 1, len(chunks))
 
             # Load images and create masks
-            imgs_original, masks = imgs_to_unet_array(img_list)
+            imgs_original, masks = imgs_to_unet_array(img_list, self.erode)
 
             # Pre-process the images, and return as patches (TODO: get patch size from the model)
             img_patches, new_height, new_width, padded_masks = self.pre_process(imgs_original, masks)
@@ -96,17 +97,18 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--images', help="Image or folder of images", dest='images', required=True)
     parser.add_argument('-o', '--out-dir', help="Output directory", dest="out_dir", required=True)
     parser.add_argument('-u', '--unet', help='retina-unet dir', dest='model', required=True)
+    parser.add_argument('-e', '--erode', help='Size of structuring element for mask erosion', dest='erode', type=int, default=10)
     parser.add_argument('-s', '--stride', help="Stride dimensions (width, height)", nargs='*', default=(8, 8))
     args = parser.parse_args()
 
     # Get list of images to segment
     data = []
     if isdir(args.images):
-        data.extend(find_images(args.images))
+        data.extend(find_images(join(args.images, '*')))
     elif isfile(args.images):
         data.append(args.images)
     else:
         raise IOError("Please specify a valid image path or folder of images")
 
-    s = SegmentUnet(args.out_dir, args.model, stride=args.stride)
+    s = SegmentUnet(args.out_dir, args.model, stride=args.stride, erode=args.erode)
     s.segment_batch(data)
