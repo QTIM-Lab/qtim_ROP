@@ -20,7 +20,7 @@ def resize(im_dir, out_dir, csv_file, unet=None):
     for image, row in csv_data.iterrows():
 
         im_path = join(im_dir, row['image']) + '.jpeg'
-        level = 'Healthy' if row['level'] == 0 else 'Diseased'
+        level = 'Healthy' if row['level'] < 2 else 'Diseased'
 
         im_arr = cv2.imread(im_path)[:, :, ::-1]
         resized_im = imresize(im_arr, (480, 640), interp='bicubic')
