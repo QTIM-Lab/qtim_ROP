@@ -58,4 +58,6 @@ if __name__ == '__main__':
 
     df = pd.DataFrame(data=pd.concat(rows))
     df = df.set_index('ID').sort_index()
-    df.to_csv(join(sys.argv[1], 'downloaded.csv'))
+
+    for class_name, class_group in df.groupby('Golden Reading Plus'):
+        class_group.to_csv(join(sys.argv[1], '{}.csv'.format(class_name)))
