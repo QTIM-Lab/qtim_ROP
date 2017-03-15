@@ -16,6 +16,7 @@ from common import find_images, make_sub_dir
 from methods import *
 from segmentation import segment, SegmentUnet
 from mask_retina import *
+from metadata import image_to_metadata
 from keras.preprocessing.image import ImageDataGenerator
 
 
@@ -259,15 +260,6 @@ def preprocess(im, params):
                 im.save(new_outfile)
 
     return True
-
-
-def image_to_metadata(im_path):
-
-    im_name = basename(im_path)
-    im_str = splitext(im_name)[0]
-    subject_id, _, im_id, session, _, eye, class_ = im_str.split('_')[:7]
-    return {'subjectID': subject_id, 'session': session, 'eye': eye, 'class': class_, 'image': im_path, 'prefix': im_str}
-
 
 if __name__ == '__main__':
 
