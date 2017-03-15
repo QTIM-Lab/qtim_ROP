@@ -21,7 +21,7 @@ def image_to_metadata(im_path):
 
     im_name = basename(im_path)
     im_str = splitext(im_name)[0]
-    subject_id, _, im_id, session, view, eye, class_ = im_str.split('_')[:7]
+    subject_id, im_id, session, view, eye, class_ = im_str.split('_')[:7]
     return {'imID': im_id, 'subjectID': subject_id, 'session': session, 'eye': eye, 'class': class_,
             'image': im_path, 'prefix': im_str, 'view': view.lower()}
 
@@ -32,17 +32,17 @@ def image_csv_data(im_path, csv_df):
     meta_dict.update({'gold': GOLD})
     image_view = meta_dict['view']
 
-    rows = csv_df.query(QUERY.format(**meta_dict))
+    row = csv_df.query(QUERY.format(**meta_dict)).iloc[[0]]
 
     for view in VIEWS:
         if view != image_view:
-            del rows[view]
+            del row[view]
 
-    rows.rename(columns={image_view: 'image'}, inplace=True)
+    row.rename(columns={image_view: 'image'}, inplace=True)
 
-    rows['ID'] = meta_dict['imID']
-    rows['downloadFile'] = basename(im_path)
-    return rows
+    row['ID'] = meta_dict['imID']
+    row['downloadFile'] = basename(im_path)
+    return row, meta_dict
 
 if __name__ == '__main__':
 
