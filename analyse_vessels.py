@@ -109,12 +109,16 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
         plt.hist(total_pixels, normed=True, stacked=True, color=color, alpha=0.25, label=class_)
 
     plt.legend(pixel_totals.keys())
+    plt.xlabel('Number of vessel pixels')
+    plt.ylabel('Normalized frequency')
     plt.savefig(join(out_dir, 'hist.png'))
 
     # Box plot
     fig, ax = plt.subplots()
-    sns.violinplot(data=df, order=['No', 'Pre-Plus', 'Plus'])
-    sns.plt.savefig(join(out_dir, 'violin_plot.png'))
+    sns.boxplot(data=df, order=['No', 'Pre-Plus', 'Plus'])
+    sns.plt.xlabel('Class')
+    sns.plt.ylabel('Total vessel pixels')
+    sns.plt.savefig(join(out_dir, 'boxplot.png'))
 
 if __name__ == '__main__':
 
