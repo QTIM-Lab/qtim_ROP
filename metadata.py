@@ -1,4 +1,7 @@
-from os.path import basename, splitext, join, dirname
+#!/usr/bin/env python
+
+
+from os.path import basename, splitext, join
 import pandas as pd
 import yaml
 from common import find_images
