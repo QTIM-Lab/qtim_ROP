@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-
-from os.path import basename, splitext, join
+from os.path import basename, dirname, splitext, join
 import pandas as pd
 import yaml
 from common import find_images
@@ -10,8 +9,11 @@ QUERY = 'subjectID == "{subjectID}" and eye == "{eye}" and reader == "{gold}" an
 VIEWS = ['posterior', 'nasal', 'temporal']
 
 
-with open('config/conf.yaml') as y:
+dir_name = dirname(__file__)
+conf_name = join(dir_name, 'config/conf.yaml')
+with open(conf_name) as y:
     conf = yaml.load(y)
+
 GOLD = conf['golden_reader']
 
 
