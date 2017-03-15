@@ -91,3 +91,7 @@ ENV/
 # PyCharm
 .idea/
 *.yaml
+
+# Various files
+download_retina_data.py
+statistics.py
