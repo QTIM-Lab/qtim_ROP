@@ -50,7 +50,8 @@ def find_images_by_class(im_path):
 
     return images
 
-def imgs_to_unet_array(img_list):
+
+def imgs_to_unet_array(img_list, erode=10):
 
     n_imgs = len(img_list)
     test_im = np.asarray(Image.open(img_list[0]))
@@ -64,7 +65,7 @@ def imgs_to_unet_array(img_list):
         img = np.asarray(Image.open(im_path))
         imgs_arr[i] = img
 
-        mask = create_mask(img, erode=5)
+        mask = create_mask(img, erode=erode)
         masks_arr[i] = np.expand_dims(mask, 2)
 
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
@@ -110,3 +111,9 @@ def dict_to_csv(my_dict, my_csv):
 def csv_to_dict(my_csv):
 
     return pd.read_csv(my_csv).to_dict(orient='list')
+
+
+def series_to_plot_dict(series, key, value):
+
+    sorted_list = [{key: k, value: v} for k, v in series.to_dict().items()]
+    return pd.DataFrame(data=sorted_list)

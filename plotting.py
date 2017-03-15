@@ -1,7 +1,11 @@
+from os.path import join
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style("darkgrid")
+
+from common import series_to_plot_dict
+
 
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 
@@ -41,3 +45,13 @@ def plot_confusion(confusion, classes, out_file):
     sns.heatmap(df_cm, cmap='Blues', annot=True, fmt='g')
     ax.xaxis.tick_top()
     sns.plt.savefig(out_file)
+
+
+def plot_counts(count_series, x, y, order, y_label, title, out_path):
+
+    df = series_to_plot_dict(count_series, x, y)
+    fig, ax = sns.plt.subplots()
+    sns.barplot(data=df, x=x, y=y, order=order)
+    sns.plt.ylabel(y_label)
+    sns.plt.title(title)
+    sns.plt.savefig(out_path)

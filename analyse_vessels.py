@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from os import mkdir
+from os.path import basename
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style("darkgrid")
@@ -50,6 +50,7 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
 
         sorted_orig = orig_images[order]
         sorted_seg = seg_images[order]
+        sorted_names = [basename(orig_list[x]) for x in order]
 
         print "Original images: {}".format(sorted_orig.shape)
         print "Segmented images: {}".format(sorted_seg.shape)
@@ -61,8 +62,8 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
             mkdir(fewest_dir)
 
         for j in range(0, step):
-
-            Image.fromarray(sorted_orig[j]).save(join(fewest_dir, '{}.jpg'.format(j)))
+            im_name = sorted_names[j]
+            Image.fromarray(sorted_orig[j]).save(join(fewest_dir, '{}.jpg'.format(im_name)))
 
         sample = range(0, sorted_orig.shape[0], step)
 
