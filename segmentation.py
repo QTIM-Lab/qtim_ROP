@@ -34,7 +34,7 @@ class SegmentUnet(object):
             print "Segmenting batch {} of {} ".format(chunk_no + 1, len(chunks))
 
             # Load images and create masks
-            imgs_original, masks = imgs_to_unet_array(img_list, self.erode)
+            imgs_original, masks = imgs_to_unet_array(img_list, erode=self.erode)
 
             # Pre-process the images, and return as patches (TODO: get patch size from the model)
             img_patches, new_height, new_width, padded_masks = self.pre_process(imgs_original, masks)
@@ -54,7 +54,7 @@ class SegmentUnet(object):
 
                 # Save masked segmentation
                 name, ext = splitext(basename(im_name))
-                filename = join(self.out_dir, name + '_seg')
+                filename = join(self.out_dir, name)
                 print "Writing {}".format(filename)
                 visualize(seg_masked, filename)
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     # Get list of images to segment
     data = []
     if isdir(args.images):
-        data.extend(find_images(join(args.images, '*')))
+        data.extend(find_images(join(args.images)))
     elif isfile(args.images):
         data.append(args.images)
     else:
