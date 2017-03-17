@@ -5,7 +5,7 @@ from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
 import logging
 from shutil import copy
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
@@ -23,7 +23,7 @@ class RetiNet(object):
         self.config = parse_yaml(conf_file)
         self.ext = self.config.get('ext', '.png')
 
-        self.conf_dir = dirname(self.conf_file)
+        self.conf_dir = dirname(abspath(self.conf_file))
         self.experiment_name = splitext(basename(self.conf_file))[0]
 
         chdir(self.conf_dir)
@@ -141,8 +141,8 @@ class RetiNet(object):
     def evaluate(self, data_path):
 
         logging.info("Evaluating model for on {}".format(data_path))
-        history = csv_to_dict(join(self.experiment_dir, "history.csv"))
-        datagen = self.create_generator(data_path, self.model.input_shape[1:], training=False)
+        datagen = self.create_generator(data_path, self.model.input_shape[1:], batch_size=1, training=False)
+        print datagen.class_indices
         no_samples = len(find_images(join(data_path, '*')))
 
         # Predict data
@@ -150,16 +150,19 @@ class RetiNet(object):
         y_true, y_pred = datagen.classes, np.argmax(predictions, axis=1)
         labels = [k[0] for k in sorted(datagen.class_indices.items(), key=lambda x: x[1])]
         confusion = confusion_matrix(y_true, y_pred)
+        print classification_report(y_true, y_pred)
 
         with open(join(self.experiment_dir, 'confusion.csv'), 'wb') as conf_csv:
             pd.DataFrame(data=confusion).to_csv(conf_csv)
 
         # Plots
-        plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
-        plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
         plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion' + self.ext))
 
-    def create_generator(self, data_path, input_shape, training=True):
+        history = csv_to_dict(join(self.experiment_dir, "history.csv"))
+        plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
+        plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
+
+    def create_generator(self, data_path, input_shape, batch_size=32, training=True):
 
         zmuv = self.config.get('zmuv', False)
         if zmuv:
@@ -169,7 +172,7 @@ class RetiNet(object):
         generator = datagen.flow_from_directory(
             data_path,
             target_size=input_shape[1:],
-            batch_size=32,
+            batch_size=batch_size,
             class_mode='categorical',
             shuffle=training)
 
