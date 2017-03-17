@@ -19,15 +19,20 @@ def unet_preproc(img):
 
 # https://github.com/btgraham/SparseConvNet/blob/kaggle_Diabetic_Retinopathy_competition/Data/
 # kaggleDiabeticRetinopathy/preprocessImages.py
-def kaggle_BG(a, scale):
+def kaggle_BG(img, scale):
 
-    # a = scale_radius(a, scale)
-    # b = numpy.zeros(a.shape)
-    # cv2.circle(b, (a.shape[1] / 2, a.shape[0] / 2), int(scale * cf), (1, 1, 1), -1, 8, 0)
-    b = create_mask(a, erode=None)
-    b = np.stack([b]*3, axis=2)
-    aa = cv2.addWeighted(a, 4, cv2.GaussianBlur(a, (0, 0), scale / 30), -4, 128) * b + 128 * (1 - b)
-    return aa.astype(np.uint8)
+    # Create a mask from which the approximate retinal center can be calculated
+    guide_mask = create_mask(img)
+    retina_center = tuple((np.mean(np.argwhere(guide_mask), axis=0)).astype(np.uint8))[::-1]
+
+    # Generate a circle of the approximate size, centered based on the guide mask
+    cf = .9  #0.95
+    circular_mask = np.zeros(img.shape)
+    cv2.circle(circular_mask, retina_center, int(scale * cf), (1, 1, 1), -1, 8, 0)
+
+    # Compute weight sum of image, blurred image and mask it
+    w_sum = cv2.addWeighted(img, 4, cv2.GaussianBlur(img, (0, 0), scale / 30), -4, 128) * circular_mask + 128 * (1 - circular_mask)
+    return w_sum.astype(np.uint8)
 
 
 # https://github.com/btgraham/SparseConvNet/blob/kaggle_Diabetic_Retinopathy_competition/Data/

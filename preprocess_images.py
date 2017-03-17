@@ -89,6 +89,10 @@ class Pipeline(object):
                 self.pipeline = addict.Dict(conf_dict['pipeline'])
                 self.augment_size = self.pipeline.augmentation['size']
                 self.resize = self.pipeline['resize']
+                self.crop = self.pipeline['crop']
+
+                self.crop_width = (self.resize['width'] - self.crop['width']) / 2
+                self.crop_height = (self.resize['height'] - self.crop['height']) / 2
 
         except KeyError as e:
             print "Missing config entry {}".format(e)
@@ -236,12 +240,15 @@ def preprocess(im, params):
 
     # Resize and preprocess
     interp = params.resize.get('interp', 'bilinear')
-    resized_im = imresize(im_arr, (params.resize['width'], params.resize['height']), interp=interp)
+    resized_im = imresize(im_arr, (params.resize['height'], params.resize['width']), interp=interp)
 
     if params.preprocessor:
         preprocessed_im = params.preprocessor(resized_im, *params.p_args)
     else:
         preprocessed_im = resized_im
+
+    # Crop
+    preprocessed_im = preprocessed_im[params.crop_height:-params.crop_height, params.crop_width:-params.crop_width]
 
     class_dir = join(params.augment_dir, meta['class'])  # this should already exist
 
