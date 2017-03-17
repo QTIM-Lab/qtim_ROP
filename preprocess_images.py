@@ -77,6 +77,9 @@ class Pipeline(object):
                 self.input_dir = abspath(join(dirname(config), conf_dict['input_dir']))
                 self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
 
+                csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
+                self.metadata = pd.DataFrame.from_csv(csv_file)
+
                 if not isdir(self.input_dir):
                     print "Input {} is not a directory!".format(self.input_dir)
                     exit()
@@ -106,8 +109,14 @@ class Pipeline(object):
 
         # Create training and validation (imbalanced)
         print "Splitting into training/validation"
-        train_imgs, val_imgs = self.train_val_split()
-        self.random_sample(train_imgs, val_imgs)
+
+        try:
+            train_imgs, val_imgs = self.train_val_split()
+            self.random_sample(train_imgs, val_imgs)
+        except AssertionError:
+            print "No images found in one more classes - unable to split training and validation"
+            print self.class_distribution
+            exit()
 
     def train_val_split(self):
 
@@ -214,6 +223,12 @@ def preprocess(im, params):
 
     # Extract metadata
     meta = image_to_metadata(im)
+    imID = int(meta['imID'])
+    if not params.metadata.iloc[imID]['quality']:
+        print "{} is of insufficient quality - skipping".format(im)
+        return False
+
+    print "Preprocessing {}".format(im)
 
     # Resize, preprocess and augment
     im_arr = cv2.imread(im)[:, :, ::-1]
