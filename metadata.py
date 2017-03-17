@@ -3,7 +3,7 @@
 from os.path import basename, dirname, splitext, join
 import pandas as pd
 import yaml
-from common import find_images
+from common import find_images, make_sub_dir
 
 QUERY = 'subjectID == "{subjectID}" and eye == "{eye}" and reader == "{gold}" and Session == "{session}"'
 VIEWS = ['posterior', 'nasal', 'temporal']
@@ -21,9 +21,14 @@ def image_to_metadata(im_path):
 
     im_name = basename(im_path)
     im_str = splitext(im_name)[0]
-    subject_id, im_id, session, view, eye, class_ = im_str.split('_')[:7]
+
+    try:
+        subject_id, im_id, session, view, eye, class_ = im_str.split('_')[:7]
+    except ValueError:
+        subject_id, _, im_id, session, view, eye, class_ = im_str.split('_')[:7]
+
     return {'imID': im_id, 'subjectID': subject_id, 'session': session, 'eye': eye, 'class': class_,
-            'image': im_path, 'prefix': im_str, 'view': view.lower()}
+            'image': im_path, 'prefix': im_str, 'view': view}
 
 
 def image_csv_data(im_path, csv_df):
@@ -44,20 +49,25 @@ def image_csv_data(im_path, csv_df):
     row['downloadFile'] = basename(im_path)
     return row, meta_dict
 
+
+def unique_images(in_dir):
+
+    unique = []
+    im_df = pd.DataFrame(data=[image_to_metadata(im) for im in find_images(join(in_dir, '*'))])
+
+    for imID, group in im_df.groupby('imID'):
+
+        unique.append((group['class'].iloc[0], group['image'].iloc[0]))
+
+    return unique
+
+
 if __name__ == '__main__':
 
     import sys
-    csv_data = pd.DataFrame.from_csv(sys.argv[2], index_col=None)
-    csv_data['Session'] = csv_data['Session'].apply(lambda x: str(x).split()[-1])
+    from shutil import copy
 
-    rows = []
-    for im_path in find_images(join(sys.argv[1], '*')):
+    for class_name, u_im in unique_images(sys.argv[1]):
 
-        row = image_csv_data(im_path, csv_data)
-        rows.append(row)
-
-    df = pd.DataFrame(data=pd.concat(rows))
-    df = df.set_index('ID').sort_index()
-
-    for class_name, class_group in df.groupby('Golden Reading Plus'):
-        class_group.to_csv(join(sys.argv[1], '{}.csv'.format(class_name)))
+        class_dir = make_sub_dir(sys.argv[2], class_name)
+        copy(u_im, join(class_dir, basename(u_im)))
