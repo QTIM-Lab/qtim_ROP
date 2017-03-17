@@ -1,6 +1,21 @@
 import cv2, numpy as np
 from mask_retina import create_mask
 from skimage.morphology import binary_erosion, selem
+from retinaunet.lib.pre_processing import my_PreProc
+
+
+def unet_preproc(img):
+
+    width, height, channels = img.shape
+    imgs_arr = np.empty((1, width, height, channels))
+    imgs_arr[0] = img
+
+    imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
+    pre_proc = my_PreProc(imgs_arr).astype(dtype=np.float16)
+
+    result = np.transpose(pre_proc[0], (1, 2, 0))[:, :, 0]
+    return result
+
 
 # https://github.com/btgraham/SparseConvNet/blob/kaggle_Diabetic_Retinopathy_competition/Data/
 # kaggleDiabeticRetinopathy/preprocessImages.py

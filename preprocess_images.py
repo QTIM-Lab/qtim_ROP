@@ -20,7 +20,8 @@ from metadata import image_to_metadata
 from keras.preprocessing.image import ImageDataGenerator
 
 
-METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment, 'morphology': binary_morph}
+METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment,
+           'unet_norm': unet_preproc,'morphology': binary_morph}
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 
 
