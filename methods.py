@@ -26,7 +26,7 @@ def kaggle_BG(img, scale):
     retina_center = tuple((np.mean(np.argwhere(guide_mask), axis=0)).astype(np.uint8))[::-1]
 
     # Generate a circle of the approximate size, centered based on the guide mask
-    cf = .9  #0.95
+    cf = .8  #0.95
     circular_mask = np.zeros(img.shape)
     cv2.circle(circular_mask, retina_center, int(scale * cf), (1, 1, 1), -1, 8, 0)
 

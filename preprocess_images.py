@@ -233,10 +233,12 @@ def preprocess(im, params):
         print "{} is of insufficient quality - skipping".format(im)
         return False
 
-    print "Preprocessing {}".format(im)
-
     # Resize, preprocess and augment
-    im_arr = cv2.imread(im)[:, :, ::-1]
+    try:
+        im_arr = cv2.imread(im)[:, :, ::-1]
+    except TypeError:
+        print "Error loading '{}'".format(im)
+        return False
 
     # Resize and preprocess
     interp = params.resize.get('interp', 'bilinear')
