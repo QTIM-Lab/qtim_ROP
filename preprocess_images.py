@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from os import listdir, chdir
+from os import listdir, remove
 from os.path import join, isdir, basename, abspath, dirname
 from multiprocessing.pool import Pool
 from multiprocessing import cpu_count
@@ -74,14 +74,11 @@ class Pipeline(object):
         try:
             with open(config, 'rb') as c:
 
-                conf_dir = dirname(abspath(config))
-                chdir(conf_dir)
-
                 conf_dict = yaml.load(c)
-                self.input_dir = conf_dict['input_dir']
+                self.input_dir = abspath(join(dirname(config), conf_dict['input_dir']))
                 self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
 
-                csv_file = conf_dict['csv_file']
+                csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
                 self.metadata = pd.DataFrame.from_csv(csv_file)
 
                 if not isdir(self.input_dir):
