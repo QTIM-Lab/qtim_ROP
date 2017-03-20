@@ -5,12 +5,16 @@ from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
 from sklearn.metrics import confusion_matrix, classification_report
 
+from keras.models import Model
+from keras.layers import Dense, Flatten, Input, Dropout
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import model_from_json
+from keras.utils.visualize_util import plot
 
 from common import *
 from plotting import *
+from models import top_model
 
 
 class RetiNet(object):
@@ -73,7 +77,23 @@ class RetiNet(object):
 
             from keras.applications.resnet50 import ResNet50
             logging.info("Instantiating ResNet model" + fine_tuning)
-            self.model = ResNet50(weights=weights, input_shape=(3, 256, 256), include_top=True)
+
+            input_layer = Input(shape=(3, 224, 224))
+            base_model = ResNet50(weights=weights, include_top=False, input_tensor=input_layer)
+            plot(base_model, join(self.experiment_dir, 'base_model.png'))
+
+            x = base_model.output
+            x = Flatten()(x)
+            x = Dense(1024, activation='relu')(x)
+            x = Dropout(0.5)(x)
+            predictions = Dense(3, activation='softmax')(x)
+
+            self.model = Model(input=base_model.input, output=predictions)
+            for layer in base_model.layers:
+                layer.trainable = False
+
+            plot(self.model, join(self.experiment_dir, 'final_model.png'))
+            exit()
 
         else:
 
@@ -91,7 +111,7 @@ class RetiNet(object):
 
             if weights:
                 self.model.load_weights(weights, by_name=True)
-                
+
             self.model.compile('sgd', 'categorical_crossentropy', metrics=['accuracy'])
 
     def train(self):
