@@ -93,7 +93,6 @@ class RetiNet(object):
                 layer.trainable = False
 
             plot(self.model, join(self.experiment_dir, 'final_model.png'))
-            exit()
 
         else:
 
