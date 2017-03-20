@@ -3,12 +3,11 @@
 import sys
 from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
-import logging
-from shutil import copy
 from sklearn.metrics import confusion_matrix, classification_report
 
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
+from keras.models import model_from_json
 
 from common import *
 from plotting import *
@@ -76,21 +75,24 @@ class RetiNet(object):
             logging.info("Instantiating ResNet model" + fine_tuning)
             self.model = ResNet50(weights=weights, input_shape=(3, 256, 256), include_top=True)
 
-        elif 'googlenet' in type_:
+        else:
 
-            from googlenet_custom_layers import PoolHelper, LRN
-            from keras.models import model_from_json
+            if 'googlenet' in type_:
+                from googlenet_custom_layers import PoolHelper, LRN
+                custom_objects = {"PoolHelper": PoolHelper, "LRN": LRN}
+                mod_str = 'GoogLeNet'
+            else:
+                custom_objects = {}
+                mod_str = 'custom'
 
-            logging.info("Instantiating GoogLeNet model" + fine_tuning)
+            logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
             arch = network.get('arch', None)
-            self.model = model_from_json(open(arch).read(), custom_objects={"PoolHelper": PoolHelper, "LRN": LRN})
+            self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
 
             if weights:
-                self.model.load_weights(weights, by_name=True)  # TODO check this second argument
+                self.model.load_weights(weights, by_name=True)
+                
             self.model.compile('sgd', 'categorical_crossentropy', metrics=['accuracy'])
-
-        else:
-            raise KeyError("Invalid network type '{}'".format(type_))
 
     def train(self):
 
