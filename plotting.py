@@ -44,6 +44,9 @@ def plot_confusion(confusion, classes, out_file):
 
     sns.heatmap(df_cm, cmap='Blues', annot=True, fmt='g')
     ax.xaxis.tick_top()
+    ax.xaxis.set_label_position('top')
+    sns.plt.xlabel('Predicted class')
+    sns.plt.ylabel('Actual class')
     sns.plt.savefig(out_file)
 
 
