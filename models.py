@@ -1,8 +1,10 @@
 from os.path import split, join
-from keras import __version__
+
+import keras.backend as K
 from keras.models import model_from_json, Sequential
 from keras.layers import Activation, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from keras.utils.visualize_util import plot
+from keras.callbacks import Callback
 
 import json
 
@@ -30,8 +32,6 @@ def top_model(base_shape):
 
 
 def simple_CNN(out_dir=None):
-
-    print __version__
 
     model = Sequential()
     model.add(Conv2D(32, 3, 3, input_shape=(3, 224, 224)))
@@ -61,7 +61,18 @@ def simple_CNN(out_dir=None):
 
         plot(model, to_file=join(out_dir, 'arch.png'), show_shapes=True)
 
-        loaded = model_from_json(open(model_out).read())
+
+class SGDLearningRateTracker(Callback):
+
+    def __init__(self):
+
+        super(SGDLearningRateTracker, self).__init__()
+        self.lr = []
+
+    def on_epoch_end(self, epoch, logs={}):
+        optimizer = self.model.optimizer
+        lr = K.eval(optimizer.lr * (1. / (1. + optimizer.decay * optimizer.iterations)))
+        self.lr.append(lr)
 
 if __name__ == '__main__':
 

@@ -63,7 +63,7 @@ def image_histogram_equalization(image, number_bins=256):
     return image_equalized.reshape(image.shape)
 
 
-def binary_morph(img, thresh=50, min_size=None):
+def binary_morph(img, thresh=50, min_size=None, mask_only=True):
 
     if min_size is None:  # default to 10% of largest image dimension
         min_size = float(max(img.shape)) * .1
@@ -87,4 +87,6 @@ def binary_morph(img, thresh=50, min_size=None):
         if cc > min_size:
             mask[labels == lidx] = 1
 
+    if mask_only:
+        return mask * 255
     return np.dstack([img * mask] * 3).astype(np.uint8)
