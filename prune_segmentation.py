@@ -1,4 +1,7 @@
-from os.path import join, dirname, basename
+#!/usr/bin/env python
+
+
+from os.path import join, basename
 import cv2
 from methods import binary_morph
 from common import find_images
