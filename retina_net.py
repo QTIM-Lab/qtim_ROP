@@ -92,6 +92,8 @@ class RetiNet(object):
             for layer in base_model.layers:
                 layer.trainable = False
 
+            from keras.optimizers import SGD
+            self.model.compile(optimizer=SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy')
             plot(self.model, join(self.experiment_dir, 'final_model.png'))
 
         else:
