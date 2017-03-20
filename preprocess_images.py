@@ -74,7 +74,7 @@ class Pipeline(object):
         try:
             with open(config, 'rb') as c:
 
-                conf_dir = dirname(config)
+                conf_dir = dirname(abspath(config))
                 chdir(conf_dir)
 
                 conf_dict = yaml.load(c)
