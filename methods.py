@@ -63,7 +63,7 @@ def image_histogram_equalization(image, number_bins=256):
     return image_equalized.reshape(image.shape)
 
 
-def binary_morph(img, min_size=None):
+def binary_morph(img, thresh=50, min_size=None):
 
     if min_size is None:  # default to 10% of largest image dimension
         min_size = float(max(img.shape)) * .1
@@ -72,7 +72,7 @@ def binary_morph(img, min_size=None):
         img = np.mean(img, 2).astype(np.uint8)
 
     # Apply binary threshold and erode
-    ret, thresh_im = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+    ret, thresh_im = cv2.threshold(img, thresh, 255, cv2.THRESH_BINARY)
 
     # Connected component labelling
     n, labels, stats, centroids = cv2.connectedComponentsWithStats(thresh_im)
@@ -88,16 +88,3 @@ def binary_morph(img, min_size=None):
             mask[labels == lidx] = 1
 
     return np.dstack([img * mask] * 3).astype(np.uint8)
-
-
-if __name__ == '__main__':
-
-    import sys
-    from os.path import dirname, join
-
-    img = cv2.imread(sys.argv[1])
-
-    for ms in range(150, 250, 10):
-
-        masked_img = binary_morph(img, ms)
-        cv2.imwrite(join(dirname(sys.argv[1]), 'seg_m{}.bmp'.format(ms)), masked_img)
