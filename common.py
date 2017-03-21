@@ -63,7 +63,7 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
 
         img = np.asarray(Image.open(im_path))
         if img.shape[-1] == 4:
-            print "{} has four channels, selecting first three"
+            print "{} has four channels, selecting first three".format(im_path)
             img = img[:, :, :3]
 
         if img.shape[:-1] != target_shape[:-1]:
