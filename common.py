@@ -62,8 +62,10 @@ def imgs_to_unet_array(img_list, im_shape=(480, 640, 3), erode=10):
     for i, im_path in enumerate(img_list):
 
         img = np.asarray(Image.open(im_path))
+        print img.shape
 
         if img.shape != im_shape:
+            print "Resizing {}".format(im_path)
             img = imresize(img, (width, height), interp='bicubic')
 
         imgs_arr[i] = img
