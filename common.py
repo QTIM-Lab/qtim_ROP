@@ -51,10 +51,10 @@ def find_images_by_class(im_path):
     return images
 
 
-def imgs_to_unet_array(img_list, im_shape=(480, 640, 3), erode=10):
+def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
 
     n_imgs = len(img_list)
-    height, width, channels = im_shape
+    height, width, channels = target_shape
 
     imgs_arr = np.empty((n_imgs, height, width, channels))
     masks_arr = np.empty((n_imgs, height, width, 1), dtype=np.bool)
@@ -62,9 +62,11 @@ def imgs_to_unet_array(img_list, im_shape=(480, 640, 3), erode=10):
     for i, im_path in enumerate(img_list):
 
         img = np.asarray(Image.open(im_path))
-        print img.shape
+        if img.shape[-1] == 4:
+            print "{} has four channels, selecting first three"
+            img = img[:, :, :3]
 
-        if img.shape != im_shape:
+        if img.shape[:-1] != target_shape[:-1]:
             print "Resizing {}".format(im_path)
             img = imresize(img, (height, width), interp='bicubic')
 
