@@ -4,7 +4,7 @@ from os.path import join, isdir, isfile
 from shutil import copytree
 import logging
 import sys
-from collections import defaultdict
+from scipy.misc import imresize
 
 import pandas as pd
 import h5py
@@ -51,11 +51,10 @@ def find_images_by_class(im_path):
     return images
 
 
-def imgs_to_unet_array(img_list, erode=10):
+def imgs_to_unet_array(img_list, im_shape=(640, 480, 3), erode=10):
 
     n_imgs = len(img_list)
-    test_im = np.asarray(Image.open(img_list[0]))
-    width, height, channels = test_im.shape
+    width, height, channels = im_shape
 
     imgs_arr = np.empty((n_imgs, width, height, channels))
     masks_arr = np.empty((n_imgs, width, height, 1), dtype=np.bool)
@@ -63,6 +62,10 @@ def imgs_to_unet_array(img_list, erode=10):
     for i, im_path in enumerate(img_list):
 
         img = np.asarray(Image.open(im_path))
+
+        if img.shape != im_shape:
+            img = imresize(img, (width, height), interp='bicubic')
+
         imgs_arr[i] = img
 
         mask = create_mask(img, erode=erode)
