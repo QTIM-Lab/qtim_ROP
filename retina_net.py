@@ -11,10 +11,13 @@ from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import model_from_json
 from keras.utils.visualize_util import plot
+from keras.optimizers import SGD, RMSprop
 
 from common import *
 from plotting import *
-from models import top_model
+from models import SGDLearningRateTracker
+
+OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop}
 
 
 class RetiNet(object):
@@ -80,7 +83,6 @@ class RetiNet(object):
 
             input_layer = Input(shape=(3, 224, 224))
             base_model = ResNet50(weights=weights, include_top=False, input_tensor=input_layer)
-            plot(base_model, join(self.experiment_dir, 'base_model.png'))
 
             x = base_model.output
             x = Flatten()(x)
@@ -91,12 +93,6 @@ class RetiNet(object):
             self.model = Model(input=base_model.input, output=predictions)
             for layer in base_model.layers:
                 layer.trainable = False
-
-            from keras.optimizers import SGD
-            lr, momentum = network.get('lr', 0.001), network.get('momentum', 0.9)
-            self.model.compile(optimizer=SGD(lr=lr, momentum=0.9), loss='categorical_crossentropy',
-                               metrics=['accuracy'])
-            plot(self.model, join(self.experiment_dir, 'final_model.png'))
 
         else:
 
@@ -115,7 +111,13 @@ class RetiNet(object):
             if weights:
                 self.model.load_weights(weights, by_name=True)
 
-            self.model.compile('sgd', 'categorical_crossentropy', metrics=['accuracy'])
+        # Configure optimizer
+        opt_options = self.config['optimizer']
+        name, params = opt_options['type'], opt_options['params']
+        optimizer = OPTIMIZERS[name](**params)
+        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+        plot(self.model, join(self.experiment_dir, 'final_model.png'))
 
     def train(self):
 
@@ -128,6 +130,7 @@ class RetiNet(object):
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
         checkpoint_tb = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
+        lr_tb = SGDLearningRateTracker()
 
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
@@ -135,10 +138,11 @@ class RetiNet(object):
             samples_per_epoch=self.nb_train_samples,
             nb_epoch=epochs,
             validation_data=val_gen,
-            nb_val_samples=self.nb_val_samples, callbacks=[checkpoint_tb])
+            nb_val_samples=self.nb_val_samples, callbacks=[checkpoint_tb, lr_tb])
 
-        # Save model arch, weighs and history
+        # Save model arch, weights and history
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
+        np.save(join(self.experiment_dir, 'learning_rate.npy'), lr_tb.lr)
         self.model.save_weights(join(self.experiment_dir, 'final_weights.h5'))
 
         with open(join(self.experiment_dir, 'model_arch.json'), 'w') as arch:
