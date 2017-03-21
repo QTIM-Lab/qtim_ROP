@@ -51,13 +51,13 @@ def find_images_by_class(im_path):
     return images
 
 
-def imgs_to_unet_array(img_list, im_shape=(640, 480, 3), erode=10):
+def imgs_to_unet_array(img_list, im_shape=(480, 640, 3), erode=10):
 
     n_imgs = len(img_list)
-    width, height, channels = im_shape
+    height, width, channels = im_shape
 
-    imgs_arr = np.empty((n_imgs, width, height, channels))
-    masks_arr = np.empty((n_imgs, width, height, 1), dtype=np.bool)
+    imgs_arr = np.empty((n_imgs, height, width, channels))
+    masks_arr = np.empty((n_imgs, height, width, 1), dtype=np.bool)
 
     for i, im_path in enumerate(img_list):
 

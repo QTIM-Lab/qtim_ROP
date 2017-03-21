@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from os.path import isdir, isfile, join, basename, splitext, split
+from os import makedirs
+from os.path import isdir, isfile, basename
 from common import find_images, imgs_to_unet_array
 from models import load_model
 from mask_retina import *
@@ -20,6 +21,8 @@ class SegmentUnet(object):
 
         self.model = load_model(unet_dir)
         self.out_dir = out_dir
+        if not isdir(out_dir):
+            makedirs(out_dir)
         self.stride_x, self.stride_y = stride[0], stride[1]
         self.erode = erode
         self.patch_x, self.patch_y = 48, 48
