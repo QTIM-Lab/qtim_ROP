@@ -1,4 +1,4 @@
-from os.path import split, join
+from os.path import split, join, sep
 
 import keras.backend as K
 from keras.models import model_from_json, Sequential
@@ -12,7 +12,7 @@ import json
 def load_model(model):
 
     # Load model
-    _, model_basename = split(model)
+    _, model_basename = split(model.rstrip(sep))
     model_arch = join(model, model_basename + '_architecture.json')
     model_weights = join(model, model_basename + '_best_weights.h5')
 
