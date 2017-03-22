@@ -3,8 +3,8 @@
 import numpy as np
 from PIL import Image
 import yaml
-from os import listdir, mkdir
-from os.path import join, isdir
+from os import listdir, mkdir, chdir
+from os.path import join, isdir, abspath, dirname
 from common import write_hdf5
 
 
@@ -20,6 +20,8 @@ class RetinalDataset(object):
 
         with open(config_file, 'rb') as y:
             self.config = yaml.load(y)
+
+        chdir(dirname(abspath(config_file)))
 
         self.dataset_path = self.config['dataset_path']
         assert(isdir(self.dataset_path))
@@ -94,9 +96,9 @@ class RetinalDataset(object):
         type_ = 'train' if training else 'test'
 
         print "Saving dataset to '{}'".format(self.out_dir)
-        write_hdf5(imgs_arr, join(self.out_dir, "200image_dataset_imgs_{}.hdf5".format(type_)))
-        write_hdf5(ground_truth_arr, join(self.out_dir, "200image_dataset_groundTruth_{}.hdf5".format(type_)))
-        write_hdf5(masks_arr, join(self.out_dir, "200image_dataset_borderMasks_{}.hdf5".format(type_)))
+        write_hdf5(imgs_arr, join(self.out_dir, "image_dataset_imgs_{}.hdf5".format(type_)))
+        write_hdf5(ground_truth_arr, join(self.out_dir, "image_dataset_groundTruth_{}.hdf5".format(type_)))
+        write_hdf5(masks_arr, join(self.out_dir, "image_dataset_borderMasks_{}.hdf5".format(type_)))
 
         return imgs_arr, ground_truth_arr, masks_arr
 

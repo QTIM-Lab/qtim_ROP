@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os import makedirs
-from os.path import isdir, isfile, basename
+from os.path import isdir, isfile, basename, splitext
 from common import find_images, imgs_to_unet_array
 from models import load_model
 from mask_retina import *
@@ -30,7 +30,7 @@ class SegmentUnet(object):
     def segment_batch(self, img_data):
 
         # Loop through chunks of the data, as there may be thousands of images to segment
-        data = [im for im in img_data if not isfile(join(self.out_dir, im))]  # remove those that are already done
+        data = [im for im in img_data if not isfile(join(self.out_dir, splitext(basename(im))[0] + '.png'))]
 
         print "{} image(s) already segmented - these will be skipped".format(len(img_data) - len(data))
 

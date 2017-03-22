@@ -14,8 +14,8 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input-dir', dest='in_dir', required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', required=True)
 
-    parser.add_argument('-t', '--thresh', dest='thresh', help="0.0 < thresh < 1.0", type=float, default=.8)
-    parser.add_argument('-s', '--smallest', dest='smallest', help="Smallest object size allowed", default=50)
+    parser.add_argument('-t', '--thresh', dest='thresh', help="0 < thresh < 255", type=int, default=200)
+    parser.add_argument('-s', '--smallest', dest='smallest', help="Smallest object size allowed", type=int, default=10)
 
     args = parser.parse_args()
 
