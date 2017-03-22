@@ -1,6 +1,6 @@
 from glob import glob
 from os import mkdir
-from os.path import join, isdir, isfile
+from os.path import join, isdir, isfile, basename
 from shutil import copytree
 import logging
 import sys
@@ -53,29 +53,30 @@ def find_images_by_class(im_path):
 
 def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
 
-    n_imgs = len(img_list)
     height, width, channels = target_shape
 
-    imgs_arr = np.empty((n_imgs, height, width, channels))
-    masks_arr = np.empty((n_imgs, height, width, 1), dtype=np.bool)
+    imgs_arr = []  # np.empty((n_imgs, height, width, channels))
+    masks_arr = []  # np.empty((n_imgs, height, width, 1), dtype=np.bool)
 
     for i, im_path in enumerate(img_list):
 
         img = np.asarray(Image.open(im_path))
-        print img.shape
+        print '{}: {}'.format(basename(im_path), img.shape)
 
-        if img.shape[-1] == 4:
-            print "{} has four channels, selecting first three".format(im_path)
-            img = img[:, :, :3]
+        if not img.shape or img.shape[-1] != 3:
+            print "Invalid image shape - skipping"
+            continue
 
         if img.shape[:-1] != target_shape[:-1]:
-            print "Resizing {}".format(im_path)
             img = imresize(img, (height, width), interp='bicubic')
 
-        imgs_arr[i] = img
+        imgs_arr.append(img)
 
         mask = create_mask(img, erode=erode)
-        masks_arr[i] = np.expand_dims(mask, 2)
+        masks_arr.append(np.expand_dims(mask, 2))
+
+    imgs_arr = np.stack(imgs_arr, axis=0)
+    masks_arr = np.stack(masks_arr, axis=0)
 
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
     masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
