@@ -27,13 +27,12 @@ class SegmentUnet(object):
         self.erode = erode
         self.patch_x, self.patch_y = 48, 48
 
-    def segment_batch(self, data):
+    def segment_batch(self, img_data):
 
         # Loop through chunks of the data, as there may be thousands of images to segment
-        data = [im for im in data if not isfile(join(self.out_dir, im))]  # remove those that are already done
+        data = [im for im in img_data if not isfile(join(self.out_dir, im))]  # remove those that are already done
 
-        if not data:
-            print "Images already segmented!"
+        print "{} image(s) already segmented - these will be skipped".format(len(img_data) - len(data))
 
         chunks = [data[x:x + 100] for x in xrange(0, len(data), 100)]
 
