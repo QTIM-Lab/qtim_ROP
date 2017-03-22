@@ -30,6 +30,11 @@ class SegmentUnet(object):
     def segment_batch(self, data):
 
         # Loop through chunks of the data, as there may be thousands of images to segment
+        data = [im for im in data if not isfile(join(self.out_dir, im))]  # remove those that are already done
+
+        if not data:
+            print "Images already segmented!"
+
         chunks = [data[x:x + 100] for x in xrange(0, len(data), 100)]
 
         for chunk_no, img_list in enumerate(chunks):
