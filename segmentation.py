@@ -104,7 +104,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--out-dir', help="Output directory", dest="out_dir", required=True)
     parser.add_argument('-u', '--unet', help='retina-unet dir', dest='model', required=True)
     parser.add_argument('-e', '--erode', help='Size of structuring element for mask erosion', dest='erode', type=int, default=10)
-    parser.add_argument('-s', '--stride', help="Stride dimensions (width, height)", nargs='*', default=(8, 8))
+    parser.add_argument('-s', '--stride', help="Stride dimensions (width, height)", type=int, nargs='2', default=(8, 8))
     args = parser.parse_args()
 
     # Get list of images to segment
