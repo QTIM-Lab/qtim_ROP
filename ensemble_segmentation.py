@@ -19,9 +19,11 @@ class UnetEnsemble(object):
         self.max_dir = make_sub_dir(self.out_dir, 'max')
         self.mean_dir = make_sub_dir(self.out_dir, 'mean')
 
-    def segment_all(self, imgs):
+    def segment_all(self, img_dir):
 
         result_dirs = {}
+        imgs = find_images(img_dir)
+
         for i, model_dir in enumerate(self.models):
 
             print "Instantiating model #{}: {}".format(i+1, model_dir)
@@ -57,10 +59,20 @@ class UnetEnsemble(object):
 
 if __name__ == '__main__':
 
-    import sys
+    from argparse import ArgumentParser
 
-    model_dir = sys.argv[1]
-    models_list = sorted([join(model_dir, name) for name in listdir(model_dir) if isdir(join(model_dir, name))])
+    parser = ArgumentParser()
+    parser.add_argument('-m', '--model-dir', dest='model_dir', required=True)
+    parser.add_argument('-o', '--output-dir', dest='out_dir', required=True)
+    parser.add_argument('-i', '--images', dest='img_dir', required=True)
 
-    ensembler = UnetEnsemble(models_list, sys.argv[2], evaluate='splitAll_results')
-    ensembler.segment_all(models_list)
+    args = parser.parse_args()
+
+    # List of all models to ensemble
+    models_list = sorted([join(args.model_dir, name) for name in listdir(args.model_dir)
+                          if isdir(join(args.model_dir, name))])
+    print models_list
+
+    # Instantiate ensembler object
+    ensembler = UnetEnsemble(models_list, args.out_dir, evaluate='splitAll_results')
+    ensembler.segment_all(args.img_dir)  # segment images using all models and ensemble
