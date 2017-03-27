@@ -4,8 +4,10 @@ import numpy as np
 from PIL import Image
 import yaml
 from os import listdir, mkdir, chdir
-from os.path import join, isdir, abspath, dirname
+from os.path import join, isdir, abspath, dirname, basename
 from common import write_hdf5
+from scipy.misc import imresize
+from mask_retina import create_mask
 
 
 class RetinalDataset(object):
@@ -101,6 +103,39 @@ class RetinalDataset(object):
         write_hdf5(masks_arr, join(self.out_dir, "image_dataset_borderMasks_{}.hdf5".format(type_)))
 
         return imgs_arr, ground_truth_arr, masks_arr
+
+
+def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
+
+    height, width, channels = target_shape
+
+    imgs_arr = []  # np.empty((n_imgs, height, width, channels))
+    masks_arr = []  # np.empty((n_imgs, height, width, 1), dtype=np.bool)
+
+    for i, im_path in enumerate(img_list):
+
+        img = np.asarray(Image.open(im_path))
+        print '{}: {}'.format(basename(im_path), img.shape)
+
+        if not img.shape or img.shape[-1] != 3:
+            print "Invalid image shape - skipping"
+            continue
+
+        if img.shape[:-1] != target_shape[:-1]:
+            img = imresize(img, (height, width), interp='bicubic')
+
+        imgs_arr.append(img)
+
+        mask = create_mask(img, erode=erode)
+        masks_arr.append(np.expand_dims(mask, 2))
+
+    imgs_arr = np.stack(imgs_arr, axis=0)
+    masks_arr = np.stack(masks_arr, axis=0)
+
+    imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
+    masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
+
+    return imgs_arr, masks_arr
 
 
 if __name__ == "__main__":

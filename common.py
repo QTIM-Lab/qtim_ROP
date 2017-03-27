@@ -1,17 +1,13 @@
 from glob import glob
 from os import mkdir
-from os.path import join, isdir, isfile, basename
+from os.path import join, isdir, isfile
 from shutil import copytree
 import logging
 import sys
-from scipy.misc import imresize
 
 import pandas as pd
 import h5py
-from PIL import Image
-import numpy as np
 import yaml
-from mask_retina import create_mask
 
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 
@@ -49,40 +45,6 @@ def find_images_by_class(im_path):
         images[class_] = find_images(join(im_path, class_))
 
     return images
-
-
-def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
-
-    height, width, channels = target_shape
-
-    imgs_arr = []  # np.empty((n_imgs, height, width, channels))
-    masks_arr = []  # np.empty((n_imgs, height, width, 1), dtype=np.bool)
-
-    for i, im_path in enumerate(img_list):
-
-        img = np.asarray(Image.open(im_path))
-        print '{}: {}'.format(basename(im_path), img.shape)
-
-        if not img.shape or img.shape[-1] != 3:
-            print "Invalid image shape - skipping"
-            continue
-
-        if img.shape[:-1] != target_shape[:-1]:
-            img = imresize(img, (height, width), interp='bicubic')
-
-        imgs_arr.append(img)
-
-        mask = create_mask(img, erode=erode)
-        masks_arr.append(np.expand_dims(mask, 2))
-
-    imgs_arr = np.stack(imgs_arr, axis=0)
-    masks_arr = np.stack(masks_arr, axis=0)
-
-    imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
-    masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
-
-    return imgs_arr, masks_arr
-
 
 def write_hdf5(arr, outfile):
     with h5py.File(outfile, "w") as f:

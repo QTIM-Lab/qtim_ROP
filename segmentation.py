@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from os import makedirs
-from os.path import isdir, isfile, basename, splitext
-from common import find_images, imgs_to_unet_array
+from os.path import isdir, isfile, basename
+from prepare_unet_data import imgs_to_unet_array
 from models import load_model
 from mask_retina import *
 
