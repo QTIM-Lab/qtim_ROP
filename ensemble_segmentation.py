@@ -37,16 +37,18 @@ class UnetEnsemble(object):
             model = SegmentUnet(result_dir, model_dir, stride=(4, 4))  # instantiate U-Net
             model.segment_batch(imgs)  # segment images
 
-        # self.ensemble(result_dirs)  # combine the result of the segmentations
+        self.ensemble(result_dirs)  # combine the result of the segmentations
 
     def ensemble(self, results):
 
         if self.evaluate in results.keys():
             results.pop(self.evaluate)  # don't include the evaluation data in the ensembling
 
-        segmented_images = [find_images(x) for _, x in results.items()]
+        segmented_images = [sorted(find_images(x)) for _, x in results.items()]
 
         for seg_images in zip(*segmented_images):
+
+            print seg_images
 
             im_name = basename(seg_images[0])
             seg_arr = np.asarray([np.asarray(Image.open(seg)) for seg in seg_images])
