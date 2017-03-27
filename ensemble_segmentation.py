@@ -26,7 +26,7 @@ class UnetEnsemble(object):
 
             print "Instantiating model #{}: {}".format(i+1, model_dir)
 
-            result_dir = join(self.out_dir, i)  # create directory to store segmented images
+            result_dir = join(self.out_dir, str(i))  # create directory to store segmented images
             print "Segmented images will be written to '{}'".format(result_dir)
 
             model_id = basename(model_dir.rstrip(sep))  # identifier for this particular model
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     import sys
 
     model_dir = sys.argv[1]
-    models_list = [join(model_dir, name) for name in listdir(model_dir) if isdir(join(model_dir, name))]
+    models_list = sorted([join(model_dir, name) for name in listdir(model_dir) if isdir(join(model_dir, name))])
 
     ensembler = UnetEnsemble(models_list, sys.argv[2], evaluate='splitAll_results')
     ensembler.segment_all(models_list)
