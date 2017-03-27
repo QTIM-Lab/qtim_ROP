@@ -53,7 +53,7 @@ class UnetEnsemble(object):
             im_name = basename(seg_images[0])
             seg_arr = np.asarray([np.asarray(Image.open(seg)) for seg in seg_images])
 
-            mean_image = np.mean(seg_arr, axis=2)
+            mean_image = np.round(np.mean(seg_arr, axis=2)).astype(np.uint8)
             Image.fromarray(mean_image).save(join(self.mean_dir, im_name))
 
             max_image = np.max(seg_arr, axis=2)
