@@ -58,9 +58,9 @@ class UnetEnsemble(object):
 if __name__ == '__main__':
 
     import sys
-    from glob import glob
 
-    models_list = [x for x in glob(sys.argv[1]) if isdir(x)]
+    model_dir = sys.argv[1]
+    models_list = [join(model_dir, name) for name in listdir(model_dir) if isdir(join(model_dir, name))]
 
     ensembler = UnetEnsemble(models_list, sys.argv[2], evaluate='splitAll_results')
     ensembler.segment_all(models_list)
