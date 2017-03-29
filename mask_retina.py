@@ -1,11 +1,11 @@
 from skimage import measure
 from skimage.color import rgb2gray
-from skimage.filters import threshold_li
 from skimage.morphology import binary_erosion, binary_dilation, selem
 
 from PIL import Image
 import numpy as np
 from os.path import split, join, splitext
+from common import find_images
 
 
 def create_mask(im_arr, erode=0):
@@ -39,12 +39,14 @@ def apply_mask(im, mask):
 if __name__ == "__main__":
 
     import sys
+    out_dir = sys.argv[2]
 
-    im_path = sys.argv[1]
-    im = np.asarray(Image.open(im_path))
-    seg = create_mask(im) * 255
+    for im_path in find_images(sys.argv[1]):
 
-    dir_name, file_name = split(im_path)
-    name, ext = splitext(file_name)
+        im = np.asarray(Image.open(im_path))
+        mask = create_mask(im).astype(np.uint8) * 255
 
-    Image.fromarray(seg).save(join(dir_name, name + '_seg' + ext))
+        _, file_name = split(im_path)
+        name, ext = splitext(file_name)
+
+        Image.fromarray(mask).save(join(out_dir, name + '_mask.gif'))

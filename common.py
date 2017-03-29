@@ -9,7 +9,7 @@ import pandas as pd
 import h5py
 import yaml
 
-CLASSES = ['No', 'Pre-Plus', 'Plus']
+DEFAULT = ['No', 'Pre-Plus', 'Plus']
 
 
 def make_sub_dir(dir_, sub, tree=None):
@@ -38,10 +38,13 @@ def find_images(im_path):
     return sorted(files)
 
 
-def find_images_by_class(im_path):
+def find_images_by_class(im_path, classes=None):
+
+    if classes is None:
+        classes = DEFAULT
 
     images = {}
-    for class_ in CLASSES:
+    for class_ in classes:
         images[class_] = find_images(join(im_path, class_))
 
     return images
