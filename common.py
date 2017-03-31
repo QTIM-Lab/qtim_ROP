@@ -29,10 +29,10 @@ def ignore_files(dir, files):
     return [f for f in files if isfile(join(dir, f))]
 
 
-def find_images(im_path):
+def find_images(im_path, extensions=[]):
 
     files = []
-    for ext in ['*.bmp', '*.BMP', '*.png', '*.jpg', '*.tif']:
+    for ext in ['*.bmp', '*.BMP', '*.png', '*.jpg', '*.tif'] + extensions:
         files.extend(glob(join(im_path, ext)))
 
     return sorted(files)
@@ -48,6 +48,12 @@ def find_images_by_class(im_path, classes=None):
         images[class_] = find_images(join(im_path, class_))
 
     return images
+
+
+def get_subdirs(root_dir):
+
+    return [x for x in glob(join(root_dir, '*')) if isdir(x)]
+
 
 def write_hdf5(arr, outfile):
     with h5py.File(outfile, "w") as f:
