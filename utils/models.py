@@ -1,4 +1,4 @@
-from os.path import split, join, sep
+from os.path import split, join, sep, isfile
 
 import keras.backend as K
 from keras.models import model_from_json, Sequential
@@ -15,6 +15,12 @@ def load_model(model):
     _, model_basename = split(model.rstrip(sep))
     model_arch = join(model, model_basename + '_architecture.json')
     model_weights = join(model, model_basename + '_best_weights.h5')
+
+    if not isfile(model_arch):
+        raise IOError('Unable to locate model architecture (.json)')
+
+    if not isfile(model_weights):
+        raise IOError('Unable to locate model weights (.h5)')
 
     model = model_from_json(open(model_arch).read())
     model.load_weights(model_weights)

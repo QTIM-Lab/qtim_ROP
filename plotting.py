@@ -58,3 +58,5 @@ def plot_counts(count_series, x, y, order, y_label, title, out_path):
     sns.plt.ylabel(y_label)
     sns.plt.title(title)
     sns.plt.savefig(out_path)
+
+

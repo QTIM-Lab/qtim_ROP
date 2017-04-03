@@ -51,7 +51,7 @@ def circular_mask(img):
         x_shift = 0
 
     radius = (max_x - min_x + x_shift) / 2.
-    retina_center = np.round(regionprops(guide_mask)[0].centroid).astype(np.uint16)[::-1]
+    retina_center = np.round(regionprops(guide_mask.astype(np.uint8))[0].centroid).astype(np.uint16)[::-1]
     retina_center[0] += x_shift
 
     # Generate a circle of the approximate size, centered based on the guide mask

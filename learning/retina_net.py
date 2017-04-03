@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 
-import sys
 from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
-from sklearn.metrics import confusion_matrix, classification_report
-
-from keras.models import Model
-from keras.layers import Dense, Flatten, Input, Dropout
-from keras.callbacks import ModelCheckpoint
-from keras.preprocessing.image import ImageDataGenerator
-from keras.models import model_from_json
-from keras.utils.visualize_util import plot
-from keras.optimizers import SGD, RMSprop
 
 from common import *
+from keras.callbacks import ModelCheckpoint
+from keras.layers import Dense, Flatten, Input, Dropout
+from keras.models import Model
+from keras.models import model_from_json
+from keras.optimizers import SGD, RMSprop
+from keras.preprocessing.image import ImageDataGenerator
+from keras.utils.visualize_util import plot
+from sklearn.metrics import confusion_matrix, classification_report
+
 from plotting import *
-from models import SGDLearningRateTracker
+from utils.models import SGDLearningRateTracker
 
 OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop}
 

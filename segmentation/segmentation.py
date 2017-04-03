@@ -3,9 +3,9 @@
 from os import makedirs
 from os.path import isdir, isfile, basename
 from prepare_unet_data import imgs_to_unet_array
-from models import load_model
+from utils.models import load_model
 from mask_retina import *
-from common import find_images
+from utils.common import find_images
 
 
 try:
@@ -19,23 +19,27 @@ except ImportError:
 
 class SegmentUnet(object):
 
-    def __init__(self, out_dir, unet_dir, stride=(8, 8), erode=10):
+    def __init__(self, unet_dir, out_dir=None, stride=(8, 8), erode=10):
 
         self.model = load_model(unet_dir)
         self.out_dir = out_dir
-        if not isdir(out_dir):
+        if out_dir and not isdir(out_dir):
             makedirs(out_dir)
         self.stride_x, self.stride_y = stride[0], stride[1]
         self.erode = erode
         self.patch_x, self.patch_y = 48, 48
 
-    def segment_batch(self, img_data):
+    def segment_batch(self, img_data, batch_size=100):
 
         # Loop through chunks of the data, as there may be thousands of images to segment
-        data = [im for im in img_data if not isfile(join(self.out_dir, splitext(basename(im))[0] + '.png'))]
+        if self.out_dir is None:
+            data = [im for im in img_data]
+        else:
+            data = [im for im in img_data if not isfile(join(self.out_dir, splitext(basename(im))[0] + '.png'))]
+            print "{} image(s) already segmented".format(len(img_data) - len(data))
 
-        print "{} image(s) already segmented - these will be skipped".format(len(img_data) - len(data))
-        chunks = [data[x:x + 10] for x in xrange(0, len(data), 10)]
+        chunks = [data[x:x + batch_size] for x in xrange(0, len(data), batch_size)]
+        final_results = []
 
         for chunk_no, img_list in enumerate(chunks):
 
@@ -59,12 +63,16 @@ class SegmentUnet(object):
 
                 # Mask the segmentation and transpose
                 seg_masked = apply_mask(seg, mask)
+                final_results.append(np.squeeze(seg_masked))
 
                 # Save masked segmentation
-                name, ext = splitext(basename(im_name))
-                filename = join(self.out_dir, name)
-                print "Writing {}".format(filename)
-                visualize(seg_masked, filename)
+                if self.out_dir is not None:
+                    name, ext = splitext(basename(im_name))
+                    filename = join(self.out_dir, name)
+                    print "Writing {}".format(filename)
+                    visualize(seg_masked, filename)
+
+        return final_results
 
     def pre_process(self, imgs_original, masks):
 
@@ -83,7 +91,7 @@ class SegmentUnet(object):
 def segment(im_arr, unet):  # static method
 
     assert(len(im_arr.shape) == 3)
-    mask = create_mask(im_arr)
+    mask = circular_mask(im_arr)[:,:,0].astype(np.uint8) * 255
 
     im_arr = np.expand_dims(im_arr, 0).transpose((0, 3, 1, 2))
     im_mask = np.zeros((1, 1, mask.shape[0],  mask.shape[1]))
@@ -95,6 +103,7 @@ def segment(im_arr, unet):  # static method
     seg = recompone_overlap(pred_imgs, h, w, unet.stride_x, unet.stride_y)
 
     # Remove singleton dimensions and apply mask
+
     return apply_mask(seg[0], im_mask[0])
 
 if __name__ == "__main__":
@@ -103,20 +112,22 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
     parser.add_argument('-i', '--images', help="Image or folder of images", dest='images', required=True)
-    parser.add_argument('-o', '--out-dir', help="Output directory", dest="out_dir", required=True)
+    parser.add_argument('-o', '--out-dir', help="Output directory", dest="out_dir", default=None)
     parser.add_argument('-u', '--unet', help='retina-unet dir', dest='model', required=True)
     parser.add_argument('-e', '--erode', help='Size of structuring element for mask erosion', dest='erode', type=int, default=10)
     parser.add_argument('-s', '--stride', help="Stride dimensions (width, height)", type=int, default=8)
     args = parser.parse_args()
 
+    unet = SegmentUnet(args.model, out_dir=args.out_dir, stride=(args.stride, args.stride), erode=args.erode)
+
     # Get list of images to segment
     data = []
     if isdir(args.images):
-        data.extend(find_images(join(args.images)))
+        unet.segment_batch(args.images)
     elif isfile(args.images):
-        data.append(args.images)
+        seg_result = segment(np.asarray(Image.open(args.images)), unet)
+
+        if args.out_dir:
+            visualize(seg_result, join(args.out_dir, basename(args.images)))
     else:
         raise IOError("Please specify a valid image path or folder of images")
-
-    s = SegmentUnet(args.out_dir, args.model, stride=(args.stride, args.stride), erode=args.erode)
-    s.segment_batch(data)
