@@ -68,6 +68,11 @@ def simple_CNN(out_dir=None):
         plot(model, to_file=join(out_dir, 'arch.png'), show_shapes=True)
 
 
+def deep_CNN(out_dir=None):
+
+    model = Sequential()
+
+
 class SGDLearningRateTracker(Callback):
 
     def __init__(self):
