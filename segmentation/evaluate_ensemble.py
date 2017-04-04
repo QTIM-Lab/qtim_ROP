@@ -11,7 +11,7 @@ from segmentation import SegmentUnet
 from utils.common import find_images, get_subdirs, make_sub_dir
 
 
-def evaluate(models, img_dir, true_dir, out_dir):
+def evaluate(models, img_dir, true_dir, out_dir, ignore=None):
 
     imgs = sorted(find_images(img_dir))
     ground_truth = [np.asarray(Image.open(img)).astype(np.bool)
@@ -38,8 +38,13 @@ def evaluate(models, img_dir, true_dir, out_dir):
             seg_imgs = unet.segment_batch(imgs, batch_size=100)  # samples, channels, height, width
             np.save(npy_file, np.asarray(seg_imgs))
 
-        all_predictions.append(seg_imgs)
         plot_roc_auc(seg_imgs, ground_truth, name=model_name)
+
+        if ignore and model_name == ignore:
+            print "Not including '{}' in the ensemble".format(model_name)
+            continue  # don't include the results of this model in the ensembling
+
+        all_predictions.append(seg_imgs)
 
     # Now run the ensemble
     ensemble_imgs = np.mean(np.asarray(all_predictions), axis=0)
@@ -66,7 +71,7 @@ def plot_roc_auc(predictions, ground_truth, name=''):
     roc_auc = auc(fpr, tpr)
 
     # Plot
-    plt.plot(fpr, tpr, label='{}, AUC = {:.2f}'.format(name, roc_auc))
+    plt.plot(fpr, tpr, label='{}, AUC = {:.3f}'.format(name, roc_auc))
 
 if __name__ == '__main__':
 
@@ -79,4 +84,4 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--out-dir', dest='out_dir', required=True)
 
     args = parser.parse_args()
-    evaluate(args.ensemble, args.images, args.ground_truth, args.out_dir)
+    evaluate(args.ensemble, args.images, args.ground_truth, args.out_dir, ignore='all_model')

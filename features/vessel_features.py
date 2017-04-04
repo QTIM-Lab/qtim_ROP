@@ -1,37 +1,35 @@
 from PIL import Image
 import numpy as np
 from glob import glob
-from os.path import join
+from os.path import join, basename
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+import SimpleITK as sitk
+from skimage.color import rgb2gray
 
 
-def vessel_features(orig_dir, seg_dir):
+def vessel_features(orig_dir, seg_dir, out_dir):
 
+    prob = .5
     orig_images = [np.asarray(Image.open(x)) for x in sorted(glob(join(orig_dir, '*.*')))]
-    seg_images = [np.asarray(Image.open(x)) for x in sorted(glob(join(seg_dir, '*.gif')))]
+    seg_images = [np.asarray(Image.open(x)) for x in sorted(glob(join(seg_dir, '*.png')))]
 
-    index = 0
-    probability = .5
-    test_orig = orig_images[index]
-    test_seg = (seg_images[index] > 255 * probability).astype(np.uint8)
+    for i, (orig, seg) in enumerate(zip(orig_images, seg_images)):
 
-    overlay_mask(test_orig, test_seg)
+        mask = (seg > (255 * prob)).astype(np.uint8)
+        overlay_mask(orig, mask, join(out_dir, '{}.png'.format(i)))
 
 
-def overlay_mask(img, mask):
+def overlay_mask(img, mask, out):
 
-    seg_masked = np.ma.masked_where(mask == 0, mask)
-
-    plt.figure()
-    plt.imshow(img)
-    plt.imshow(seg_masked, interpolation='nearest', alpha=0.7)
-    plt.show()
+    img_gray = sitk.GetImageFromArray(np.mean(img, axis=2).astype(np.uint8))
+    overlay = sitk.LabelOverlay(img_gray, sitk.GetImageFromArray(mask))
+    sitk.WriteImage(overlay, out)
 
 if __name__ == '__main__':
 
     root_dir = '/home/james/QTIM/data/vessel_features/'
     orig_dir = join(root_dir, 'data/images')
-    seg_dir = join(root_dir, 'data/1st_manual')
+    seg_dir = join(root_dir, 'data/vessels')
+    out_dir = join(root_dir, 'output')
 
-    vessel_features(orig_dir, seg_dir)
+    vessel_features(orig_dir, seg_dir, out_dir)
