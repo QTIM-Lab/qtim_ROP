@@ -8,7 +8,7 @@ import cv2
 from PIL import Image
 import numpy as np
 from os.path import split, join, splitext
-from common import find_images
+from utils.common import find_images
 
 
 def create_mask(im_arr, erode=0):

@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
-import numpy as np
 from PIL import Image
-import yaml
 from os import listdir, mkdir, chdir
 from os.path import join, isdir, abspath, dirname, basename
-from common import write_hdf5
+
+import numpy as np
+import yaml
+from utils.common import write_hdf5
 from scipy.misc import imresize
-from mask_retina import create_mask
+
+from segmentation.mask_retina import create_mask
 
 
 class RetinalDataset(object):

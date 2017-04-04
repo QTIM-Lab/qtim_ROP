@@ -2,10 +2,11 @@
 
 
 from os.path import join, basename
-import cv2
-from methods import binary_morph
-from common import find_images
 
+import cv2
+from utils.common import find_images
+
+from preprocessing.methods import binary_morph
 
 if __name__ == '__main__':
 

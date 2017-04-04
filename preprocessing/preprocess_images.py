@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 
-from os import listdir, remove
-from os.path import join, isdir, basename, abspath, dirname
-from multiprocessing.pool import Pool
-from multiprocessing import cpu_count
 from functools import partial
+from multiprocessing import cpu_count
+from multiprocessing.pool import Pool
+from os import listdir
+from os.path import isdir, basename, abspath, dirname
 from shutil import copy
+
 import addict
-
-import yaml
-from scipy.misc import imresize
 import pandas as pd
-
-from common import find_images, make_sub_dir
-from methods import *
-from segmentation import segment, SegmentUnet
-from mask_retina import *
-from metadata import image_to_metadata
+import yaml
+from utils.common import find_images, make_sub_dir
 from keras.preprocessing.image import ImageDataGenerator
+from scipy.misc import imresize
 
+from metadata import image_to_metadata
+from methods import *
+from segmentation.segmentation import segment, SegmentUnet
+from segmentation.mask_retina import *
 
 METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment,
            'unet_norm': unet_preproc,'morphology': binary_morph}

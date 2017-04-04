@@ -1,8 +1,6 @@
-import cv2
-from skimage.color import rgb2gray
 import matplotlib.pyplot as plt
 
-from mask_retina import *
+from segmentation.mask_retina import *
 
 
 def hough_vessels(im_arr):

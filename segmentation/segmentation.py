@@ -2,11 +2,11 @@
 
 from os import makedirs
 from os.path import isdir, isfile, basename
+
 from prepare_unet_data import imgs_to_unet_array
-from utils.models import load_model
 from mask_retina import *
 from utils.common import find_images
-
+from utils.models import load_model
 
 try:
     from retinaunet.lib.help_functions import *

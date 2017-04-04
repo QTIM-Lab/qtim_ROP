@@ -1,7 +1,8 @@
-import cv2, numpy as np
-from mask_retina import create_mask
-from skimage.morphology import binary_erosion, selem
+import cv2
+import numpy as np
 from retinaunet.lib.pre_processing import my_PreProc
+
+from segmentation.mask_retina import create_mask
 
 
 def unet_preproc(img):
