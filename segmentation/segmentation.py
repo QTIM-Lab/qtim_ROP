@@ -123,7 +123,7 @@ if __name__ == "__main__":
     # Get list of images to segment
     data = []
     if isdir(args.images):
-        unet.segment_batch(args.images)
+        unet.segment_batch(find_images(args.images))
     elif isfile(args.images):
         seg_result = segment(np.asarray(Image.open(args.images)), unet)
 
