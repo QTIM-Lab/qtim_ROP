@@ -2,12 +2,11 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from os.path import join, basename, dirname, abspath, isfile
+from os.path import join, basename, isfile
 import numpy as np
 from PIL import Image
 from sklearn.metrics import roc_curve, auc, confusion_matrix
-import h5py
-from segmentation import SegmentUnet
+from segment_unet import SegmentUnet
 from utils.common import find_images, get_subdirs, make_sub_dir
 
 

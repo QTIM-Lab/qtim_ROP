@@ -16,7 +16,7 @@ from scipy.misc import imresize
 
 from metadata import image_to_metadata
 from methods import *
-from segmentation.segmentation import segment, SegmentUnet
+from segmentation.segment_unet import segment, SegmentUnet
 from segmentation.mask_retina import *
 
 METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment,

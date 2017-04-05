@@ -4,7 +4,7 @@ from os import listdir, sep
 from os.path import join, basename, isfile
 import numpy as np
 from PIL import Image
-from segmentation import SegmentUnet, segment
+from segment_unet import SegmentUnet, segment
 from utils.common import find_images, get_subdirs
 
 
