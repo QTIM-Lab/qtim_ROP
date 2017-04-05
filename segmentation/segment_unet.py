@@ -77,7 +77,7 @@ class SegmentUnet(object):
                     print "Writing {}".format(filename)
                     visualize(seg_masked, filename)
 
-        if len(invalid) > 0 and out_dir is not None:
+        if len(invalid) > 0 and self.out_dir is not None:
             with open(join(self.out_dir, 'invalid.csv')) as f_inv:
                 writer = csv.writer(f_inv)
                 for img in invalid:
