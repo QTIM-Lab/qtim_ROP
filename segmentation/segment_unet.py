@@ -8,6 +8,7 @@ from mask_retina import *
 from utils.common import find_images
 from utils.models import load_model
 import h5py
+import csv
 
 try:
     from retinaunet.lib.help_functions import *
@@ -42,12 +43,15 @@ class SegmentUnet(object):
         chunks = [data[x:x + batch_size] for x in xrange(0, len(data), batch_size)]
         final_results = []
 
+        invalid = []
+
         for chunk_no, img_list in enumerate(chunks):
 
             print "Segmenting batch {} of {} ".format(chunk_no + 1, len(chunks))
 
             # Load images and create masks
-            imgs_original, masks = imgs_to_unet_array(img_list, erode=self.erode)
+            imgs_original, masks, skipped = imgs_to_unet_array(img_list, erode=self.erode)
+            invalid.extend(skipped)
 
             # Pre-process the images, and return as patches (TODO: get patch size from the model)
             img_patches, new_height, new_width, padded_masks = self.pre_process(imgs_original, masks)
@@ -72,6 +76,12 @@ class SegmentUnet(object):
                     filename = join(self.out_dir, name)
                     print "Writing {}".format(filename)
                     visualize(seg_masked, filename)
+
+        if len(invalid) > 0 and out_dir is not None:
+            with open(join(self.out_dir, 'invalid.csv')) as f_inv:
+                writer = csv.writer(f_inv)
+                for img in invalid:
+                    writer.writerow([img])
 
         return final_results
 

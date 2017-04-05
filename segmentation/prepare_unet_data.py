@@ -128,7 +128,6 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
             img = imresize(img, (height, width), interp='bicubic')
 
         print '{}: {}'.format(basename(im_path), img.shape)
-
         imgs_arr.append(img)
 
         mask = create_mask(img, erode=erode)
@@ -140,12 +139,7 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
     masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
 
-    if len(skipped) > 0:
-        print "{} images skipped due to invalid shape, remove before attempting to segment"
-        print '\n'.join(skipped)
-        exit()
-
-    return imgs_arr, masks_arr
+    return imgs_arr, masks_arr, skipped
 
 
 if __name__ == "__main__":
