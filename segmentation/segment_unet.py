@@ -126,7 +126,7 @@ if __name__ == "__main__":
     if isdir(args.images):
         results = unet.segment_batch(find_images(args.images))
 
-        results = np.asarray(results)
+        results = np.asarray(results).transpose((1, 2, 0))
         print results.shape
 
         f = h5py.File(join(args.out_dir, 'all_segs.h5'), 'w')
