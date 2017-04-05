@@ -119,10 +119,12 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
 
         img = np.asarray(Image.open(im_path))
 
-        if not img.shape or img.shape[-1] != 3:
+        if not img.shape:
             print "'{}' has invalid image shape - skipping".format(im_path)
             skipped.append(im_path)
             continue
+
+        img = img[:, : ,:3]  # in case there's an alpha channel
 
         if img.shape[:-1] != target_shape[:-1]:
             img = imresize(img, (height, width), interp='bicubic')
