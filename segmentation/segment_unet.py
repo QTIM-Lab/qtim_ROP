@@ -127,6 +127,8 @@ if __name__ == "__main__":
         results = unet.segment_batch(find_images(args.images))
 
         results = np.asarray(results)
+        print results.shape
+
         f = h5py.File(join(args.out_dir, 'all_segs.h5'), 'w')
         f.create_dataset('segmentations', data=results)
         f.close()
