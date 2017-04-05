@@ -121,7 +121,8 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
 
         if not img.shape or img.shape[-1] != 3:
             print "'{}' has invalid image shape - skipping".format(im_path)
-            exit()
+            skipped.append(im_path)
+            continue
 
         if img.shape[:-1] != target_shape[:-1]:
             img = imresize(img, (height, width), interp='bicubic')
@@ -139,7 +140,12 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
     masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
 
-    return imgs_arr, masks_arr, skipped
+    if len(skipped) > 0:
+        print "{} images skipped due to invalid shape, remove before attempting to segment"
+        print '\n'.join(skipped)
+        exit()
+
+    return imgs_arr, masks_arr
 
 
 if __name__ == "__main__":
