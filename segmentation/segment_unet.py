@@ -20,7 +20,7 @@ except ImportError:
 
 class SegmentUnet(object):
 
-    def __init__(self, unet_dir, out_dir=None, stride=(8, 8), erode=10):
+    def __init__(self, unet_dir, out_dir=None, resize=(480, 640), stride=(8, 8), erode=10):
 
         self.model = load_model(unet_dir)
         self.out_dir = out_dir

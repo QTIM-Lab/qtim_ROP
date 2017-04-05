@@ -117,14 +117,16 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
     for i, im_path in enumerate(img_list):
 
         img = np.asarray(Image.open(im_path))
-        print '{}: {}'.format(basename(im_path), img.shape)
 
         if not img.shape or img.shape[-1] != 3:
-            print "Invalid image shape - skipping"
+            print "'{}' has invalid image shape - skipping".format(basename(im_path))
             continue
 
         if img.shape[:-1] != target_shape[:-1]:
+            print ""
             img = imresize(img, (height, width), interp='bicubic')
+
+        print '{}: {}'.format(basename(im_path), img.shape)
 
         imgs_arr.append(img)
 
