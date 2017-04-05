@@ -113,17 +113,17 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
 
     imgs_arr = []  # np.empty((n_imgs, height, width, channels))
     masks_arr = []  # np.empty((n_imgs, height, width, 1), dtype=np.bool)
+    skipped = []
 
     for i, im_path in enumerate(img_list):
 
         img = np.asarray(Image.open(im_path))
 
         if not img.shape or img.shape[-1] != 3:
-            print "'{}' has invalid image shape - skipping".format(basename(im_path))
-            continue
+            print "'{}' has invalid image shape - skipping".format(im_path)
+            exit()
 
         if img.shape[:-1] != target_shape[:-1]:
-            print ""
             img = imresize(img, (height, width), interp='bicubic')
 
         print '{}: {}'.format(basename(im_path), img.shape)
@@ -139,7 +139,7 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
     masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
 
-    return imgs_arr, masks_arr
+    return imgs_arr, masks_arr, skipped
 
 
 if __name__ == "__main__":
