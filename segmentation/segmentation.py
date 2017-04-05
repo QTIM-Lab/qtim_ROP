@@ -7,6 +7,7 @@ from prepare_unet_data import imgs_to_unet_array
 from mask_retina import *
 from utils.common import find_images
 from utils.models import load_model
+import h5py
 
 try:
     from retinaunet.lib.help_functions import *
@@ -123,7 +124,13 @@ if __name__ == "__main__":
     # Get list of images to segment
     data = []
     if isdir(args.images):
-        unet.segment_batch(find_images(args.images))
+        results = unet.segment_batch(find_images(args.images))
+
+        results = np.asarray(results)
+        f = h5py.File(join(args.out_dir, 'all_segs.h5'), 'w')
+        f.create_dataset('segmentations', data=results)
+        f.close()
+
     elif isfile(args.images):
         seg_result = segment(np.asarray(Image.open(args.images)), unet)
 

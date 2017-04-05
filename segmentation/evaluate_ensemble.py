@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from os.path import join, basename, dirname, abspath, isfile
 import numpy as np
 from PIL import Image
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, confusion_matrix
 import h5py
 from segmentation import SegmentUnet
 from utils.common import find_images, get_subdirs, make_sub_dir
@@ -72,6 +72,26 @@ def plot_roc_auc(predictions, ground_truth, name=''):
 
     # Plot
     plt.plot(fpr, tpr, label='{}, AUC = {:.3f}'.format(name, roc_auc))
+
+    # Return index of best model by J statistic
+    J = [j_statistic(y_true, y_pred, t) for t in thresholds]
+
+    return thresholds[np.argmax(J)]  # TODO test this out!
+
+
+def j_statistic(y_true, y_pred, thresh):
+
+    C = confusion_matrix(y_true, y_pred > thresh)
+    TN = C[0, 0]
+    FN = C[1, 0]
+    TP = C[1, 1]
+    FP = C[0, 1]
+
+    j = (TP / float(TP + FN)) + (TN / float(TN + FP)) - 1
+    J.append(j)
+
+
+
 
 if __name__ == '__main__':
 
