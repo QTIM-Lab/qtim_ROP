@@ -1,56 +1,40 @@
 from os.path import join
 
-from keras.models import Model
-from keras.layers import Input, Convolution2D, Dropout, ZeroPadding2D, MaxPooling2D, Flatten, Dense
+from keras.models import Sequential, save_model
+from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Activation, Dropout, Flatten, Dense
 from keras.utils.visualize_util import plot
-from keras.preprocessing.image import ImageDataGenerator
 
 import sys
 
-in_dir = sys.argv[1]
-out_dir = sys.argv[2]
+out_dir = sys.argv[1]
 
-input = Input(shape=(3, 224, 224))
 
-conv_1 = Convolution2D(32, 3, 3, activation='relu')(input)
-pad_1 = ZeroPadding2D()(conv_1)
+model = Sequential()
+model.add(Conv2D(32, 3, 3, input_shape=(3, 224, 224)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 
-conv_2 = Convolution2D(64, 3, 3, activation='relu')(pad_1)
-pad_2 = ZeroPadding2D()(conv_2)
-pool_1 = MaxPooling2D(pool_size=(2, 2))(pad_2)
-drop_1 = Dropout(.5)(pool_1)
+model.add(Conv2D(32, 3, 3))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 
-conv_3 = Convolution2D(64, 3, 3, activation='relu')(drop_1)
-pad_3 = ZeroPadding2D()(conv_2)
-conv_4 = Convolution2D(64, 3, 3, activation='relu')(conv_3)
-pool_2 = MaxPooling2D(pool_size=(2, 2))(conv_4)
-drop_2 = Dropout(.5)(pool_2)
+model.add(Conv2D(64, 3, 3))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 
-flat = Flatten()(drop_2)
-hidden = Dense(512, activation='relu')(flat)
-drop_3 = Dropout(.25)(hidden)
-output = Dense(3, activation='softmax')(drop_3)
-
-model = Model(input=input, output=output)
+model.add(Flatten())  # this converts our 3D feature maps to 1D feature vectors
+model.add(Dense(512))
+model.add(Activation('relu'))
+model.add(Dropout(0.5))
+model.add(Dense(3))
+model.add(Activation('sigmoid'))
 
 model.compile(loss='categorical_crossentropy',
-              optimizer='adam',
+              optimizer='sgd',
               metrics=['accuracy'])
 
 
 plot(model, to_file=join(out_dir, 'arch.png'), show_shapes=True)
-
-print "Instantiating training generator"
-train_gen = ImageDataGenerator().flow_from_directory(join(in_dir, 'training'), batch_size=64,
-                                                     target_size=(224, 224), shuffle=True)
-
-print "Instantiating validation generator"
-val_gen = ImageDataGenerator().flow_from_directory(join(in_dir, 'validation'), batch_size=64,
-                                                   target_size=(224, 224), shuffle=False)
-
-print "Training..."
-model.fit_generator(train_gen, samples_per_epoch=train_gen.nb_sample, nb_epoch=100,
-                    validation_data=val_gen, nb_val_samples=val_gen.nb_sample)
-
-model.save(join(out_dir, 'model.json'))
-model.save_weights(join(out_dir, 'weights.json'))
+save_model(model, join(out_dir, 'model.json'))
+# model.save_weights(join(out_dir, 'weights.json'))
