@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import matplotlib
+matplotlib.use('Agg')
 from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
 import numpy as np
