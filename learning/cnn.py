@@ -40,11 +40,15 @@ model.compile(loss='categorical_crossentropy',
 
 plot(model, to_file=join(out_dir, 'arch.png'), show_shapes=True)
 
+print "Instantiating training generator"
+train_gen = ImageDataGenerator().flow_from_directory(join(in_dir, 'training'), batch_size=64,
+                                                     target_size=(224, 224), shuffle=True)
 
-train_gen = ImageDataGenerator().flow_from_directory(join(in_dir, 'training'), target_size=(224, 224))
-val_gen = ImageDataGenerator().flow_from_directory(join(in_dir, 'validation'), target_size=(224, 224))
+print "Instantiating validation generator"
+val_gen = ImageDataGenerator().flow_from_directory(join(in_dir, 'validation'), batch_size=64,
+                                                   target_size=(224, 224), shuffle=False)
 
-
+print "Training..."
 model.fit_generator(train_gen, samples_per_epoch=train_gen.nb_sample, nb_epoch=100,
                     validation_data=val_gen, nb_val_samples=val_gen.nb_sample)
 
