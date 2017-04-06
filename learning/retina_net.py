@@ -61,8 +61,8 @@ class RetiNet(object):
 
             # Set up logging
             setup_log(None)
-            self._configure_network()
             self.experiment_dir = self.conf_dir
+            self._configure_network()
             self.evaluate(self.config['test_dir'])
 
     def _configure_network(self):
