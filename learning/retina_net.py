@@ -2,7 +2,7 @@
 
 from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
-
+import numpy as np
 from utils.common import *
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
