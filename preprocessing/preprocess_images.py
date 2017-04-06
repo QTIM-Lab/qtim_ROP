@@ -77,8 +77,8 @@ class Pipeline(object):
                 self.input_dir = abspath(join(dirname(config), conf_dict['input_dir']))
                 self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
 
-                csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
-                self.metadata = pd.DataFrame.from_csv(csv_file)
+                # csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
+                # self.metadata = pd.DataFrame.from_csv(csv_file)
 
                 if not isdir(self.input_dir):
                     print "Input {} is not a directory!".format(self.input_dir)
@@ -228,9 +228,6 @@ def preprocess(im, params):
     # Extract metadata
     meta = image_to_metadata(im)
     imID = int(meta['imID'])
-    if not params.metadata.iloc[imID]['quality']:
-        print "{} is of insufficient quality - skipping".format(im)
-        return False
 
     # Resize, preprocess and augment
     try:
