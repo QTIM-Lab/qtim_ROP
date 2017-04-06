@@ -227,7 +227,6 @@ def preprocess(im, params):
 
     # Extract metadata
     meta = image_to_metadata(im)
-    imID = int(meta['imID'])
 
     # Resize, preprocess and augment
     try:
@@ -235,6 +234,8 @@ def preprocess(im, params):
     except TypeError:
         print "Error loading '{}'".format(im)
         return False
+
+    im_arr = im_arr[:,:,:3]
 
     # Resize and preprocess
     interp = params.resize.get('interp', 'bilinear')
