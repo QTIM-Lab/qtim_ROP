@@ -4,7 +4,7 @@ from functools import partial
 from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
 from os import listdir
-from os.path import isdir, basename, abspath, dirname
+from os.path import isdir, basename, abspath, dirname, splitext
 from shutil import copy
 
 import addict
@@ -266,9 +266,8 @@ def preprocess(im, params):
     else:
 
         img = preprocessed_im
-        outfile = join(class_dir, meta['prefix'] + '.jpg')
-        flipnames = ['noflip', 'flip']
-        rotatenames = ['0', '90', '180', '270']
+        flip_names = ['noflip', 'flip']
+        rotate_names = ['0', '90', '180', '270']
 
         for flip in [0, 1]:
             for rotate in [0, 1, 2, 3]:
@@ -279,9 +278,10 @@ def preprocess(im, params):
                 if flip == 1:
                     new_img = np.fliplr(new_img)
                 im = Image.fromarray(new_img)
-                splitfile = str.split(outfile, '.')
-                new_outfile = splitfile[0] + '_' + flipnames[flip] + '_' + rotatenames[rotate] + '.' + splitfile[-1]
-                im.save(new_outfile)
+
+                out_name = '{}_{}_{}.jpg'.format(meta['prefix'], flip_names[flip], rotate_names[rotate])
+                out_path = join(class_dir, out_name)
+                im.save(out_path)
 
     return True
 
