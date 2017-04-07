@@ -28,7 +28,7 @@ model.add(Dense(512))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
 model.add(Dense(3))
-model.add(Activation('sigmoid'))
+model.add(Activation('softmax'))
 
 model.compile(loss='categorical_crossentropy',
               optimizer='sgd',
@@ -36,5 +36,6 @@ model.compile(loss='categorical_crossentropy',
 
 
 plot(model, to_file=join(out_dir, 'arch.png'), show_shapes=True)
-save_model(model, join(out_dir, 'model.json'))
-# model.save_weights(join(out_dir, 'weights.json'))
+
+json_model = model.to_json()
+open(join(out_dir, 'model_architecture.json'), 'w').write(json_model)

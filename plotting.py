@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style("darkgrid")
 
-from common import series_to_plot_dict
+from utils.common import series_to_plot_dict
 
 
 CLASSES = ['No', 'Pre-Plus', 'Plus']
@@ -31,6 +31,13 @@ def plot_loss(history, out_file=None):
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Training', 'Validation'], loc='upper left')
+    plt.savefig(out_file)
+
+
+def plot_LR(lr, out_file):
+
+    plt.figure()
+    plt.plot(lr)
     plt.savefig(out_file)
 
 

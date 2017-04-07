@@ -192,21 +192,33 @@ class RetiNet(object):
         plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
         plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
 
-    def create_generator(self, data_path, input_shape, batch_size=32, training=True):
+        lr = np.load(join(self.experiment_dir, 'learning_rate.npy'))
+        plot_LR(lr, join(self.experiment_dir, 'lr_plot' + self.ext))
+
+
+    def create_generator(self, data_path, input_shape, batch_size=32, training=True, labels=None):
 
         zmuv = self.config.get('zmuv', False)
         if zmuv:
             logging.info('Normalizing data zero mean, unit variance')
 
         datagen = ImageDataGenerator(samplewise_center=zmuv, samplewise_std_normalization=zmuv)
-        generator = datagen.flow_from_directory(
-            data_path,
-            target_size=input_shape[1:],
-            batch_size=batch_size,
-            class_mode='categorical',
-            shuffle=training)
 
-        return generator
+        if labels:
+
+            # X = np.asarray([img for img in find_images(joindata_path)])
+
+            return datagen.flow()
+
+        else:
+
+            return datagen.flow_from_directory(
+                data_path,
+                target_size=input_shape[1:],
+                batch_size=batch_size,
+                class_mode='categorical',
+                shuffle=training)
+
 
 if __name__ == '__main__':
 
