@@ -93,5 +93,6 @@ ENV/
 *.yaml
 
 # Various files
+config/
 download_retina_data.py
 statistics.py
