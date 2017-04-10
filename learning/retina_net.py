@@ -10,7 +10,7 @@ from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model
 from keras.models import model_from_json
-from keras.optimizers import SGD, RMSprop, Adadelta
+from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.visualize_util import plot
 from sklearn.metrics import confusion_matrix, classification_report
@@ -18,7 +18,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 from plotting import *
 from utils.models import SGDLearningRateTracker
 
-OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop, 'adadelta': Adadelta}
+OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop, 'adadelta': Adadelta, 'adam': Adam}
 
 
 class RetiNet(object):

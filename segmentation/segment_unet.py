@@ -134,9 +134,10 @@ if __name__ == "__main__":
     # Get list of images to segment
     data = []
     if isdir(args.images):
-        results = unet.segment_batch(find_images(args.images))
+        results = unet.segment_batch(find_images(args.images, extensions=['*.jpeg']))
 
-        results = np.asarray(results).transpose((1, 2, 0))
+        if results:
+            results = np.asarray(results).transpose((1, 2, 0))
         # print results.shape
         #
         # f = h5py.File(join(args.out_dir, 'all_segs.h5'), 'w')
