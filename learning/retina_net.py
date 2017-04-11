@@ -5,6 +5,8 @@ matplotlib.use('Agg')
 from os import listdir, chdir
 from os.path import dirname, basename, splitext, abspath
 import numpy as np
+import h5py
+
 from utils.common import *
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
@@ -14,6 +16,8 @@ from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.visualize_util import plot
 from sklearn.metrics import confusion_matrix, classification_report
+from keras.utils.np_utils import to_categorical
+
 
 from plotting import *
 from utils.models import SGDLearningRateTracker
@@ -34,8 +38,8 @@ class RetiNet(object):
         self.experiment_name = splitext(basename(self.conf_file))[0]
 
         chdir(self.conf_dir)
-        self.train_dir = abspath(self.config['training_dir'])
-        self.val_dir = abspath(self.config['validation_dir'])
+        self.train_data = abspath(self.config['training_data'])
+        self.val_data = abspath(self.config['validation_data'])
 
         try:
             self.config['mode']
@@ -47,14 +51,16 @@ class RetiNet(object):
 
             # Set up logging
             self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
+            self.debug_dir = make_sub_dir(self.experiment_dir, 'debug')
+
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
             self._configure_network()
 
             # Get number of classes and samples
-            self.no_classes = listdir(self.train_dir)
-            self.nb_train_samples = len(find_images(join(self.train_dir, '*')))
-            self.nb_val_samples = len(find_images(join(self.val_dir, '*')))
+            #self.no_classes = listdir(self.train_dir)
+            #self.nb_train_samples = len(find_images(join(self.train_dir, '*')))
+            #self.nb_val_samples = len(find_images(join(self.val_dir, '*')))
             self.train()
 
         elif self.config['mode'] == 'evaluate':
@@ -93,7 +99,7 @@ class RetiNet(object):
 
             self.model = Model(input=base_model.input, output=predictions)
             for layer in base_model.layers:
-                layer.trainable = False
+                layer.trainable = fine_tuning
 
         else:
 
@@ -125,8 +131,11 @@ class RetiNet(object):
         # Train
         epochs = self.config.get('epochs', 50)  # default to 50 if not specified
         input_shape = self.model.input_shape[1:]
-        train_gen = self.create_generator(self.train_dir, input_shape, training=True)
-        val_gen = self.create_generator(self.val_dir, input_shape, training=False)
+        train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
+
+        # Create generators
+        train_gen = self.create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
+        val_gen = self.create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
 
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
@@ -136,10 +145,10 @@ class RetiNet(object):
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=self.nb_train_samples,
+            samples_per_epoch=train_gen.n,
             nb_epoch=epochs,
             validation_data=val_gen,
-            nb_val_samples=self.nb_val_samples, callbacks=[checkpoint_tb, lr_tb])
+            nb_val_samples=val_gen.n, callbacks=[checkpoint_tb, lr_tb])
 
         # Save model arch, weights and history
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
@@ -155,7 +164,7 @@ class RetiNet(object):
             yaml.dump(conf_eval, ce, default_flow_style=False)
 
         # Evaluate results
-        self.evaluate(self.val_dir)
+        self.evaluate(self.val_data)
 
     def update_config(self):
 
@@ -195,22 +204,15 @@ class RetiNet(object):
         lr = np.load(join(self.experiment_dir, 'learning_rate.npy'))
         plot_LR(lr, join(self.experiment_dir, 'lr_plot' + self.ext))
 
-
-    def create_generator(self, data_path, input_shape, batch_size=32, training=True, labels=None):
+    def create_generator(self, data_path, input_shape, batch_size=32, training=True):
 
         zmuv = self.config.get('zmuv', False)
         if zmuv:
             logging.info('Normalizing data zero mean, unit variance')
 
-        datagen = ImageDataGenerator(samplewise_center=zmuv, samplewise_std_normalization=zmuv)
+        datagen = ImageDataGenerator()
 
-        if labels:
-
-            X = np.asarray([img for img in find_images(join(data_path))])
-
-            return datagen.flow()
-
-        else:
+        if isdir(data_path):
 
             return datagen.flow_from_directory(
                 data_path,
@@ -218,6 +220,17 @@ class RetiNet(object):
                 batch_size=batch_size,
                 class_mode='categorical',
                 shuffle=training)
+
+        else:
+
+            f = h5py.File(data_path, 'r')
+
+            # Convert class names to numerical labels
+            classes = {k: v for v, k in enumerate(np.unique(f['labels']))}
+            labels = to_categorical([classes[k] for k in f['labels']])
+
+            return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training)
+                                # save_to_dir=self.debug_dir, save_format='.png')
 
 
 if __name__ == '__main__':

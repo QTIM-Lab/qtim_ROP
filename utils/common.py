@@ -55,9 +55,9 @@ def get_subdirs(root_dir):
     return [x for x in glob(join(root_dir, '*')) if isdir(x)]
 
 
-def write_hdf5(arr, outfile):
+def write_hdf5(arr, outfile, name="image"):
     with h5py.File(outfile, "w") as f:
-        f.create_dataset("image", data=arr, dtype=arr.dtype)
+        f.create_dataset(name, data=arr, dtype=arr.dtype)
 
 
 def parse_yaml(conf_file):

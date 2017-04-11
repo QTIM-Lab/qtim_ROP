@@ -6,6 +6,7 @@ from multiprocessing.pool import Pool
 from os import listdir
 from os.path import isdir, basename, abspath, dirname, splitext
 from shutil import copy
+import h5py
 
 import addict
 import pandas as pd
@@ -77,8 +78,9 @@ class Pipeline(object):
                 self.input_dir = abspath(join(dirname(config), conf_dict['input_dir']))
                 self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
 
-                # csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
-                # self.metadata = pd.DataFrame.from_csv(csv_file)
+                csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
+                self.labels = pd.DataFrame.from_csv(csv_file)
+                self.reader = conf_dict['reader']
 
                 if not isdir(self.input_dir):
                     print "Input {} is not a directory!".format(self.input_dir)
@@ -167,6 +169,9 @@ class Pipeline(object):
         train_class_sizes = [len(x) for x in train_imgs]
         val_class_sizes = [len(x) for x in val_imgs]
 
+        train_arr, val_arr = [], []
+        train_labels, val_labels = [], []
+
         for cidx, class_ in enumerate(CLASSES):
 
             train_class_dir = join(self.train_dir, class_)
@@ -180,6 +185,8 @@ class Pipeline(object):
                 train_imgs[cidx] = random_train
 
             for ti in train_imgs[cidx]:
+                train_arr.append(np.asarray(Image.open(ti)))
+                train_labels.append(class_)
                 copy(ti, train_class_dir)
 
             removal_num = val_class_sizes[cidx] - int(
@@ -190,11 +197,28 @@ class Pipeline(object):
                 val_imgs[cidx] = random_val
 
             for vi in val_imgs[cidx]:
+                val_arr.append(np.asarray(Image.open(vi)))
+                val_labels.append(class_)
                 copy(vi, val_class_dir)
 
             print '\n---'
             print "Training ({}): {}".format(class_, len(train_imgs[cidx]))
             print "Validation ({}): {}".format(class_, len(val_imgs[cidx]))
+
+        # Save results
+        train_data = np.transpose(np.asarray(train_arr), (0, 3, 2, 1))
+        val_data = np.transpose(np.asarray(val_arr), (0, 3, 2, 1))
+
+        train_labels = np.asarray(train_labels)
+        val_labels = np.asarray(val_labels)
+
+        with h5py.File(join(self.out_dir, 'train.h5'), "w") as f:
+            f.create_dataset('data', data=train_data, dtype=train_data.dtype)
+            f.create_dataset('labels', data=train_labels, dtype=train_labels.dtype)
+
+        with h5py.File(join(self.out_dir, 'val.h5'), "w") as f:
+            f.create_dataset('data', data=val_data, dtype=val_data.dtype)
+            f.create_dataset('labels', data=val_labels, dtype=val_labels.dtype)
 
     def choose_random(self, imgs, to_remove):
 
@@ -226,8 +250,20 @@ def preprocess(im, params):
 
     print "Preprocessing {}".format(im)
 
-    # Extract metadata
+    # Image metadata
     meta = image_to_metadata(im)
+    im_ID = int(meta['imID'])
+
+    # Get class and quality info
+    row = params.labels.iloc[im_ID]
+    reader = params.reader
+    class_ = row[reader]
+    stage = row['ROP_stage']
+    quality = row['quality']
+
+    # Skip images with invalid class, advanced ROP or insufficient quality
+    if class_ not in CLASSES or not quality or stage > 3:
+        return False
 
     # Resize, preprocess and augment
     try:
@@ -251,14 +287,17 @@ def preprocess(im, params):
     if params.crop is not None:
         preprocessed_im = preprocessed_im[params.crop_height:-params.crop_height, params.crop_width:-params.crop_width]
 
-    class_dir = join(params.augment_dir, meta['class'])  # this should already exist
+    # Get the labels
+
+    class_dir = join(params.augment_dir, class_)  # this should already exist
 
     if params.augmenter:
 
         img = np.expand_dims(np.transpose(preprocessed_im, (2, 0, 1)), 0)
 
         i = 0
-        for _ in params.augmenter.flow(img, batch_size=1, save_to_dir=class_dir, save_prefix=meta['prefix'], save_format='jpg'):
+        for _ in params.augmenter.flow(img, batch_size=1, save_to_dir=class_dir,
+                                       save_prefix=meta['prefix'], save_format='png'):
             i += 1
             if i >= params.augment_size:
                 break
@@ -279,7 +318,7 @@ def preprocess(im, params):
                     new_img = np.fliplr(new_img)
                 im = Image.fromarray(new_img)
 
-                out_name = '{}_{}_{}.jpg'.format(meta['prefix'], flip_names[flip], rotate_names[rotate])
+                out_name = '{}_{}_{}.png'.format(meta['prefix'], flip_names[flip], rotate_names[rotate])
                 out_path = join(class_dir, out_name)
                 im.save(out_path)
 

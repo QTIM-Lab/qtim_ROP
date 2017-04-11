@@ -23,7 +23,7 @@ def image_to_metadata(im_path):
     im_str = splitext(im_name)[0]
 
     try:
-        subject_id, im_id, session, view, eye, class_ = im_str.split('_')[:7]
+        subject_id, im_id, session, view, eye, class_ = im_str.split('_')[:6]
     except ValueError:
         subject_id, _, im_id, session, view, eye, class_ = im_str.split('_')[:7]
 
