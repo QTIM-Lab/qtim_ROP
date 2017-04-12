@@ -98,3 +98,7 @@ def series_to_plot_dict(series, key, value):
 
     sorted_list = [{key: k, value: v} for k, v in series.to_dict().items()]
     return pd.DataFrame(data=sorted_list)
+
+def dict_reverse(my_dict):
+
+    return {v: k for k, v in my_dict.items()}

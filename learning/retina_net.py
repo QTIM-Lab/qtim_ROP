@@ -18,8 +18,8 @@ from keras.utils.visualize_util import plot
 from sklearn.metrics import confusion_matrix, classification_report
 from keras.utils.np_utils import to_categorical
 
-
 from plotting import *
+from evaluate import misclassifications
 from utils.models import SGDLearningRateTracker
 
 OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop, 'adadelta': Adadelta, 'adam': Adam}
@@ -68,6 +68,7 @@ class RetiNet(object):
             # Set up logging
             setup_log(None)
             self.experiment_dir = self.conf_dir
+            self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
             self._configure_network()
             self.evaluate(self.config['test_data'])
 
@@ -191,12 +192,15 @@ class RetiNet(object):
         confusion = confusion_matrix(y_true, y_pred)
         print classification_report(y_true, y_pred)
 
+        # Misclassified
+        misclassifications(datagen.x, y_true, y_pred, class_indices, self.eval_dir)
+
+        # Confusion
+        plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion' + self.ext))
         with open(join(self.experiment_dir, 'confusion.csv'), 'wb') as conf_csv:
             pd.DataFrame(data=confusion).to_csv(conf_csv)
 
-        # Plots
-        plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion' + self.ext))
-
+        # History
         history = csv_to_dict(join(self.experiment_dir, "history.csv"))
         plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
         plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
