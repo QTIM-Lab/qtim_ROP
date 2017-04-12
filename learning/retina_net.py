@@ -134,8 +134,8 @@ class RetiNet(object):
         train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
 
         # Create generators
-        train_gen = self.create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
-        val_gen = self.create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
+        train_gen, _, _ = self.create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
+        val_gen, _, _ = self.create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
 
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
@@ -180,14 +180,14 @@ class RetiNet(object):
     def evaluate(self, data_path):
 
         logging.info("Evaluating model for on {}".format(data_path))
-        datagen = self.create_generator(data_path, self.model.input_shape[1:], batch_size=1, training=False)
-        print datagen.class_indices
-        no_samples = len(find_images(join(data_path, '*')))
+        datagen, y_true, class_indices = self.create_generator(data_path, self.model.input_shape[1:],
+                                                                batch_size=1, training=False)
+        no_samples = datagen.x.shape[0]
 
         # Predict data
         predictions = self.model.predict_generator(datagen, no_samples)
-        y_true, y_pred = datagen.classes, np.argmax(predictions, axis=1)
-        labels = [k[0] for k in sorted(datagen.class_indices.items(), key=lambda x: x[1])]
+        y_pred = np.argmax(predictions, axis=1)
+        labels = [k[0] for k in sorted(class_indices.items(), key=lambda x: x[1])]
         confusion = confusion_matrix(y_true, y_pred)
         print classification_report(y_true, y_pred)
 
@@ -214,24 +214,24 @@ class RetiNet(object):
 
         if isdir(data_path):
 
-            return datagen.flow_from_directory(
+            dg = datagen.flow_from_directory(
                 data_path,
                 target_size=input_shape[1:],
                 batch_size=batch_size,
                 class_mode='categorical',
                 shuffle=training)
+            return dg, dg.classes, dg.class_indices
 
         else:
 
             f = h5py.File(data_path, 'r')
 
             # Convert class names to numerical labels
-            classes = {k: v for v, k in enumerate(np.unique(f['labels']))}
-            labels = to_categorical([classes[k] for k in f['labels']])
+            class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
+            classes = [class_indices[k] for k in f['labels']]
+            labels = to_categorical(classes)
 
-            return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training)
-                                # save_to_dir=self.debug_dir, save_format='.png')
-
+            return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, class_indices
 
 if __name__ == '__main__':
 
