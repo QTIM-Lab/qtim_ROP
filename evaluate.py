@@ -20,7 +20,7 @@ def misclassifications(data, y_true, y_pred, classes, out_dir, n=10):
 
     for img, yt, yp in zip(data, y_true, y_pred):
 
-        if yt != yp and class_count[yt] < n:
+        if yt != yp and class_count[yp] < n:
 
             plt.cla()
             ax.imshow(np.transpose(img, (1, 2, 0)))
@@ -28,5 +28,5 @@ def misclassifications(data, y_true, y_pred, classes, out_dir, n=10):
             ax.text(5, 25, 'Predicted: {}'.format(classes[yp]), fontdict=FONT)
             ax.axis('off')
 
-            plt.savefig(join(out_dir, '{}_{}.png'.format(classes[yt], class_count[yt])))
-            class_count[yt] += 1
+            plt.savefig(join(out_dir, '{}_{}.png'.format(classes[yp], class_count[yp])))
+            class_count[yp] += 1
