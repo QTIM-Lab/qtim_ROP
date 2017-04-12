@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D
 from keras.models import Model
 from keras.utils.np_utils import to_categorical
+from keras.optimizers import SGD
 
 
 def main(X, y):
@@ -72,7 +73,9 @@ def autoencoder():
     decoded = Conv2D(3, 3, 3, activation='sigmoid', border_mode='same')(x)
 
     ae = Model(input_img, decoded)
-    ae.compile(optimizer='adadelta', loss='binary_crossentropy')
+
+    sgd = SGD(lr=0.01, momentum=.9, decay=1e-3)
+    ae.compile(optimizer=sgd, loss='binary_crossentropy')
     return ae
 
 if __name__ == '__main__':
