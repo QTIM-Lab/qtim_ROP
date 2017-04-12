@@ -145,10 +145,10 @@ class RetiNet(object):
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=train_gen.n,
+            samples_per_epoch=train_gen.x.shape[0],
             nb_epoch=epochs,
             validation_data=val_gen,
-            nb_val_samples=val_gen.n, callbacks=[checkpoint_tb, lr_tb])
+            nb_val_samples=val_gen.x.shape[0], callbacks=[checkpoint_tb, lr_tb])
 
         # Save model arch, weights and history
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
