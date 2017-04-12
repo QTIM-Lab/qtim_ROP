@@ -69,7 +69,7 @@ class RetiNet(object):
             setup_log(None)
             self.experiment_dir = self.conf_dir
             self._configure_network()
-            self.evaluate(self.config['test_dir'])
+            self.evaluate(self.config['test_data'])
 
     def _configure_network(self):
 
@@ -173,8 +173,8 @@ class RetiNet(object):
         conf_eval['network']['arch'] = 'model_arch.json'
         conf_eval['network']['weights'] = 'best_weights.h5'
 
-        conf_eval['training_dir'] = abspath(self.config['training_dir'])
-        conf_eval['validation_dir'] = abspath(self.config['validation_dir'])
+        conf_eval['training_data'] = abspath(self.config['training_data'])
+        conf_eval['validation_data'] = abspath(self.config['validation_data'])
         return conf_eval
 
     def evaluate(self, data_path):
