@@ -51,7 +51,7 @@ class RetiNet(object):
 
             # Set up logging
             self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
-            self.debug_dir = make_sub_dir(self.experiment_dir, 'debug')
+            self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
 
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
