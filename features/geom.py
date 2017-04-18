@@ -11,8 +11,13 @@ from utils.image import *
 import cv2
 from addict import Dict
 
+
+def vec_length(vector):
+    return np.linalg.norm(vector)
+
+
 def unit_vector(vector):
-    return vector / np.linalg.norm(vector)
+    return vector / vec_length(vector)
 
 
 def angle_between(v1, v2):
