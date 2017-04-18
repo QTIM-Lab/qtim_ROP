@@ -50,7 +50,7 @@ def get_unique(rater_dir, image_dir, csv_file, out_dir):
         all_imgs.append(im_arr)
 
     data = np.transpose(np.asarray(all_imgs), (0, 3, 2, 1))
-    imgs_and_labels_to_hdf5(data, classes, join(out_dir, 'test.h5'))
+    imgs_and_labels_to_hdf5(data, np.asarray(classes), join(out_dir, 'test.h5'))
 
 if __name__ == '__main__':
 
