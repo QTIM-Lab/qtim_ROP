@@ -2,14 +2,14 @@ import numpy as np
 from PIL import Image
 import pandas as pd
 import yaml
-from os.path import join, dirname
+from os.path import join, dirname, abspath
 from utils.common import get_subdirs, find_images, imgs_and_labels_to_hdf5
 from metadata import image_to_metadata
 
 
 def get_unique(rater_dir, image_dir, csv_file, out_dir):
 
-    conf_name = join(dirname(__file__), 'config/conf.yaml')
+    conf_name = abspath(join(dirname(dirname(__file__)), 'config/conf.yaml'))
     with open(conf_name) as y:
         conf = yaml.load(y)
     gold = conf['golden_reader']
