@@ -1,14 +1,18 @@
-import h5py
 import numpy as np
-from scipy.misc import imresize
 from PIL import Image
 import pandas as pd
-from os.path import join
+import yaml
+from os.path import join, dirname
 from utils.common import get_subdirs, find_images, imgs_and_labels_to_hdf5
 from metadata import image_to_metadata
 
 
 def get_unique(rater_dir, image_dir, csv_file, out_dir):
+
+    conf_name = join(dirname(__file__), 'config/conf.yaml')
+    with open(conf_name) as y:
+        conf = yaml.load(y)
+    gold = conf['golden_reader']
 
     csv_data = pd.DataFrame.from_csv(csv_file)
     img_list = []
@@ -37,10 +41,11 @@ def get_unique(rater_dir, image_dir, csv_file, out_dir):
     for i, unique_image in df.iterrows():
 
         csv_row = csv_data.iloc[i]
-        orig_path = join(image_dir, unique_image['class'], csv_row['imageName'])
+        golden_reader_class = csv_row[gold]
+        orig_path = join(image_dir, golden_reader_class, csv_row['imageName'])
         print orig_path
 
-        classes.append(unique_image['class'])
+        classes.append(golden_reader_class)
 
         # Load image
         im_arr = np.asarray(Image.open(orig_path))
