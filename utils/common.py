@@ -61,7 +61,7 @@ def write_hdf5(arr, outfile, name="image"):
 
 
 def imgs_and_labels_to_hdf5(data, labels, out_path):
-    with h5py.File(join(out_path, "w")) as f:
+    with h5py.File(join(out_path), "w") as f:
         f.create_dataset('data', data=data, dtype=data.dtype)
         f.create_dataset('labels', data=labels, dtype=labels.dtype)
 
