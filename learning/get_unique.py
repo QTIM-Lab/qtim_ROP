@@ -20,7 +20,6 @@ def get_unique(rater_dir, image_dir, csv_file, out_dir):
     for reader_dir in get_subdirs(rater_dir):
 
         val_dir = join(reader_dir, 'validation')
-
         val_imgs = find_images(join(val_dir, '*'))
 
         for img in val_imgs:
@@ -40,15 +39,13 @@ def get_unique(rater_dir, image_dir, csv_file, out_dir):
 
     for i, unique_image in df.iterrows():
 
+        # Get golden reader class
         csv_row = csv_data.iloc[i]
         golden_reader_class = csv_row[gold]
-        orig_path = join(image_dir, golden_reader_class, csv_row['imageName'])
-        print orig_path
-
         classes.append(golden_reader_class)
 
         # Load image
-        im_arr = np.asarray(Image.open(orig_path))
+        im_arr = np.asarray(Image.open(unique_image['path']))
         all_imgs.append(im_arr)
 
     data = np.transpose(np.asarray(all_imgs), (0, 3, 2, 1))
