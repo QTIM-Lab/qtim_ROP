@@ -70,9 +70,13 @@ def autoencoder(channels=3):
     x = Conv2D(16, 3, 3, activation='relu', border_mode='same')(x)
     x = MaxPooling2D((2, 2), border_mode='same')(x)
     x = Conv2D(8, 3, 3, activation='relu', border_mode='same')(x)
+    x = MaxPooling2D((2, 2), border_mode='same')(x)
+    x = Conv2D(8, 3, 3, activation='relu', border_mode='same')(x)
     encoded = MaxPooling2D((2, 2), border_mode='same')(x)
 
     x = Conv2D(8, 3, 3, activation='relu', border_mode='same')(encoded)
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(8, 3, 3, activation='relu', border_mode='same')(x)
     x = UpSampling2D((2, 2))(x)
     x = Conv2D(16, 3, 3, activation='relu', border_mode='same')(x)
     x = UpSampling2D((2, 2))(x)
@@ -82,8 +86,8 @@ def autoencoder(channels=3):
 
     ae = Model(input_img, decoded)
 
-    sgd = SGD(lr=0.01, momentum=.9, decay=1e-3)
-    ae.compile(optimizer=sgd, loss='mse')
+    # sgd = SGD(lr=0.001, momentum=.9, decay=1e-3)
+    ae.compile(optimizer='adadelta', loss='mse')
     return ae
 
 if __name__ == '__main__':
