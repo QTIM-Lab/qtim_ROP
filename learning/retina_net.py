@@ -2,7 +2,7 @@
 
 import matplotlib
 matplotlib.use('Agg')
-from os import chdir
+from os import chdir, getcwd
 from os.path import dirname, basename, splitext, abspath
 import numpy as np
 
@@ -35,6 +35,7 @@ class RetiNet(object):
         self.conf_dir = dirname(abspath(self.conf_file))
         self.experiment_name = splitext(basename(self.conf_file))[0]
 
+        cwd = getcwd()
         chdir(self.conf_dir)
         self.train_data = abspath(self.config['training_data'])
         self.val_data = abspath(self.config['validation_data'])
@@ -63,6 +64,8 @@ class RetiNet(object):
             setup_log(None)
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
             self._configure_network(build=False)
+
+        chdir(cwd)  # revert to original working directory
 
     def _configure_network(self, build=True):
 

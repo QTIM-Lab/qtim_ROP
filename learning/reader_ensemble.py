@@ -24,7 +24,7 @@ class ReaderEnsemble(object):
         self.modes = modes
         self.out_dir = out_dir
 
-    def evaluate(self, test_data, n):
+    def evaluate(self, test_data):
 
         all_probs, all_votes, all_data = [], [], []
 
@@ -32,7 +32,7 @@ class ReaderEnsemble(object):
 
             # Predict class probabilities using current model
             print "Generating predictions for model '{}".format(model.experiment_name)
-            data_dict = model.predict(test_data, n_samples=n)
+            data_dict = model.predict(test_data)
 
             pred_prob = data_dict['probabilities']
             all_probs.append(pred_prob)  # keep probabilities
@@ -78,4 +78,4 @@ if __name__ == '__main__':
 
     import sys
     ensemble = ReaderEnsemble(sys.argv[1], sys.argv[2], names=['Reader1_Seg1', 'Reader2_Seg1', 'Reader3_Seg1'])
-    ensemble.evaluate(sys.argv[3], n=20)
+    ensemble.evaluate(sys.argv[3])

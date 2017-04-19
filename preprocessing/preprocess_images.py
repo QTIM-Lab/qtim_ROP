@@ -22,7 +22,7 @@ from segmentation.mask_retina import *
 
 METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment,
            'unet_norm': unet_preproc,'morphology': binary_morph}
-CLASSES = ['No', 'Pre-Plus', 'Plus']
+DEFAULT_CLASSES = ['No', 'Pre-Plus', 'Plus']
 
 
 class Pipeline(object):
@@ -32,7 +32,7 @@ class Pipeline(object):
         self._parse_config(config)
 
         # Calculate class distribution and train/val split
-        self.class_distribution = {c: len(listdir(join(self.input_dir, c))) for c in CLASSES}
+        self.class_distribution = {c: len(listdir(join(self.input_dir, c))) for c in DEFAULT_CLASSES}
 
         largest_class = max(self.class_distribution, key=lambda k: self.class_distribution[k])
         class_size = self.class_distribution[largest_class]
@@ -78,6 +78,8 @@ class Pipeline(object):
                 self.input_dir = abspath(join(dirname(config), conf_dict['input_dir']))
                 self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
 
+                self.class_merge = conf_dict.get('class_merge', None)
+
                 csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
                 self.labels = pd.DataFrame.from_csv(csv_file)
                 self.reader = conf_dict['reader']
@@ -118,19 +120,19 @@ class Pipeline(object):
         print "Splitting into training/validation"
 
         try:
-            train_imgs, val_imgs = self.train_val_split()
-            self.random_sample(train_imgs, val_imgs)
+            train_imgs, val_imgs = self.train_val_split(listdir(self.augment_dir))
+            self.random_sample(train_imgs, val_imgs, classes=DEFAULT_CLASSES)
         except AssertionError:
             print "No images found in one more classes - unable to split training and validation"
             print self.class_distribution
             exit()
 
-    def train_val_split(self):
+    def train_val_split(self, classes):
 
         train_imgs = [[], [], []]
         val_imgs = [[], [], []]
 
-        for cidx, class_ in enumerate(CLASSES):
+        for cidx, class_ in enumerate(classes):
 
             # Get all augmented images per class
             aug_imgs = find_images(join(self.augment_dir, class_))
@@ -164,7 +166,7 @@ class Pipeline(object):
 
         return train_imgs, val_imgs
 
-    def random_sample(self, train_imgs, val_imgs):
+    def random_sample(self, train_imgs, val_imgs, classes=DEFAULT_CLASSES):
 
         train_class_sizes = [len(x) for x in train_imgs]
         val_class_sizes = [len(x) for x in val_imgs]
@@ -172,7 +174,7 @@ class Pipeline(object):
         train_arr, val_arr = [], []
         train_labels, val_labels = [], []
 
-        for cidx, class_ in enumerate(CLASSES):
+        for cidx, class_ in enumerate(classes):
 
             train_class_dir = join(self.train_dir, class_)
             val_class_dir = join(self.val_dir, class_)
@@ -187,7 +189,7 @@ class Pipeline(object):
             for ti in train_imgs[cidx]:
                 train_arr.append(np.asarray(Image.open(ti)))
                 train_labels.append(class_)
-                copy(ti, train_class_dir)
+                # copy(ti, train_class_dir)
 
             removal_num = val_class_sizes[cidx] - int(
                 (float(min(val_class_sizes)) / float(val_class_sizes[cidx])) * val_class_sizes[cidx])
@@ -199,7 +201,7 @@ class Pipeline(object):
             for vi in val_imgs[cidx]:
                 val_arr.append(np.asarray(Image.open(vi)))
                 val_labels.append(class_)
-                copy(vi, val_class_dir)
+                # copy(vi, val_class_dir)
 
             print '\n---'
             print "Training ({}): {}".format(class_, len(train_imgs[cidx]))
@@ -262,8 +264,11 @@ def preprocess(im, params):
     quality = row['quality']
 
     # Skip images with invalid class, advanced ROP or insufficient quality
-    if class_ not in CLASSES or not quality or stage > 3:
+    if class_ not in DEFAULT_CLASSES or not quality or stage > 3:
         return False
+
+    if params.class_merge:
+        class_ = params.class_merge[class_]
 
     # Resize, preprocess and augment
     try:
