@@ -61,7 +61,6 @@ class RetiNet(object):
 
             # Set up logging
             self.experiment_dir = self.conf_dir
-            setup_log(None)
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
             self._configure_network(build=False)
 

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from os.path import join
 from utils.common import dict_reverse, make_sub_dir
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from plotting import plot_confusion
 
 
@@ -33,6 +33,8 @@ def calculate_metrics(data_dict, y_pred=None, out_dir=None, ext='.png'):
     plot_confusion(confusion, labels, join(out_dir, 'confusion' + ext))
     with open(join(out_dir, 'confusion.csv'), 'wb') as conf_csv:
         pd.DataFrame(data=confusion).to_csv(conf_csv)
+
+    print accuracy_score(y_true, y_pred)
 
 
 # Predict data
