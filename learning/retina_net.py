@@ -2,25 +2,23 @@
 
 import matplotlib
 matplotlib.use('Agg')
-from os import listdir, chdir
+from os import chdir
 from os.path import dirname, basename, splitext, abspath
 import numpy as np
-import h5py
 
-from utils.common import *
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
-from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.visualize_util import plot
-from sklearn.metrics import confusion_matrix, classification_report
-from keras.utils.np_utils import to_categorical
+
+from utils.common import *
+from utils.image import create_generator
+from utils.metrics import calculate_metrics
+from utils.models import SGDLearningRateTracker
 
 from plotting import *
-from evaluate import misclassifications
-from utils.models import SGDLearningRateTracker
 
 OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop, 'adadelta': Adadelta, 'adam': Adam}
 
@@ -55,24 +53,18 @@ class RetiNet(object):
 
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
-            self._configure_network()
-
-            # Get number of classes and samples
-            #self.no_classes = listdir(self.train_dir)
-            #self.nb_train_samples = len(find_images(join(self.train_dir, '*')))
-            #self.nb_val_samples = len(find_images(join(self.val_dir, '*')))
-            self.train()
+            self._configure_network(build=True)
+            plot(self.model, join(self.experiment_dir, 'final_model.png'))
 
         elif self.config['mode'] == 'evaluate':
 
             # Set up logging
-            setup_log(None)
             self.experiment_dir = self.conf_dir
+            setup_log(None)
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
-            self._configure_network()
-            self.evaluate(self.config['test_data'])
+            self._configure_network(build=False)
 
-    def _configure_network(self):
+    def _configure_network(self, build=True):
 
         network = self.config['network']
         type_, weights = network['type'].lower(), network.get('weights', None)
@@ -120,12 +112,11 @@ class RetiNet(object):
                 self.model.load_weights(weights, by_name=True)
 
         # Configure optimizer
-        opt_options = self.config['optimizer']
-        name, params = opt_options['type'], opt_options['params']
-        optimizer = OPTIMIZERS[name](**params)
-        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-
-        plot(self.model, join(self.experiment_dir, 'final_model.png'))
+        if build:
+            opt_options = self.config['optimizer']
+            name, params = opt_options['type'], opt_options['params']
+            optimizer = OPTIMIZERS[name](**params)
+            self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
     def train(self):
 
@@ -135,8 +126,8 @@ class RetiNet(object):
         train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
 
         # Create generators
-        train_gen, _, _ = self.create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
-        val_gen, _, _ = self.create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
+        train_gen, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
+        val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
 
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
@@ -164,8 +155,11 @@ class RetiNet(object):
         with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'wb') as ce:
             yaml.dump(conf_eval, ce, default_flow_style=False)
 
-        # Evaluate results
-        self.evaluate(self.val_data)
+        # Plot histories
+        plot_accuracy(history.history, join(self.experiment_dir, 'accuracy' + self.ext))
+        plot_loss(history.history, join(self.experiment_dir, 'loss' + self.ext))
+        lr = np.load(join(self.experiment_dir, 'learning_rate.npy'))
+        plot_LR(lr, join(self.experiment_dir, 'lr_plot' + self.ext))
 
     def update_config(self):
 
@@ -178,64 +172,18 @@ class RetiNet(object):
         conf_eval['validation_data'] = abspath(self.config['validation_data'])
         return conf_eval
 
-    def evaluate(self, data_path):
+    def predict(self, data_path, n_samples=None):
 
         logging.info("Evaluating model for on {}".format(data_path))
-        datagen, y_true, class_indices = self.create_generator(data_path, self.model.input_shape[1:],
-                                                                batch_size=1, training=False)
-        no_samples = datagen.x.shape[0]
+        datagen, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
+                                                          batch_size=1, training=False)
+        if not n_samples:
+            n_samples = datagen.x.shape[0]
 
-        # Predict data
-        predictions = self.model.predict_generator(datagen, no_samples)
-        y_pred = np.argmax(predictions, axis=1)
-        labels = [k[0] for k in sorted(class_indices.items(), key=lambda x: x[1])]
-        confusion = confusion_matrix(y_true, y_pred)
-        print classification_report(y_true, y_pred)
+        predictions = self.model.predict_generator(datagen, n_samples)
+        data_dict = {'data': datagen, 'classes': class_indices, 'y_true': y_true[:n_samples], 'probabilities': predictions}
 
-        # Misclassified
-        misclassifications(datagen.x, y_true, y_pred, class_indices, self.eval_dir)
-
-        # Confusion
-        plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion' + self.ext))
-        with open(join(self.experiment_dir, 'confusion.csv'), 'wb') as conf_csv:
-            pd.DataFrame(data=confusion).to_csv(conf_csv)
-
-        # History
-        history = csv_to_dict(join(self.experiment_dir, "history.csv"))
-        plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
-        plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
-
-        lr = np.load(join(self.experiment_dir, 'learning_rate.npy'))
-        plot_LR(lr, join(self.experiment_dir, 'lr_plot' + self.ext))
-
-    def create_generator(self, data_path, input_shape, batch_size=32, training=True):
-
-        zmuv = self.config.get('zmuv', False)
-        if zmuv:
-            logging.info('Normalizing data zero mean, unit variance')
-
-        datagen = ImageDataGenerator()
-
-        if isdir(data_path):
-
-            dg = datagen.flow_from_directory(
-                data_path,
-                target_size=input_shape[1:],
-                batch_size=batch_size,
-                class_mode='categorical',
-                shuffle=training)
-            return dg, dg.classes, dg.class_indices
-
-        else:
-
-            f = h5py.File(data_path, 'r')
-
-            # Convert class names to numerical labels
-            class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
-            classes = [class_indices[k] for k in f['labels']]
-            labels = to_categorical(classes)
-
-            return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, class_indices
+        return data_dict
 
 if __name__ == '__main__':
 
@@ -245,4 +193,10 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', dest='config', required=True)
     args = parser.parse_args()
 
+    # Instantiate model and train
     r = RetiNet(args.config)
+    r.train()
+
+    # Evaluate on validation data and calculate metrics
+    pred, data_dict = r.predict(r.val_data)
+    calculate_metrics(data_dict, out_dir=r.eval_dir)
