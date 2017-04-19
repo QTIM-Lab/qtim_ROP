@@ -1,6 +1,7 @@
 from os.path import join, basename
 import numpy as np
 from scipy.stats import mode
+import pandas as pd
 from learning.retina_net import RetiNet
 from utils.common import get_subdirs, make_sub_dir
 from utils.metrics import calculate_metrics
@@ -57,6 +58,8 @@ class ReaderEnsemble(object):
             average_dir = make_sub_dir(self.out_dir, 'average')
             average = average_probabilities(all_probs)
             calculate_metrics(data, y_pred=average, out_dir=average_dir)
+
+        pd.DataFrame(np.asarray(all_probs)).to_csv(join(self.out_dir, 'pred.csv'))
 
 
 def majority_vote(votes):
