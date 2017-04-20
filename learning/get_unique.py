@@ -49,7 +49,7 @@ def get_unique(rater_dir, csv_file, out_dir):
         classes.append(golden_reader_class)
 
         # Copy image and store array in list
-        copy(img_path, join(out_dir, join(out_dir, basename(img_path))))
+        copy(img_path, join(out_dir, basename(img_path)))
         im_arr = np.asarray(Image.open(unique_image['path']))
         all_imgs.append(im_arr)
 
