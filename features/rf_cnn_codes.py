@@ -9,16 +9,20 @@ import numpy as np
 def main(model_conf, train_data, test_data):
 
     # Load model and set last layer
+    print "Loading model..."
     net = RetiNet(model_conf)
     net.set_intermediate('flatten_3')
 
     # Get CNN codes
+    print "Getting features..."
     codes = net.predict(train_data)
 
     # Create random forest
     rf = RandomForestClassifier()
     X_train= codes['probabilities']
     y_train = codes['y_true']
+
+    print "Training RF..."
     rf.fit(X_train, y_train)
 
     # Load test data
@@ -30,6 +34,7 @@ def main(model_conf, train_data, test_data):
     y_true = to_categorical(classes)
 
     # Predict
+    print "Getting predictions..."
     y_pred = rf.predict(X_test)
 
     print accuracy_score(y_true, y_pred)
