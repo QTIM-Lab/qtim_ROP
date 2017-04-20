@@ -48,7 +48,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', dest='model_config', help="YAML file for model to test", required=True)
     parser.add_argument('-t', '--test', dest='test_data', help="HDF5 file for test data", required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help="Output directory for results", required=True)
-    parser.add_argument('-m', '--merge-disease', dest='merge_disease', action='store_true', default=True)
+    parser.add_argument('-m', '--merge-disease', dest='merge_disease', action='store_true', default=False)
 
     args = parser.parse_args()
     binary_classifier(args.model_config, args.test_data, args.out_dir, merge_disease=args.merge_disease)
