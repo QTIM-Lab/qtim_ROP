@@ -83,8 +83,9 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-m', '--models-dir', dest='models_dir', help="Directory where models are kept", required=True)
     parser.add_argument('-t', '--test-data', dest='test_data', help="HD5 file with fields 'data' and 'labels'", required=True)
-    parser.add_argument('-n', '--names', dest='names', help="Relative paths of models to ensemble", required=False, default=None)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help="Directory to output results", required=True)
+    parser.add_argument('-n', '--names', dest='names', help="Relative paths of models to ensemble", nargs='+', required=False, default=None)
+
 
     args = parser.parse_args()
     ensemble = ReaderEnsemble(args.models_dir, args.out_dir, names=args.names)
