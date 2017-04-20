@@ -15,23 +15,20 @@ def main(model_conf, train_data, test_data):
 
     # Get CNN codes
     print "Getting features..."
-    codes = net.predict(train_data)
+    train_codes = net.predict(train_data)
 
     # Create random forest
     rf = RandomForestClassifier()
-    X_train= codes['probabilities']
-    y_train = codes['y_true']
+    X_train = train_codes['probabilities']
+    y_train = train_codes['y_true']
 
     print "Training RF..."
     rf.fit(X_train, y_train)
 
     # Load test data
-    f = h5py.File(test_data, 'r')
-    X_test = f['data']
-
-    class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
-    classes = [class_indices[k] for k in f['labels']]
-    y_true = to_categorical(classes)
+    test_codes = net.predict(test_data)
+    X_test = test_codes['probabilities']
+    y_true = test_codes['y_true']
 
     # Predict
     print "Getting predictions..."
