@@ -79,6 +79,13 @@ def combine_models(models):
 
 if __name__ == '__main__':
 
-    import sys
-    ensemble = ReaderEnsemble(sys.argv[1], sys.argv[2], names=['Reader1_Seg1', 'Reader2_Seg1', 'Reader3_Seg1'])
-    ensemble.evaluate(sys.argv[3])
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('-m', '--models-dir', dest='models_dir', help="Directory where models are kept", required=True)
+    parser.add_argument('-t', '--test-data', dest='test_data', help="HD5 file with fields 'data' and 'labels'", required=True)
+    parser.add_argument('-n', '--names', dest='names', help="Relative paths of models to ensemble", required=False, default=None)
+    parser.add_argument('-o', '--out-dir', dest='out_dir', help="Directory to output results", required=True)
+
+    args = parser.parse_args()
+    ensemble = ReaderEnsemble(args.models_dir, args.out_dir, names=args.names)
+    ensemble.evaluate(args.test_data)
