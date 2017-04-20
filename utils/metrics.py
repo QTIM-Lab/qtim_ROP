@@ -15,7 +15,7 @@ FONT = {'family': 'sans-serif',
         'size': 14}
 
 
-def calculate_metrics(data_dict, y_pred=None, out_dir=None, ext='.png'):
+def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     predictions, datagen, y_true, class_indices = [data_dict[x] for x in ['probabilities', 'data', 'y_true', 'classes']]
 
     if y_pred is None:

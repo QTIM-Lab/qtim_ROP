@@ -1,12 +1,9 @@
 from learning.retina_net import RetiNet
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
-from keras.utils.np_utils import to_categorical
-import h5py
-import numpy as np
+from utils.metrics import calculate_metrics
 
 
-def main(model_conf, train_data, test_data):
+def main(model_conf, train_data, test_data, out_dir):
 
     # Load model and set last layer
     print "Loading model..."
@@ -28,19 +25,23 @@ def main(model_conf, train_data, test_data):
     # Load test data
     test_codes = net.predict(test_data)
     X_test = test_codes['probabilities']
-    y_true = test_codes['y_true']
 
     # Predict
     print "Getting predictions..."
     y_pred = rf.predict(X_test)
-
-    print accuracy_score(y_true, y_pred)
-    print confusion_matrix(y_true, y_pred)
-    print classification_report(y_true, y_pred)
+    calculate_metrics(test_codes, out_dir, y_pred=y_pred)
 
 
 if __name__ == '__main__':
 
-    import sys
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
 
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    parser.add_argument('-c', '--config', dest='model_config', help="YAML file for model to test", required=True)
+    parser.add_argument('-tr', '--train', dest='training_data', help="HDF5 file for training data", required=True)
+    parser.add_argument('-te', '--test', dest='test_data', help="HDF5 file for test data", required=True)
+    parser.add_argument('-o', '--out-dir', dest='out_dir', help="Output directory for results", required=True)
+
+
+    args = parser.parse_args()
+    main(args.model_config, args.training_data, args.test_data, args.out_dir)
