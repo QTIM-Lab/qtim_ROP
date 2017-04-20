@@ -8,9 +8,12 @@ from utils.common import make_sub_dir
 def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
 
     net = RetiNet(model_yaml)
+    
+    print "Generating predictions"
     pred_dict = net.predict(test_data)
 
     # Convert three class ground truth to two class
+    print "Merging predictions"
     pred_dict['y_true'] = merge_predictions(pred_dict['y_true'], merge_disease=merge_disease)
 
     # Create new class labels based on how we've merged
@@ -31,7 +34,7 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
 
 def merge_predictions(y, merge_disease=True):
 
-    arg_max = np.argmax(y)
+    arg_max = np.argmax(y, axis=1)
 
     if merge_disease:  # 0: No, 1: Plus, 2: Pre-Plus
         bin_pred = [1 if x in (1, 2) else 0 for x in arg_max]
