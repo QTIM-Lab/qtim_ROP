@@ -1,0 +1,51 @@
+from learning.retina_net import RetiNet
+from utils.metrics import calculate_metrics
+from os.path import join
+import numpy as np
+
+
+def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
+
+    net = RetiNet(model_yaml)
+    pred_dict = net.predict(test_data)
+
+    # Convert three class ground truth to two class
+    pred_dict['y_true'] = merge_predictions(pred_dict['y_true'], merge_disease=merge_disease)
+
+    # Create new class labels based on how we've merged
+    if merge_disease:
+        pred_dict['classes'] = {0: 'No', 1: 'Pre-Plus + Plus'}
+        name = 'PrePlus_Plus'
+    else:
+        pred_dict['classes'] = {0: 'No + Pre-Plus', 1: 'Plus'}
+        name = 'No_PrePlus'
+
+    # Convert three class predictions class
+    y_pred = merge_predictions(pred_dict['probabilities'], merge_disease=merge_disease)
+
+    # Assess performance
+    calculate_metrics(pred_dict, y_pred=y_pred, out_dir=join(out_dir, name))
+
+
+def merge_predictions(y, merge_disease=True):
+
+    arg_max = np.argmax(y)
+
+    if merge_disease:  # 0: No, 1: Plus, 2: Pre-Plus
+        bin_pred = [1 if x in (1, 2) else 0 for x in arg_max]
+    else:
+        bin_pred = [0 if x in (0, 2) else 1 for x in arg_max]
+
+    return bin_pred
+
+if __name__ == '__main__':
+
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+
+    parser.add_argument('-c', '--config', dest='model_config', help="YAML file for model to test", required=True)
+    parser.add_argument('-t', '--test', dest='test_data', help="HDF5 file for test data", required=True)
+    parser.add_argument('-o', '--out-dir', dest='out_dir', help="Output directory for results", required=True)
+
+    args = parser.parse_args()
+    binary_classifier(args.model_config, args.test_data, args.out_dir)
