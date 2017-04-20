@@ -10,7 +10,7 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
     net = RetiNet(model_yaml)
 
     print "Generating predictions"
-    pred_dict = net.predict(test_data)
+    pred_dict = net.predict(test_data, n_samples=10)
 
     # Convert three class ground truth to two class
     print "Merging predictions"
@@ -18,10 +18,10 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
 
     # Create new class labels based on how we've merged
     if merge_disease:
-        pred_dict['classes'] = {0: 'No', 1: 'Pre-Plus + Plus'}
+        pred_dict['classes'] = {'No': 0, 'Pre-Plus + Plus': 1}
         name = 'PrePlus_Plus'
     else:
-        pred_dict['classes'] = {0: 'No + Pre-Plus', 1: 'Plus'}
+        pred_dict['classes'] = {'No + Pre-Plus': 0, 'Plus': 1}
         name = 'No_PrePlus'
 
     # Convert three class predictions class
@@ -33,7 +33,6 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
 
 
 def merge_predictions(y, merge_disease=True):
-
 
     if merge_disease:  # 0: No, 1: Plus, 2: Pre-Plus
         bin_pred = [1 if x in (1, 2) else 0 for x in y]
