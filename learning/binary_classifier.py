@@ -2,6 +2,7 @@ from learning.retina_net import RetiNet
 from utils.metrics import calculate_metrics
 from os.path import join
 import numpy as np
+from utils.common import make_sub_dir
 
 
 def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
@@ -24,7 +25,8 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
     y_pred = merge_predictions(pred_dict['probabilities'], merge_disease=merge_disease)
 
     # Assess performance
-    calculate_metrics(pred_dict, y_pred=y_pred, out_dir=join(out_dir, name))
+    subdir = make_sub_dir(out_dir, name)
+    calculate_metrics(pred_dict, y_pred=y_pred, out_dir=join(out_dir, subdir))
 
 
 def merge_predictions(y, merge_disease=True):
@@ -46,6 +48,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', dest='model_config', help="YAML file for model to test", required=True)
     parser.add_argument('-t', '--test', dest='test_data', help="HDF5 file for test data", required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help="Output directory for results", required=True)
+    parser.add_argument('-m', '--merge-disease', dest='merge_disease', action='store_true', default=True)
 
     args = parser.parse_args()
-    binary_classifier(args.model_config, args.test_data, args.out_dir)
+    binary_classifier(args.model_config, args.test_data, args.out_dir, merge_disease=args.merge_disease)
