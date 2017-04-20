@@ -29,7 +29,7 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
 
     # Assess performance
     subdir = make_sub_dir(out_dir, name)
-    calculate_metrics(pred_dict, y_pred=y_pred, out_dir=join(out_dir, subdir))
+    calculate_metrics(pred_dict, y_pred=y_pred, out_dir=subdir)
 
 
 def merge_predictions(y, merge_disease=True):
