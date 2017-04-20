@@ -6,7 +6,7 @@ from learning.retina_net import RetiNet
 from utils.common import get_subdirs, make_sub_dir
 from utils.metrics import calculate_metrics
 
-OPTIONS = ('vote', 'average', 'weighed_average', 'merge')
+OPTIONS = ('vote', 'average', 'confidence', 'weighted_average', 'merge')
 
 
 class ReaderEnsemble(object):
@@ -33,7 +33,7 @@ class ReaderEnsemble(object):
 
             # Predict class probabilities using current model
             print "Generating predictions for model '{}".format(model.experiment_name)
-            data_dict = model.predict(test_data)
+            data_dict = model.predict(test_data, n_samples=20)  #  TODO REVERT!
 
             pred_prob = data_dict['probabilities']
             all_probs.append(pred_prob)  # keep probabilities
@@ -43,6 +43,9 @@ class ReaderEnsemble(object):
             # Calculate metrics
             test_dir = make_sub_dir(self.out_dir, model.experiment_name)
             calculate_metrics(data_dict, out_dir=test_dir)
+
+            # Save predictions
+            pd.DataFrame(np.asarray(pred_prob)).to_csv(join(self.out_dir, '{}.csv'.format(model.experiment_name)))
 
         # Test ensemble(s)
         data = all_data[0]
@@ -59,7 +62,11 @@ class ReaderEnsemble(object):
             average = average_probabilities(all_probs)
             calculate_metrics(data, y_pred=average, out_dir=average_dir)
 
-        pd.DataFrame(np.asarray(all_probs)).to_csv(join(self.out_dir, 'pred.csv'))
+        if 'confidence' in self.modes:
+
+            conf_dir = make_sub_dir(self.out_dir, 'confidence')
+            conf = max_prob(all_probs)
+            calculate_metrics(data, y_pred=conf, out_dir=conf_dir)
 
 
 def majority_vote(votes):
@@ -71,6 +78,18 @@ def majority_vote(votes):
 def average_probabilities(probs):
 
     return np.argmax(np.mean(probs, axis=0), axis=1)
+
+
+def max_prob(probs):
+
+    mc = []
+    for i in range(0, probs[0].shape[0]):
+
+        readers = [probs[r][i] for r in range(0, len(probs))]  # probabilties from all readers for this image
+        most_confident = np.argmax(np.max(readers, axis=1))  # the index of the most confident reader
+        mc.append(np.argmax(readers[most_confident]))  # the predicted label of the most confident reader
+
+    return np.asarray(mc)
 
 
 def combine_models(models):
