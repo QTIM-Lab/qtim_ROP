@@ -25,16 +25,16 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     confusion = confusion_matrix(y_true, y_pred)
     print classification_report(y_true, y_pred)
 
-    # Misclassified images
-    misclassified_dir = make_sub_dir(out_dir, 'misclassified')
-    misclassifications(datagen.x, y_true, y_pred, class_indices, misclassified_dir)
-
     # Confusion
     plot_confusion(confusion, labels, join(out_dir, 'confusion' + ext))
     with open(join(out_dir, 'confusion.csv'), 'wb') as conf_csv:
         pd.DataFrame(data=confusion).to_csv(conf_csv)
 
     print accuracy_score(y_true, y_pred)
+
+    # Misclassified images  #  TODO fix bug when classes < 3
+    misclassified_dir = make_sub_dir(out_dir, 'misclassified')
+    misclassifications(datagen.x, y_true, y_pred, class_indices, misclassified_dir)
 
 
 # Predict data
