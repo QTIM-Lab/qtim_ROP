@@ -187,6 +187,11 @@ class RetiNet(object):
 
         return data_dict
 
+    def set_intermediate(self, layer_name):
+
+        self.model = Model(input=self.model.input,
+                           output=self.model.get_layer(name=layer_name).output)
+
 if __name__ == '__main__':
 
     from argparse import ArgumentParser
