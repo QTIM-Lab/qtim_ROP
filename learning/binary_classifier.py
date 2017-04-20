@@ -8,7 +8,7 @@ from utils.common import make_sub_dir
 def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
 
     net = RetiNet(model_yaml)
-    
+
     print "Generating predictions"
     pred_dict = net.predict(test_data)
 
@@ -25,7 +25,7 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
         name = 'No_PrePlus'
 
     # Convert three class predictions class
-    y_pred = merge_predictions(pred_dict['probabilities'], merge_disease=merge_disease)
+    y_pred = merge_predictions(np.argmax(pred_dict['probabilities'], axis=1), merge_disease=merge_disease)
 
     # Assess performance
     subdir = make_sub_dir(out_dir, name)
@@ -34,12 +34,11 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
 
 def merge_predictions(y, merge_disease=True):
 
-    arg_max = np.argmax(y, axis=1)
 
     if merge_disease:  # 0: No, 1: Plus, 2: Pre-Plus
-        bin_pred = [1 if x in (1, 2) else 0 for x in arg_max]
+        bin_pred = [1 if x in (1, 2) else 0 for x in y]
     else:
-        bin_pred = [0 if x in (0, 2) else 1 for x in arg_max]
+        bin_pred = [0 if x in (0, 2) else 1 for x in y]
 
     return bin_pred
 
