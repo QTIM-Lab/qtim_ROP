@@ -6,6 +6,8 @@ from os.path import join
 from tsne import tsne
 import matplotlib.pyplot as plt
 
+LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
+
 
 def main(model_conf, train_data, test_data, out_dir):
 
@@ -16,17 +18,17 @@ def main(model_conf, train_data, test_data, out_dir):
 
     # Get CNN codes
     print "Getting features..."
-    train_codes = net.predict(train_data)
+    train_codes = net.predict(train_data, n_samples=10)
 
     # Create random forest
     rf = RandomForestClassifier(n_estimators=100, class_weight='balanced_subsample')
     X_train = train_codes['probabilities']
-    y_train = train_codes['y_true']
+    y_train = np.asarray(train_codes['y_true'])
 
     # T-SNE embedding
     print "T-SNE visualisation of training features"
     np.save(join(out_dir, 'cnn_train_features.npy'), X_train)
-    make_tsne(X_train, y_train, out_dir, ['No', 'Plus', 'Pre-Plus'])
+    make_tsne(X_train, y_train, out_dir)
 
     print "Training RF..."
     rf.fit(X_train, y_train)
@@ -41,11 +43,13 @@ def main(model_conf, train_data, test_data, out_dir):
     calculate_metrics(test_codes, out_dir, y_pred=y_pred)
 
 
-def make_tsne(X, y, out_dir, labels):
+def make_tsne(X, y, out_dir):
 
-    Y = tsne(X, 2, 50, 20.0)
-    plt.scatter(Y[:, 0], Y[:, 1], 20, y)
-    plt.legend(labels)
+    T = tsne(X, 2, 50, 20.0)
+    plt.scatter(T[y == 0, 0], T[y == 0, 1], 20, label=LABELS[0])
+    plt.scatter(T[y == 1, 0], T[y == 1, 1], 20, label=LABELS[1])
+    plt.scatter(T[y == 2, 0], T[y == 2, 1], 20, label=LABELS[2])
+    plt.legend()
     plt.savefig(join(out_dir, 'tsne.png'))
 
 
