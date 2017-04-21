@@ -25,22 +25,22 @@ def main(model_conf, train_data, test_data, out_dir):
     X_train = train_codes['probabilities']
     y_train = np.asarray(train_codes['y_true'])
 
-    # T-SNE embedding
-    print "T-SNE visualisation of training features"
-    np.save(join(out_dir, 'cnn_train_features.npy'), X_train)
-    make_tsne(X_train, y_train, out_dir)
-
     print "Training RF..."
     rf.fit(X_train, y_train)
 
     # Load test data
-    test_codes = net.predict(test_data, n_samples=100)
+    test_codes = net.predict(test_data)
     X_test = test_codes['probabilities']
 
     # Predict
     print "Getting predictions..."
     y_pred = rf.predict(X_test)
     calculate_metrics(test_codes, out_dir, y_pred=y_pred)
+
+    # T-SNE embedding
+    print "T-SNE visualisation of training features"
+    np.save(join(out_dir, 'cnn_train_features.npy'), X_train)
+    make_tsne(X_train, y_train, out_dir)
 
 
 def make_tsne(X, y, out_dir):
