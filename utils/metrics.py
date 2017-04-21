@@ -29,7 +29,7 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     with open(join(out_dir, 'confusion.csv'), 'wb') as conf_csv:
         pd.DataFrame(data=confusion).to_csv(conf_csv)
 
-    print accuracy_score(y_true, y_pred)
+    print "Accuracy: {}".format(accuracy_score(y_true, y_pred))
     print classification_report(y_true, y_pred)
 
     # Misclassified images  #  TODO fix bug when classes < 3
