@@ -19,7 +19,7 @@ def main(model_conf, train_data, test_data, out_dir):
     train_codes = net.predict(train_data)
 
     # Create random forest
-    rf = RandomForestClassifier()
+    rf = RandomForestClassifier(n_estimators=100, class_weight='balanced_subsample')
     X_train = train_codes['probabilities']
     y_train = train_codes['y_true']
 
