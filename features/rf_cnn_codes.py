@@ -18,7 +18,7 @@ def main(model_conf, train_data, test_data, out_dir):
 
     # Get CNN codes
     print "Getting features..."
-    train_codes = net.predict(train_data, n_samples=10)
+    train_codes = net.predict(train_data)
 
     # Create random forest
     rf = RandomForestClassifier(n_estimators=100, class_weight='balanced_subsample')
@@ -46,9 +46,9 @@ def main(model_conf, train_data, test_data, out_dir):
 def make_tsne(X, y, out_dir):
 
     T = tsne(X, 2, 50, 20.0)
-    plt.scatter(T[y == 0, 0], T[y == 0, 1], 20, label=LABELS[0])
-    plt.scatter(T[y == 1, 0], T[y == 1, 1], 20, label=LABELS[1])
-    plt.scatter(T[y == 2, 0], T[y == 2, 1], 20, label=LABELS[2])
+    plt.scatter(T[y == 0, 0], T[y == 0, 1], 20, label=LABELS[0], alpha=0.6)
+    plt.scatter(T[y == 1, 0], T[y == 1, 1], 20, label=LABELS[1], alpha=0.6)
+    plt.scatter(T[y == 2, 0], T[y == 2, 1], 20, label=LABELS[2], alpha=0.6)
     plt.legend()
     plt.savefig(join(out_dir, 'tsne.png'))
 
