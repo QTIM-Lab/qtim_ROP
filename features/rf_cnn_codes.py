@@ -1,6 +1,10 @@
 from learning.retina_net import RetiNet
 from sklearn.ensemble import RandomForestClassifier
 from utils.metrics import calculate_metrics
+import numpy as np
+from os.path import join
+from tsne import tsne
+import matplotlib.pyplot as plt
 
 
 def main(model_conf, train_data, test_data, out_dir):
@@ -19,17 +23,28 @@ def main(model_conf, train_data, test_data, out_dir):
     X_train = train_codes['probabilities']
     y_train = train_codes['y_true']
 
+    # T-SNE embedding
+    np.save(join(out_dir, 'cnn_train_features.npy'), X_train)
+    make_tsne(X_train, y_train, out_dir)
+
     print "Training RF..."
     rf.fit(X_train, y_train)
 
     # Load test data
-    test_codes = net.predict(test_data)
+    test_codes = net.predict(test_data, n_samples=100)
     X_test = test_codes['probabilities']
 
     # Predict
     print "Getting predictions..."
     y_pred = rf.predict(X_test)
     calculate_metrics(test_codes, out_dir, y_pred=y_pred)
+
+
+def make_tsne(X, y, out_dir):
+
+    Y = tsne(X, 2, 50, 20.0)
+    plt.scatter(Y[:, 0], Y[:, 1], 20, y)
+    plt.savefig(join(out_dir, 'tsne.png'))
 
 
 if __name__ == '__main__':
