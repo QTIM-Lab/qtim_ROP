@@ -26,7 +26,7 @@ def main(model_conf, train_data, test_data, out_dir):
     # T-SNE embedding
     print "T-SNE visualisation of training features"
     np.save(join(out_dir, 'cnn_train_features.npy'), X_train)
-    make_tsne(X_train, y_train, out_dir, )
+    make_tsne(X_train, y_train, out_dir, ['No', 'Plus', 'Pre-Plus'])
 
     print "Training RF..."
     rf.fit(X_train, y_train)
@@ -45,7 +45,7 @@ def make_tsne(X, y, out_dir, labels):
 
     Y = tsne(X, 2, 50, 20.0)
     plt.scatter(Y[:, 0], Y[:, 1], 20, y)
-    plt.legend(['No', 'Plus', 'Pre-Plus'])
+    plt.legend(labels)
     plt.savefig(join(out_dir, 'tsne.png'))
 
 
