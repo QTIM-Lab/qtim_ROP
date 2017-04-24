@@ -198,12 +198,16 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument('-c', '--config', dest='config', required=True)
+    parser.add_argument('-d', '--data', dest='data', default=None)
+
     args = parser.parse_args()
 
     # Instantiate model and train
     r = RetiNet(args.config)
-    r.train()
+    if args.data is None:
+        pass
+        # r.train()
 
     # Evaluate on validation data and calculate metrics
-    pred, data_dict = r.predict(r.val_data)
+    pred, data_dict = r.predict(args.data)
     calculate_metrics(data_dict, out_dir=r.eval_dir)

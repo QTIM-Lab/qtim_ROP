@@ -46,10 +46,11 @@ def main(model_conf, train_data, test_data, out_dir):
 def make_tsne(X, y, out_dir):
 
     T = tsne(X, 2, 50, 20.0)
-    plt.scatter(T[y == 0, 0], T[y == 0, 1], 20, label=LABELS[0], alpha=0.6)
-    plt.scatter(T[y == 1, 0], T[y == 1, 1], 20, label=LABELS[1], alpha=0.6)
-    plt.scatter(T[y == 2, 0], T[y == 2, 1], 20, label=LABELS[2], alpha=0.6)
-    plt.legend()
+    fig, ax = plt.subplots()
+    ax.scatter(T[y == 0, 0], T[y == 0, 1], 20, label=LABELS[0], alpha=0.6)
+    ax.scatter(T[y == 1, 0], T[y == 1, 1], 20, label=LABELS[1], alpha=0.6)
+    ax.scatter(T[y == 2, 0], T[y == 2, 1], 20, label=LABELS[2], alpha=0.6)
+    ax.legend()
     plt.savefig(join(out_dir, 'tsne.png'))
 
 
