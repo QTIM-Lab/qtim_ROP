@@ -79,4 +79,4 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
-    main(args.model_config, args.training_data, args.test_data, args.out_dir)
+    main(args.model_config,  args.test_data, args.out_dir, train_data=args.training_data)
