@@ -1,5 +1,6 @@
 from learning.retina_net import RetiNet
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.externals import joblib
 from utils.metrics import calculate_metrics
 import numpy as np
 from os.path import join
@@ -27,6 +28,8 @@ def main(model_conf, train_data, test_data, out_dir):
 
     print "Training RF..."
     rf.fit(X_train, y_train)
+
+    joblib.dump(rf, join(out_dir, 'rf.pkl'))
 
     # Load test data
     test_codes = net.predict(test_data)
