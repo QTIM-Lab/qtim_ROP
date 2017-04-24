@@ -209,5 +209,5 @@ if __name__ == '__main__':
         # r.train()
 
     # Evaluate on validation data and calculate metrics
-    pred, data_dict = r.predict(args.data)
+    data_dict = r.predict(args.data)
     calculate_metrics(data_dict, out_dir=r.eval_dir)
