@@ -13,6 +13,7 @@ from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.utils.visualize_util import plot
+from keras.utils.np_utils import to_categorical
 
 from utils.common import *
 from utils.image import create_generator
@@ -187,16 +188,11 @@ class RetiNet(object):
         data_dict = {'data': datagen, 'classes': class_indices, 'y_true': y_true[:n_samples], 'probabilities': predictions}
 
         cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
-        df = pd.DataFrame(data=predictions, columns=cols[:, 1])
-        df['ground_truth'] = pd.Series(data=y_true, name='ground_truth')
-        df.to_csv(join(self.eval_dir, 'predictions.csv'))
+        pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
+        true_df = pd.DataFrame(data=to_categorical(class_indices), columns=cols[:, 0])
 
-        np.savetxt(join(self.eval_dir, "ground_truth.csv"), y_true, delimiter=",")
-
-        with open(join(self.eval_dir, 'class_names.csv'), 'wb') as csv_file:
-            writer = csv.writer(csv_file)
-            for key, value in class_indices.items():
-                writer.writerow([key, value])
+        pred_df.to_csv(join(self.eval_dir, 'predictions.csv'))
+        true_df.to_csv(join(self.eval_dir, 'ground_truth.csv'))
 
         return data_dict
 
