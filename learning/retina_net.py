@@ -186,7 +186,9 @@ class RetiNet(object):
         predictions = self.model.predict_generator(datagen, n_samples)
         data_dict = {'data': datagen, 'classes': class_indices, 'y_true': y_true[:n_samples], 'probabilities': predictions}
 
-        np.savetxt(join(self.eval_dir, "predictions.csv"), predictions, delimiter=",")
+        cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
+        pd.DataFrame(data=predictions, columns=cols[:, 0]).to_csv('predictions.csv')
+
         np.savetxt(join(self.eval_dir, "ground_truth.csv"), y_true, delimiter=",")
 
         with open(join(self.eval_dir, 'class_names.csv'), 'wb') as csv_file:
