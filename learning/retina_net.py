@@ -186,8 +186,9 @@ class RetiNet(object):
         predictions = self.model.predict_generator(datagen, n_samples)
         data_dict = {'data': datagen, 'classes': class_indices, 'y_true': y_true[:n_samples], 'probabilities': predictions}
 
-        np.savetxt("predictions.csv", predictions, delimiter=",")
-        np.savetxt("ground_truth.csv", y_true, delimiter=",")
+        np.savetxt(join(self.eval_dir, "predictions.csv"), predictions, delimiter=",")
+        np.savetxt(join(self.eval_dir, "ground_truth.csv"), y_true, delimiter=",")
+        np.savetxt(join(self.eval_dir, "class_names.csv"), class_indices, delimiter=",")
         return data_dict
 
     def set_intermediate(self, layer_name):
