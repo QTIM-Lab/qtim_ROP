@@ -189,7 +189,7 @@ class RetiNet(object):
 
         cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
         pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
-        true_df = pd.DataFrame(data=to_categorical(class_indices), columns=cols[:, 0])
+        true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
 
         pred_df.to_csv(join(self.eval_dir, 'predictions.csv'))
         true_df.to_csv(join(self.eval_dir, 'ground_truth.csv'))
