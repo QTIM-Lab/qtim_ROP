@@ -5,6 +5,7 @@ matplotlib.use('Agg')
 from os import chdir, getcwd
 from os.path import dirname, basename, splitext, abspath
 import numpy as np
+import csv
 
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
@@ -185,6 +186,7 @@ class RetiNet(object):
         predictions = self.model.predict_generator(datagen, n_samples)
         data_dict = {'data': datagen, 'classes': class_indices, 'y_true': y_true[:n_samples], 'probabilities': predictions}
 
+        np.savetxt("predictions.csv", predictions, delimiter=",")
         return data_dict
 
     def set_intermediate(self, layer_name):
