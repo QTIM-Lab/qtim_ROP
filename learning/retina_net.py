@@ -188,7 +188,12 @@ class RetiNet(object):
 
         np.savetxt(join(self.eval_dir, "predictions.csv"), predictions, delimiter=",")
         np.savetxt(join(self.eval_dir, "ground_truth.csv"), y_true, delimiter=",")
-        np.savetxt(join(self.eval_dir, "class_names.csv"), [[k,v] for k, v in class_indices.items()], delimiter=",")
+
+        with open(join(self.eval_dir, 'class_names.csv'), 'wb') as csv_file:
+            writer = csv.writer(csv_file)
+            for key, value in class_indices.items():
+                writer.writerow([key, value])
+
         return data_dict
 
     def set_intermediate(self, layer_name):
