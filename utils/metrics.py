@@ -32,7 +32,7 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     true_df.to_csv(join(out_dir, 'ground_truth.csv'))
 
     # ROC/AUC
-    roc_auc(predictions, true_df, join(out_dir, 'roc_auc' + ext))
+    roc_auc(pred_df, true_df, join(out_dir, 'roc_auc' + ext))
 
     # For the sake of calculating confusion matrices
     if y_pred is None:
