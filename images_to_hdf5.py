@@ -12,7 +12,7 @@ def images_to_hdf5(image_dirs, out_path, class_names=None):
     :param out_path: full path of the HD5 file to save
     :param class_names: the set of classes (uses all subdirectories in image_dir, if None)
     """
-    X, y = [], []
+    X, y, filenames = [], [], []
 
     for image_dir in image_dirs:
 
@@ -27,13 +27,16 @@ def images_to_hdf5(image_dirs, out_path, class_names=None):
                 img_arr = np.asarray(Image.open(src_img))
                 X.append(img_arr)
                 y.append(class_name)
+                filenames.append(basename(src_img))
 
     X = np.transpose(np.asarray(X), (0, 3, 2, 1))
     y = np.asarray(y)
+    filenames = np.asarray(filenames)
 
     with h5py.File(out_path, "w") as f:
         f.create_dataset('data', data=X, dtype=X.dtype)
         f.create_dataset('labels', data=y, dtype=y.dtype)
+        f.create_dataset('filenames', data=filenames, dtype=filenames.dtype)
 
 
 if __name__ == '__main__':
