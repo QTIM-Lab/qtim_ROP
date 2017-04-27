@@ -60,7 +60,8 @@ def main(model_conf, test_data, out_dir, train_data=None):
 
     # Save features
     f = h5py.File(test_data, 'r')
-    pd.DataFrame(data=X_test, index=f['filenames']).to_csv(join(out_dir, 'test_features.csv'))
+    if 'filenames' in f:
+        pd.DataFrame(data=X_test, index=f['filenames']).to_csv(join(out_dir, 'test_features.csv'))
 
     # Predict
     print "Getting RF predictions..."
