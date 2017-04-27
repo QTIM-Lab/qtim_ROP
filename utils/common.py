@@ -1,15 +1,18 @@
 from glob import glob
 from os import mkdir
-from os.path import join, isdir, isfile
+from os.path import join, isdir, isfile, basename
 from shutil import copytree
 import logging
 import sys
-
+from PIL import Image
+import numpy as np
 import pandas as pd
 import h5py
 import yaml
 
 DEFAULT = ['No', 'Pre-Plus', 'Plus']
+EXTENSIONS = ['*.bmp', '*.png', '*.jpg', '*.tif', '*.jpeg', '*.gif']
+EXTENSIONS.extend([ext.upper() for ext in EXTENSIONS])
 
 
 def make_sub_dir(dir_, sub, tree=None):
@@ -29,10 +32,10 @@ def ignore_files(dir, files):
     return [f for f in files if isfile(join(dir, f))]
 
 
-def find_images(im_path, extensions=[]):
+def find_images(im_path):
 
     files = []
-    for ext in ['*.bmp', '*.BMP', '*.png', '*.jpg', '*.tif'] + extensions:
+    for ext in EXTENSIONS:
         files.extend(glob(join(im_path, ext)))
 
     return sorted(files)
@@ -48,7 +51,6 @@ def find_images_by_class(im_path, classes=None):
         images[class_] = find_images(join(im_path, class_))
 
     return images
-
 
 def get_subdirs(root_dir):
 
@@ -104,6 +106,7 @@ def series_to_plot_dict(series, key, value):
 
     sorted_list = [{key: k, value: v} for k, v in series.to_dict().items()]
     return pd.DataFrame(data=sorted_list)
+
 
 def dict_reverse(my_dict):
 

@@ -1,7 +1,7 @@
 import cv2
 from scipy.misc import imresize
 import yaml
-from utils.common import find_images
+from utils.common import find_images_by_class, get_subdirs, make_sub_dir
 from os.path import join, basename
 from PIL import Image
 
@@ -43,7 +43,14 @@ if __name__ == '__main__':
     with open(args.conf, 'rb') as yam:
         params = yaml.load(yam)
 
-    for src_img in find_images(join(args.images)):
+    class_names = [basename(x) for x in get_subdirs(args.images)]
+    imgs_by_class = find_images_by_class(args.images, classes=class_names)
 
-        dst_img = join(args.out_dir, basename(src_img))
-        preprocess(src_img, dst_img, params['pipeline'])
+    for class_, imgs in imgs_by_class.items():
+
+        class_dir = make_sub_dir(args.out_dir, class_)
+
+        for src_img in imgs:
+
+            dst_img = join(class_dir, basename(src_img))
+            preprocess(src_img, dst_img, params['pipeline'])
