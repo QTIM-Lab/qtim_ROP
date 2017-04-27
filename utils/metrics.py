@@ -31,9 +31,6 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     pred_df.to_csv(join(out_dir, 'predictions.csv'))
     true_df.to_csv(join(out_dir, 'ground_truth.csv'))
 
-    # ROC/AUC
-    roc_auc(pred_df, true_df, join(out_dir, 'roc_auc' + ext))
-
     # For the sake of calculating confusion matrices
     if y_pred is None:
         y_pred = np.argmax(predictions, axis=1)
@@ -52,6 +49,12 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     # Misclassified images  #  TODO fix bug when classes < 3
     misclassified_dir = make_sub_dir(out_dir, 'misclassified')
     misclassifications(datagen.x, y_true, y_pred, class_indices, misclassified_dir)
+
+    # ROC/AUC
+    col_names = {k: v for k, v in enumerate(y_true.columns)}
+    y_pred = predictions.as_matrix()
+    y_true = y_true.as_matrix()
+    roc_auc(y_pred, y_true, col_names, join(out_dir, 'roc_auc' + ext))
 
 
 # Predict data
@@ -76,13 +79,9 @@ def misclassifications(data, y_true, y_pred, classes, out_dir, n=10):
             class_count[yp] += 1
 
 
-def roc_auc(predictions, y_true, out_path):
+def roc_auc(y_pred, y_true, col_names, out_path):
 
-    col_names = {k: v for k, v in enumerate(y_true.columns)}
     n_classes = len(col_names)
-
-    y_pred = predictions.as_matrix()
-    y_true = y_true.as_matrix()
 
     fpr, tpr, roc_auc = {}, {}, {}
     for i in range(n_classes):
@@ -117,11 +116,11 @@ def roc_auc(predictions, y_true, out_path):
     plt.plot(fpr["macro"], tpr["macro"], label='macro-averaging (AUC = {0:0.2f})'
              .format(roc_auc["macro"]), linestyle=':', linewidth=4)
 
-    # colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
-    # for i, color in zip([0, 2, 1], colors):
-    #     plt.plot(fpr[i], tpr[i], lw=lw,
-    #              label='ROC curve of class {0} (AUC = {1:0.2f})'
-    #              ''.format(col_names[i], roc_auc[i]))
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    for i, color in zip([0, 2, 1], colors):
+        plt.plot(fpr[i], tpr[i], lw=lw,
+                 label='ROC curve of class {0} (AUC = {1:0.2f})'
+                 ''.format(col_names[i], roc_auc[i]))
 
     ax.plot([0, 1], [0, 1], 'k--', lw=lw)
     plt.xlim([-0.025, 1.025])
@@ -131,3 +130,5 @@ def roc_auc(predictions, y_true, out_path):
     plt.title('ROC/AUC')
     plt.legend(loc="lower right")
     plt.savefig(out_path)
+
+    return roc_auc
