@@ -1,11 +1,15 @@
 from learning.retina_net import RetiNet
+from keras.utils.np_utils import to_categorical
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
-from utils.metrics import calculate_metrics
+from utils.common import dict_reverse
+from utils.metrics import roc_auc
 import numpy as np
 from os.path import join
 from tsne import tsne
 import matplotlib.pyplot as plt
+import pandas as pd
+import h5py
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
@@ -41,19 +45,29 @@ def main(model_conf, test_data, out_dir, train_data=None):
     # Train/load random forest
     rf_out = join(out_dir, 'rf.pkl')
     if train_data is not None:
+        print "Training new RF on '{}'".format(train_data)
         rf = train_rf(net, train_data, out_dir)
         joblib.dump(rf, rf_out)
     else:
+        print "Loading previously trained RF from '{}'".format(rf_out)
         rf = joblib.load(rf_out)
 
     # Load test data
-    test_codes = net.predict(test_data)
-    X_test = test_codes['probabilities']
+    print "Getting CNN features using pre-trained network '{}'".format(net.experiment_name)
+    cnn_features = net.predict(test_data)
+    X_test = cnn_features['probabilities']
+    y_test = cnn_features['y_true']
+
+    # Save features
+    f = h5py.File(test_data, 'r')
+    pd.DataFrame(data=X_test, index=f['filenames']).to_csv(join(out_dir, 'test_features.csv'))
 
     # Predict
-    print "Getting predictions..."
-    y_pred = rf.predict(X_test)
-    calculate_metrics(test_codes, out_dir, y_pred=y_pred)
+    print "Getting RF predictions..."
+    y_pred = rf.predict_proba(X_test)
+
+    col_names = dict_reverse(cnn_features['classes'])
+    roc_auc(y_pred, to_categorical(y_test), col_names, join(out_dir, 'roc_auc.svg'))
 
 
 def make_tsne(X, y, out_dir):
