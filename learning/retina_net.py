@@ -214,9 +214,8 @@ if __name__ == '__main__':
     # Instantiate model and train
     r = RetiNet(args.config)
     if args.data is None:
-        pass
-        # r.train()
-
-    # Evaluate on validation data and calculate metrics
-    data_dict = r.predict(args.data)
-    calculate_metrics(data_dict, out_dir=r.eval_dir)
+        r.train()
+    else:
+        # Evaluate on validation data and calculate metrics
+        data_dict = r.predict(args.data)
+        calculate_metrics(data_dict, out_dir=r.eval_dir)
