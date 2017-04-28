@@ -90,7 +90,7 @@ class Pipeline(object):
         # Group by class/patient, and split into five
         all_splits = {}  # to keep track of all splits of the data
 
-        for class_, c_group in df.groupby('class'):  # group by class
+        for class_, c_group in df.groupby('class'):  # TODO user the specified reader, rather than filename
 
             p_groups = c_group.groupby('patient_id')  # group by patient
 
