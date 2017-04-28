@@ -36,3 +36,9 @@ def create_generator(data_path, input_shape, batch_size=32, training=True):
         labels = to_categorical(classes)
 
         return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, class_indices
+
+def normalize(img):
+
+    img_min, img_max = np.min(img), np.max(img)
+    img_norm = (img - img_min) / (img_max - img_min)
+    return img_norm.astype(np.uint8) * 255
