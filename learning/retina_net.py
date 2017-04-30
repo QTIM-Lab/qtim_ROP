@@ -113,6 +113,7 @@ class RetiNet(object):
             self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
 
             if weights:
+                print "Loading weights '{}'".format(weights)
                 self.model.load_weights(weights, by_name=True)
 
         # Configure optimizer
