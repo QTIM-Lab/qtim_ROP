@@ -189,11 +189,11 @@ class RetiNet(object):
         data_dict = {'data': datagen, 'classes': class_indices, 'y_true': y_true[:n_samples], 'probabilities': predictions}
 
         cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
-        pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
-        true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
-
-        pred_df.to_csv(join(self.eval_dir, 'predictions.csv'))
-        true_df.to_csv(join(self.eval_dir, 'ground_truth.csv'))
+        # pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
+        # true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
+        #
+        # pred_df.to_csv(join(self.eval_dir, 'predictions.csv'))
+        # true_df.to_csv(join(self.eval_dir, 'ground_truth.csv'))
 
         return data_dict
 
