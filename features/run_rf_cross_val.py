@@ -11,7 +11,9 @@ def run_cross_val(all_splits, out_dir):
 
         results_dir = make_sub_dir(out_dir, basename(split_dir))
 
-        cnn_model = join(split_dir, '/Split{0}_Model/Split{0}_Model.yaml'.format(i))
+        cnn_model = join(split_dir, 'Split{}_Model'.format(i), 'Split{0}_Model.yaml'.format(i))
+        print cnn_model
+
         test_data = join(split_dir, 'test.h5')
         y_test, y_pred, _ = cnn_rf(cnn_model, test_data, results_dir)
 

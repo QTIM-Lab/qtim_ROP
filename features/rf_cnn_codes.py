@@ -67,7 +67,7 @@ def main(model_conf, test_data, out_dir, train_data=None):
     # Predict classes
     y_pred_classes = rf.predict(X_test)
     confusion = confusion_matrix(y_test, y_pred_classes)
-    labels = [k[0] for k in sorted(LABELS.items(), key=lambda x: x[1])]
+    labels = [k[0] for k in sorted(cnn_features['classes'].items(), key=lambda x: x[1])]
     plot_confusion(confusion, labels, join(out_dir, 'confusion.svg'))
 
     # Predict probabilities
