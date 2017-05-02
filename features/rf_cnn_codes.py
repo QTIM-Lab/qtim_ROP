@@ -64,18 +64,21 @@ def main(model_conf, test_data, out_dir, train_data=None):
     # index_col = 'filenames' if 'filenames' in f:
     # pd.DataFrame(data=X_test, index=f['filenames']).to_csv(join(out_dir, 'test_features.csv'))
 
+    # Predict classes
+    y_pred_classes = rf.predict(X_test)
+    confusion = confusion_matrix(y_test, y_pred_classes)
+    labels = [k[0] for k in sorted(LABELS.items(), key=lambda x: x[1])]
+    plot_confusion(confusion, labels, join(out_dir, 'confusion.svg'))
+
     # Predict probabilities
     print "Getting RF predictions..."
     y_pred = rf.predict_proba(X_test)
 
-    col_names = dict_reverse(cnn_features['classes'])
-    roc, thresh, J = roc_auc(y_pred, to_categorical(y_test), col_names, join(out_dir, 'roc_auc.svg'))
+    # col_names = dict_reverse(cnn_features['classes'])
+    # roc, thresh, J = roc_auc(y_pred, to_categorical(y_test), col_names, join(out_dir, 'roc_auc.svg'))
 
-    # Predict classes
-    y_pred_bin = rf.predict(X_test)
-    confusion = confusion_matrix(y_test, y_pred_bin)
-    labels = [k[0] for k in sorted(LABELS.items(), key=lambda x: x[1])]
-    plot_confusion(confusion, labels, join(out_dir, 'confusion.svg'))
+    return y_test, y_pred, cnn_features
+
 
     # # Confusion matrix, based on best threshold
     # for ci, cn in LABELS.items():
