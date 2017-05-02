@@ -2,6 +2,7 @@ from os.path import basename, join
 from features.rf_cnn_codes import main as cnn_rf
 from utils.common import get_subdirs, make_sub_dir
 from utils.metrics import calculate_roc_auc
+from keras.utils.np_utils import to_categorical
 from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,7 +24,7 @@ def run_cross_val(all_splits, out_dir):
         test_data = join(split_dir, 'test.h5')
         y_test, y_pred, cnn_features = cnn_rf(cnn_model, test_data, results_dir)
 
-        roc_auc, fpr, tpr = calculate_roc_auc(y_pred, y_test, cnn_features['classes'], None)
+        roc_auc, fpr, tpr = calculate_roc_auc(y_pred, to_categorical(y_test), cnn_features['classes'], None)
 
         if not class_dict:
             class_dict = cnn_features['classes']

@@ -1,5 +1,4 @@
 from learning.retina_net import RetiNet
-from keras.utils.np_utils import to_categorical
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 from utils.common import dict_reverse, make_sub_dir
