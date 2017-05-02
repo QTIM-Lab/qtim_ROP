@@ -1,6 +1,6 @@
 from os.path import basename, join
 from features.rf_cnn_codes import main as cnn_rf
-from utils.common import get_subdirs, make_sub_dir
+from utils.common import get_subdirs, make_sub_dir, dict_reverse
 from utils.metrics import calculate_roc_auc
 from keras.utils.np_utils import to_categorical
 from collections import defaultdict
@@ -29,7 +29,7 @@ def run_cross_val(all_splits, out_dir):
         if not class_dict:
             class_dict = cnn_features['classes']
 
-        for c, class_name in class_dict:
+        for class_name, c in class_dict:
 
             all_tpr[class_name].append(tpr[c])
             all_fpr[class_name].append(fpr[c])
@@ -38,7 +38,7 @@ def run_cross_val(all_splits, out_dir):
     fig, ax = plt.subplots()
     c_palette = sns.color_palette('colorblind')
 
-    for c, class_name in class_dict.items():
+    for class_name, c in class_dict.items():
 
         mean_fpr = np.mean(all_fpr[class_name])
         mean_tpr = np.mean(all_tpr[class_name])
