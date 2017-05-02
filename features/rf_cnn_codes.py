@@ -73,7 +73,8 @@ def main(model_conf, test_data, out_dir, train_data=None):
 
     # Confusion matrix, based on best threshold
     best_thresh = thresh[np.argmax(J[1])]
-    confusion = confusion_matrix(y_test, y_pred > best_thresh)
+    print best_thresh
+    confusion = confusion_matrix(y_test[1], y_pred[1] > best_thresh)
     plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion.svg'))
 
 
