@@ -71,7 +71,7 @@ def main(model_conf, test_data, out_dir, train_data=None):
     plot_confusion(confusion, labels, join(out_dir, 'confusion.svg'))
 
     misclass_dir = make_sub_dir(out_dir, 'misclassified')
-    misclassifications(h5py.File(test_data)['data'], y_test, y_pred_classes, cnn_features['classes'], misclass_dir)
+    misclassifications(h5py.File(test_data, 'r')['data'], y_test, y_pred_classes, cnn_features['classes'], misclass_dir)
 
     # Predict probabilities
     print "Getting RF predictions..."
