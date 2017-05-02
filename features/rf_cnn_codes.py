@@ -60,24 +60,30 @@ def main(model_conf, test_data, out_dir, train_data=None):
     y_test = cnn_features['y_true']
 
     # Save features
-    f = h5py.File(test_data, 'r')
-    if 'filenames' in f:
-        pd.DataFrame(data=X_test, index=f['filenames']).to_csv(join(out_dir, 'test_features.csv'))
+    # f = h5py.File(test_data, 'r')
+    # index_col = 'filenames' if 'filenames' in f:
+    # pd.DataFrame(data=X_test, index=f['filenames']).to_csv(join(out_dir, 'test_features.csv'))
 
-    # Predict
+    # Predict probabilities
     print "Getting RF predictions..."
     y_pred = rf.predict_proba(X_test)
 
     col_names = dict_reverse(cnn_features['classes'])
     roc, thresh, J = roc_auc(y_pred, to_categorical(y_test), col_names, join(out_dir, 'roc_auc.svg'))
 
-    # Confusion matrix, based on best threshold
-    for ci, cn in LABELS.items():
-        best_thresh = thresh[ci][np.argmax(J[ci])]
-        print best_thresh
-        confusion = confusion_matrix(to_categorical(y_test)[:, ci], y_pred[:, ci] > best_thresh)
-        print confusion
-        plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion_{}.svg'.format(cn)))
+    # Predict classes
+    y_pred_bin = rf.predict(X_test)
+    confusion = confusion_matrix(y_test, y_pred_bin)
+    labels = [k[0] for k in sorted(LABELS.items(), key=lambda x: x[1])]
+    plot_confusion(confusion, labels, join(out_dir, 'confusion.svg'))
+
+    # # Confusion matrix, based on best threshold
+    # for ci, cn in LABELS.items():
+    #     best_thresh = thresh[ci][np.argmax(J[ci])]
+    #     print best_thresh
+    #     confusion = confusion_matrix(to_categorical(y_test)[:, ci], y_pred[:, ci] > best_thresh)
+    #     print confusion
+    #     plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion_{}.svg'.format(cn)))
 
 
 def make_tsne(X, y, out_dir):
