@@ -3,7 +3,8 @@ from keras.utils.np_utils import to_categorical
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 from utils.common import dict_reverse
-from utils.metrics import roc_auc
+from utils.metrics import roc_auc, confusion_matrix
+from plotting import plot_confusion
 import numpy as np
 from os.path import join
 from tsne import tsne
@@ -68,7 +69,12 @@ def main(model_conf, test_data, out_dir, train_data=None):
     y_pred = rf.predict_proba(X_test)
 
     col_names = dict_reverse(cnn_features['classes'])
-    roc_auc(y_pred, to_categorical(y_test), col_names, join(out_dir, 'roc_auc.svg'))
+    roc, thresh, J = roc_auc(y_pred, to_categorical(y_test), col_names, join(out_dir, 'roc_auc.svg'))
+
+    # Confusion matrix, based on best threshold
+    best_thresh = thresh[np.argmax(J[1])]
+    confusion = confusion_matrix(y_test, y_pred > best_thresh)
+    plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion.svg'))
 
 
 def make_tsne(X, y, out_dir):

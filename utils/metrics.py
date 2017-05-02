@@ -83,9 +83,10 @@ def roc_auc(y_pred, y_true, col_names, out_path):
 
     n_classes = len(col_names)
 
-    fpr, tpr, roc_auc = {}, {}, {}
+    fpr, tpr, roc_auc, thresh, J = {}, {}, {}, {}, {}
     for i in range(n_classes):
-        fpr[i], tpr[i], _ = roc_curve(y_true[:, i], y_pred[:, i])
+        fpr[i], tpr[i], thresh[i] = roc_curve(y_true[:, i], y_pred[:, i])
+        J[i] = tpr[i] + (1 - fpr[i]) - 1
         roc_auc[i] = auc(fpr[i], tpr[i])
 
     # Micro-averaging
@@ -117,7 +118,7 @@ def roc_auc(y_pred, y_true, col_names, out_path):
              .format(roc_auc["macro"]), linestyle=':', linewidth=4)
 
     colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
-    for i, color in zip([0, 2, 1], colors):
+    for i, color in zip([0, 1], colors):
         plt.plot(fpr[i], tpr[i], lw=lw,
                  label='ROC curve of class {0} (AUC = {1:0.2f})'
                  ''.format(col_names[i], roc_auc[i]))
@@ -131,4 +132,4 @@ def roc_auc(y_pred, y_true, col_names, out_path):
     plt.legend(loc="lower right")
     plt.savefig(out_path)
 
-    return roc_auc
+    return roc_auc, thresh, J
