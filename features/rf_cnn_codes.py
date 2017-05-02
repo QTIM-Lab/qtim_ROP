@@ -72,10 +72,12 @@ def main(model_conf, test_data, out_dir, train_data=None):
     roc, thresh, J = roc_auc(y_pred, to_categorical(y_test), col_names, join(out_dir, 'roc_auc.svg'))
 
     # Confusion matrix, based on best threshold
-    best_thresh = thresh[np.argmax(J[1])]
-    print best_thresh
-    confusion = confusion_matrix(y_test[1], y_pred[1] > best_thresh)
-    plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion.svg'))
+    for ci, cn in LABELS.items():
+        best_thresh = thresh[ci][np.argmax(J[ci])]
+        print best_thresh
+        confusion = confusion_matrix(y_test[ci], y_pred[ci] > best_thresh)
+        print confusion
+        plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion_{}.svg'.format(cn)))
 
 
 def make_tsne(X, y, out_dir):
