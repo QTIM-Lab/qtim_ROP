@@ -2,8 +2,8 @@ from learning.retina_net import RetiNet
 from keras.utils.np_utils import to_categorical
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
-from utils.common import dict_reverse
-from utils.metrics import roc_auc, confusion_matrix
+from utils.common import dict_reverse, make_sub_dir
+from utils.metrics import roc_auc, confusion_matrix, misclassifications
 from plotting import plot_confusion
 import numpy as np
 from os.path import join
@@ -69,6 +69,9 @@ def main(model_conf, test_data, out_dir, train_data=None):
     confusion = confusion_matrix(y_test, y_pred_classes)
     labels = [k[0] for k in sorted(cnn_features['classes'].items(), key=lambda x: x[1])]
     plot_confusion(confusion, labels, join(out_dir, 'confusion.svg'))
+
+    misclass_dir = make_sub_dir(out_dir, 'misclassified')
+    misclassifications(h5py.File(test_data)['data'], y_test, y_pred_classes, cnn_features['classes'], misclass_dir)
 
     # Predict probabilities
     print "Getting RF predictions..."

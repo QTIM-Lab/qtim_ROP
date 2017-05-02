@@ -147,6 +147,9 @@ class Pipeline(object):
             train_dir = make_sub_dir(split_dir, 'training')
             test_dir = make_sub_dir(split_dir, 'testing')
 
+            train_split.to_csv(join(split_dir, 'training.csv'))
+            test_split.to_csv(join(split_dir, 'testing.csv'))
+
             for class_name in DEFAULT_CLASSES:  # need to make these in advance
                 make_sub_dir(train_dir, class_name)
                 make_sub_dir(test_dir, class_name)
