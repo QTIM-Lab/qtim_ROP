@@ -75,7 +75,7 @@ def main(model_conf, test_data, out_dir, train_data=None):
     for ci, cn in LABELS.items():
         best_thresh = thresh[ci][np.argmax(J[ci])]
         print best_thresh
-        confusion = confusion_matrix(y_test[ci], y_pred[ci] > best_thresh)
+        confusion = confusion_matrix(to_categorical(y_test)[:, ci], y_pred[:, ci] > best_thresh)
         print confusion
         plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion_{}.svg'.format(cn)))
 
