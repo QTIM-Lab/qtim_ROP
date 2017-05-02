@@ -3,7 +3,7 @@ from keras.utils.np_utils import to_categorical
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 from utils.common import dict_reverse, make_sub_dir
-from utils.metrics import roc_auc, confusion_matrix, misclassifications
+from utils.metrics import confusion_matrix, misclassifications
 from plotting import plot_confusion
 import numpy as np
 from os.path import join
