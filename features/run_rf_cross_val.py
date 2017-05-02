@@ -40,22 +40,11 @@ def run_cross_val(all_splits, out_dir):
 
     for class_name, c in class_dict.items():
 
-        mean_fpr = np.mean(all_fpr[class_name])
-        mean_tpr = np.mean(all_tpr[class_name])
+        for fpr, tpr in zip(all_fpr[class_name], all_tpr[class_name]):
 
-        sd_max_fpr = mean_fpr + np.std(all_fpr[class_name])
-        sd_max_tpr = mean_tpr + np.std(all_tpr[class_name])
-
-        sd_min_fpr = mean_fpr - np.std(all_fpr[class_name])
-        sd_min_tpr = mean_tpr - np.std(all_tpr[class_name])
-
-        # Mean
-        ax.plot(mean_fpr, mean_tpr, lw=2., c=c_palette[c],
-                 label='ROC curve of class {0} (AUC = {1:0.2f} $\pm$ {1:0.2f})'
-                       ''.format(class_name, np.mean(all_auc[i]), np.std(all_auc[i])))
-
-        ax.plot(sd_min_fpr, sd_min_tpr, lw=1.0, c=c_palette[c], alpha=0.5)
-        ax.plot(sd_max_fpr, sd_max_tpr, lw=1.0, c=c_palette[c], alpha=0.5)
+            # Mean
+            ax.plot(fpr, tpr, lw=2., c=c_palette[c], label='ROC curve of class {0} (AUC = {1:0.2f} $\pm$ {1:0.2f})'
+                    .format(class_name, np.mean(all_auc[i]), np.std(all_auc[i])))
 
     plt.savefig(join(out_dir, 'combined_roc.svg'))
 
