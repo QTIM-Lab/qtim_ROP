@@ -90,7 +90,7 @@ class Pipeline(object):
         # Group by class/patient, and split into five
         all_splits = {}  # to keep track of all splits of the data
 
-        for class_, c_group in df.groupby('class'):  # TODO user the specified reader, rather than filename
+        for class_, c_group in df.groupby('class'):  # TODO allow specific reader labels, rather than RSD labels
 
             p_groups = c_group.groupby('patient_id')  # group by patient
 
@@ -156,25 +156,29 @@ class Pipeline(object):
 
             # Pre-process, augment and randomly sample the training set
             print "Preprocessing training data..."
-            optimization_pool = Pool(self.processes)
-            subprocess = partial(preprocess, args={'params': self, 'augment': True, 'out_dir': train_dir})
-            train_imgs = list(train_split['full_path'])
-            _ = optimization_pool.map(subprocess, train_imgs)
+
+            if len(find_images(join(train_dir, '*'))) == 0:
+                optimization_pool = Pool(self.processes)
+                subprocess = partial(preprocess, args={'params': self, 'augment': True, 'out_dir': train_dir})
+                train_imgs = list(train_split['full_path'])
+                _ = optimization_pool.map(subprocess, train_imgs)
 
             self.generate_h5(find_images_by_class(train_dir), join(split_dir, 'train.h5'), random_sample=True)
 
             # Pre-process (but don't augment or randomly sample) the test set
             print "Preprocessing testing data..."
-            optimization_pool = Pool(self.processes)
-            subprocess = partial(preprocess, args={'params': self, 'augment': False, 'out_dir': test_dir})
-            test_imgs = list(test_split['full_path'])
-            _ = optimization_pool.map(subprocess, test_imgs)
+            if len(find_images(join(test_dir, '*'))) == 0:
+
+                optimization_pool = Pool(self.processes)
+                subprocess = partial(preprocess, args={'params': self, 'augment': False, 'out_dir': test_dir})
+                test_imgs = list(test_split['full_path'])
+                _ = optimization_pool.map(subprocess, test_imgs)
 
             self.generate_h5(find_images_by_class(test_dir), join(split_dir, 'test.h5'), random_sample=False)
 
     def generate_h5(self, imgs, out_file, random_sample=True, classes=DEFAULT_CLASSES):
 
-        train_class_sizes = {c: len(x) for c, x in imgs.items()}
+        class_sizes = {c: len(x) for c, x in imgs.items()}
 
         train_arr = []
         train_labels = []
@@ -182,8 +186,8 @@ class Pipeline(object):
 
         for cidx, class_ in enumerate(classes):
 
-            removal_num = train_class_sizes[class_] - int(
-                (float(min(train_class_sizes.values())) / float(train_class_sizes[class_])) * train_class_sizes[class_])
+            removal_num = class_sizes[class_] - int(
+                (float(min(class_sizes.values())) / float(class_sizes[class_])) * class_sizes[class_])
 
             if random_sample and removal_num > 0:
                 random_train = self.choose_random(imgs[class_], removal_num)

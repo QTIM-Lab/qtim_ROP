@@ -79,7 +79,7 @@ def misclassifications(data, y_true, y_pred, classes, out_dir, n=10):
             class_count[yp] += 1
 
 
-def roc_auc(y_pred, y_true, col_names, out_path):
+def calculate_roc_auc(y_pred, y_true, col_names, out_path):
 
     n_classes = len(col_names)
 
@@ -88,6 +88,8 @@ def roc_auc(y_pred, y_true, col_names, out_path):
         fpr[i], tpr[i], thresh[i] = roc_curve(y_true[:, i], y_pred[:, i])
         J[i] = tpr[i] + (1 - fpr[i]) - 1
         roc_auc[i] = auc(fpr[i], tpr[i])
+
+    return roc_auc, fpr, tpr
 
     # Micro-averaging
     fpr["micro"], tpr["micro"], thresholds = roc_curve(y_true.ravel(), y_pred.ravel())
