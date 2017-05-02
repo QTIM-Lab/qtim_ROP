@@ -29,7 +29,7 @@ def run_cross_val(all_splits, out_dir):
         if not class_dict:
             class_dict = cnn_features['classes']
 
-        for class_name, c in class_dict:
+        for class_name, c in class_dict.items():
 
             all_tpr[class_name].append(tpr[c])
             all_fpr[class_name].append(fpr[c])
