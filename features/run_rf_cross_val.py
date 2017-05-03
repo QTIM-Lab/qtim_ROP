@@ -30,9 +30,8 @@ def run_cross_val(all_splits, out_dir):
         # roc_auc, fpr, tpr = calculate_roc_auc(y_pred, to_categorical(y_test), cnn_features['classes'], None)
 
         # Save predictions and labels
-        y_test = np.asarray(y_test)
+        y_test = to_categorical(y_test)  # binarise true labels
         print y_test.shape
-        y_pred = to_categorical(y_pred)
         print y_pred.shape
 
         if not class_dict:
