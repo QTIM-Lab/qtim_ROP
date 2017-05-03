@@ -13,7 +13,6 @@ import pickle
 
 def run_cross_val(all_splits, out_dir):
 
-
     predictions = defaultdict(list)
     labels = defaultdict(list)
     class_dict = None
@@ -45,14 +44,11 @@ def run_cross_val(all_splits, out_dir):
     # Save as CSV
     for class_name, c in class_dict.items():
 
-        print predictions['class_name']
-        print labels['class_name']
-
         pred_out = join(out_dir, 'predictions_{}.csv'.format(class_name))
         labels_out = join(out_dir, 'labels_{}.csv'.format(class_name))
 
-        pred_df = pd.DataFrame(predictions['class_name']).T
-        labels_df = pd.DataFrame(labels['class_name']).T
+        pred_df = pd.DataFrame(predictions[class_name]).T
+        labels_df = pd.DataFrame(labels[class_name]).T
 
         print pred_df
         print labels_df
