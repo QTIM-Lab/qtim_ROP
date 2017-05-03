@@ -40,10 +40,12 @@ def run_cross_val(all_splits, out_dir):
 
     for class_name, c in class_dict.items():
 
-        # Mean
-        ax.plot(all_fpr[class_name], all_tpr[class_name], lw=2., c=c_palette[c], alpha=0.7,
-                label='ROC curve of class {0} (AUC = {1:0.2f} $\pm$ {1:0.2f})'
-                .format(class_name, np.mean(all_auc[i]), np.std(all_auc[i])))
+        for n, fpr, tpr in enumerate(zip(all_fpr[class_name], all_tpr[class_name])):
+
+            # Mean
+            label = 'ROC curve of class {0} (AUC = {1:0.2f}$\pm${1:0.2f} (mean $\pm$ SD)'.format(class_name, np.mean(all_auc[i]), np.std(all_auc[i]))\
+                if n == 0 else None
+            ax.plot(fpr, tpr, lw=2., c=c_palette[c], label=label)
 
     plt.savefig(join(out_dir, 'combined_roc.svg'))
 
