@@ -30,7 +30,7 @@ def run_cross_val(all_splits, out_dir):
         # roc_auc, fpr, tpr = calculate_roc_auc(y_pred, to_categorical(y_test), cnn_features['classes'], None)
 
         # Save predictions and labels
-        y_test = to_categorical(y_test)  # binarise true labels
+        y_test = to_categorical(y_test)  # binarize true labels
         print y_test.shape
         print y_pred.shape
 
@@ -39,8 +39,8 @@ def run_cross_val(all_splits, out_dir):
 
         for class_name, c in class_dict.items():
 
-            predictions[class_name].append(y_pred[c, :])
-            labels[class_name].append(y_test[c, :])
+            predictions[class_name].append(y_pred[:, c])
+            labels[class_name].append(y_test[:, c])
 
     # Save as CSV
     for class_name, c in class_dict.items():
@@ -48,8 +48,8 @@ def run_cross_val(all_splits, out_dir):
         pred_out = join(out_dir, 'predictions_{}.csv'.format(class_name))
         labels_out = join(out_dir, 'labels_{}.csv'.format(class_name))
 
-        pred_df = pd.DataFrame(data=predictions['class_name'])
-        labels_df = pd.DataFrame(data=labels['class_name'])
+        pred_df = pd.DataFrame(predictions['class_name']).T
+        labels_df = pd.DataFrame(labels['class_name']).T
 
         pred_df.to_csv(pred_out)
         labels_df.to_csv(labels_out)
