@@ -54,7 +54,7 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     col_names = {k: v for k, v in enumerate(y_true.columns)}
     y_pred = predictions.as_matrix()
     y_true = y_true.as_matrix()
-    roc_auc(y_pred, y_true, col_names, join(out_dir, 'roc_auc' + ext))
+    calculate_roc_auc(y_pred, y_true, col_names, join(out_dir, 'roc_auc' + ext))
 
 
 # Predict data
