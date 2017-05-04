@@ -85,6 +85,9 @@ def plot_roc_auc(predictions, ground_truth, name=''):
     y_pred = np.asarray(predictions).ravel()
     y_true = np.asarray(ground_truth).ravel()
 
+    print y_pred.shape
+    print y_true.shape
+
     fpr, tpr, thresholds = roc_curve(y_true, y_pred)
     roc_auc = auc(fpr, tpr)
 

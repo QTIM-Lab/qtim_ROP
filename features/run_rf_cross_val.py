@@ -51,7 +51,8 @@ def run_cross_val(all_splits, out_dir):
         if class_name == 'Pre-Plus':
             continue
 
-        J = plot_roc_auc(predictions['class_name'], labels['class_name'], name=class_name)
+        J = plot_roc_auc(predictions[class_name], labels[class_name], name=class_name)
+        print J
 
     plt.savefig(join(out_dir, 'combined_roc.svg'))
 
