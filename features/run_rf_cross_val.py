@@ -41,7 +41,7 @@ def run_cross_val(all_splits, out_dir):
             labels[class_name].append(y_test[:, c])
 
     # Save predictions
-    save_predictions(predictions, labels, CLASSES, results_dir)
+    # save_predictions(predictions, labels, CLASSES, results_dir)
 
     # Plot ROC curves for No and Plus classes, combined across all splits
     fig, ax = plt.subplots()
@@ -50,16 +50,18 @@ def run_cross_val(all_splits, out_dir):
         if class_name == 'Pre-Plus':
             continue
 
-        J = []
-        for s in range(0, 5):
-            j = plot_roc_auc(predictions[class_name][s], labels[class_name][s], name=class_name)
-            J.append(j)
+        # Concatenate predictions and labels across all splits
+        pred = np.asarray(predictions[class_name])
+        labels = np.asarray(labels[class_name])
 
-        print class_name
-        print J
+        print pred.shape
+        print labels.shape
+
+        j = plot_roc_auc(pred, labels, name=class_name)
+        print j
 
 
-    plt.savefig(join(out_dir, 'combined_roc.svg'))
+    plt.savefig(join(results_dir, 'combined_roc.svg'))
 
 
 def save_predictions(predictions, labels, class_dict, out_dir):
