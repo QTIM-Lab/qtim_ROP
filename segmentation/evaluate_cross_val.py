@@ -22,7 +22,7 @@ def evaluate_cross_val(models, test_data, out_dir):
         trained_model = SegmentUnet(model_dir, out_dir=seg_out_dir)
 
         # Get test images and ground truth
-        test_imgs_dir = join(test_data, 'split_{}'.format(i), 'images')
+        test_imgs_dir = join(test_data, 'split_{}'.format(i), 'test', 'images')
         gt_dir = join(test_data, 'split_{}'.format(i), 'first_manual')
         print "Testing on data from '{}'".format(test_imgs_dir)
 
