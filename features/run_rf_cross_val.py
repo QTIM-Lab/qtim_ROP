@@ -8,14 +8,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-import pickle
+from glob import glob
 
+CLASSES = {'No': 0, 'Plus': 1, 'Pre-Plus': 2}
 
 def run_cross_val(all_splits, out_dir):
 
+    results_dir = make_sub_dir(out_dir, 'results')
     predictions = defaultdict(list)
     labels = defaultdict(list)
-    class_dict = None
 
     for i, split_dir in enumerate(sorted(get_subdirs(all_splits))):
 
@@ -26,6 +27,7 @@ def run_cross_val(all_splits, out_dir):
 
         test_data = join(split_dir, 'test.h5')
         y_test, y_pred, cnn_features = cnn_rf(cnn_model, test_data, results_dir)
+        print cnn_features['classes']
         # roc_auc, fpr, tpr = calculate_roc_auc(y_pred, to_categorical(y_test), cnn_features['classes'], None)
 
         # Save predictions and labels
@@ -33,26 +35,29 @@ def run_cross_val(all_splits, out_dir):
         print y_test.shape
         print y_pred.shape
 
-        if not class_dict:
-            class_dict = cnn_features['classes']
-
-        for class_name, c in class_dict.items():
+        for class_name, c in CLASSES.items():
 
             predictions[class_name].append(y_pred[:, c])
             labels[class_name].append(y_test[:, c])
 
     # Save predictions
-    save_predictions(predictions, labels, class_dict, out_dir)
+    save_predictions(predictions, labels, CLASSES, results_dir)
 
     # Plot ROC curves for No and Plus classes, combined across all splits
     fig, ax = plt.subplots()
-    for class_name, c in class_dict.items():
+    for class_name, c in CLASSES.items():
 
         if class_name == 'Pre-Plus':
             continue
 
-        J = plot_roc_auc(predictions[class_name], labels[class_name], name=class_name)
+        J = []
+        for s in range(0, 5):
+            j = plot_roc_auc(predictions[class_name][s], labels[class_name][s], name=class_name)
+            J.append(j)
+
+        print class_name
         print J
+
 
     plt.savefig(join(out_dir, 'combined_roc.svg'))
 
