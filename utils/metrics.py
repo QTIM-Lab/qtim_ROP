@@ -81,9 +81,6 @@ def misclassifications(data, y_true, y_pred, classes, out_dir, n=10):
 
 def plot_roc_auc(predictions, ground_truth, name=''):
 
-    print predictions.shape
-    print ground_truth.shape
-
     # Calculate ROC curve
     y_pred = np.asarray(predictions).ravel()
     y_true = np.asarray(ground_truth).ravel()
