@@ -25,6 +25,7 @@ def evaluate_cross_val(models, test_data, out_dir):
         test_imgs_dir = join(test_data, 'split_{}'.format(i), 'test', 'images')
         gt_dir = join(test_data, 'split_{}'.format(i), 'test', '1st_manual')
         print "Testing on data from '{}'".format(test_imgs_dir)
+        print "Testing on data from '{}'".format(test_imgs_dir)
 
         # Segment images using model
         img_list = find_images(test_imgs_dir)
@@ -38,6 +39,13 @@ def evaluate_cross_val(models, test_data, out_dir):
 
         plot_roc_auc(y_pred, y_true, name="CV #{}".format(i))
 
+    plt.title('ROC curves, 5-fold cross-validation')
+    plt.legend(loc='lower right')
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([-0.1, 1.2])
+    plt.ylim([-0.1, 1.2])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
     plt.savefig(join(out_dir, 'roc_auc_CV.svg'))
 
 
