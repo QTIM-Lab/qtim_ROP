@@ -35,6 +35,10 @@ def evaluate_cross_val(models, test_data, out_dir):
         print gt_list
 
         y_pred = trained_model.segment_batch(img_list)
+        if len(y_pred) == 0:
+            print "Loading previous seg"
+            y_pred = [np.asarray(Image.open(img)).astype(np.float32) / 255. for img in seg_out_dir]
+
         y_true = [np.asarray(Image.open(img)).astype(np.bool) for img in gt_list]
 
         plot_roc_auc(y_pred, y_true, name="CV #{}".format(i))
