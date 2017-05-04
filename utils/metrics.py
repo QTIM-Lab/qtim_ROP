@@ -93,8 +93,9 @@ def plot_roc_auc(predictions, ground_truth, name=''):
 
     # Return index of best model by J statistic
     J = [j_statistic(y_true, y_pred, t) for t in thresholds]
+    Ji = np.argmax(J)
 
-    return thresholds[np.argmax(J)]
+    return thresholds[Ji], fpr[Ji], tpr[Ji]
 
 
 def j_statistic(y_true, y_pred, thresh):
