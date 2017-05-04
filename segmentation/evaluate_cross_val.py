@@ -7,6 +7,7 @@ from PIL import Image
 from utils.common import find_images, make_sub_dir
 from segmentation.segment_unet import SegmentUnet
 from evaluate_ensemble import plot_roc_auc
+import seaborn as sns
 
 
 def evaluate_cross_val(models, test_data, out_dir):
@@ -46,8 +47,8 @@ def evaluate_cross_val(models, test_data, out_dir):
     plt.title('ROC curves, 5-fold cross-validation')
     plt.legend(loc='lower right')
     plt.plot([0, 1], [0, 1], 'k--')
-    plt.xlim([-0.1, 1.2])
-    plt.ylim([-0.1, 1.2])
+    plt.xlim([-0.025, 1.025])
+    plt.ylim([-0.025, 1.025])
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
     plt.savefig(join(out_dir, 'roc_auc_CV.svg'))
