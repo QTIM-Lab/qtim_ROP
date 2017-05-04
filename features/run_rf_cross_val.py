@@ -52,8 +52,9 @@ def run_cross_val(all_splits, out_dir):
             # Make hard prediction at best threshold
             y_pred_best = y_pred[:, c] > thresh
             conf = confusion_matrix(y_true=y_test[:, c], y_pred=y_pred_best)
+            print conf
 
-            classes = ['No or Pre-Plus', 'Plus'] if class_name == 'No' else ['No', 'Pre-Plus or Plus']
+            classes = ['No or Pre-Plus', 'Plus'] if class_name == 'Plus' else ['No', 'Pre-Plus or Plus']
             plot_confusion(conf, classes, join(results_dir, 'confusion_{}'.format(class_name)))
 
         # plt.title('ROC curve for prediction of "No" and "Plus"')
