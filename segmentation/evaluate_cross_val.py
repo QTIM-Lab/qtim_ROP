@@ -1,7 +1,9 @@
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from os.path import join
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
 from utils.common import find_images, make_sub_dir
 from segmentation.segment_unet import SegmentUnet
 from evaluate_ensemble import plot_roc_auc
