@@ -1,7 +1,7 @@
 from os.path import basename, join, isfile
 from features.rf_cnn_codes import main as cnn_rf
 from utils.common import get_subdirs, make_sub_dir, dict_reverse
-from utils.metrics import calculate_roc_auc
+from utils.metrics import plot_roc_auc
 from keras.utils.np_utils import to_categorical
 from collections import defaultdict
 import numpy as np
@@ -21,7 +21,7 @@ def run_cross_val(all_splits, out_dir):
 
         results_dir = make_sub_dir(out_dir, basename(split_dir))
 
-        cnn_model = join(split_dir, 'Split{}_Model'.format(i), 'Split{0}_Model.yaml'.format(i))
+        cnn_model = join(split_dir, 'Split{}_Model'.format(i), 'Split{}_Model.yaml'.format(i))
         print cnn_model
 
         test_data = join(split_dir, 'test.h5')
@@ -41,6 +41,23 @@ def run_cross_val(all_splits, out_dir):
             predictions[class_name].append(y_pred[:, c])
             labels[class_name].append(y_test[:, c])
 
+    # Save predictions
+    save_predictions(predictions, labels, class_dict, out_dir)
+
+    # Plot ROC curves for No and Plus classes, combined across all splits
+    fig, ax = plt.subplots()
+    for class_name, c in class_dict.items():
+
+        if class_name == 'Pre-Plus':
+            continue
+
+        J = plot_roc_auc(predictions['class_name'], labels['class_name'], name=class_name)
+
+    plt.savefig(join(out_dir, 'combined_roc.svg'))
+
+
+def save_predictions(predictions, labels, class_dict, out_dir):
+
     # Save as CSV
     for class_name, c in class_dict.items():
 
@@ -55,20 +72,6 @@ def run_cross_val(all_splits, out_dir):
 
         pred_df.to_csv(pred_out)
         labels_df.to_csv(labels_out)
-
-    # fig, ax = plt.subplots()
-    # c_palette = sns.color_palette('colorblind')
-    #
-    # for class_name, c in class_dict.items():
-    #
-    #     for n, (fpr, tpr) in enumerate(zip(all_fpr[class_name], all_tpr[class_name])):
-    #
-    #         # Mean
-    #         label = 'ROC curve of class {0} (AUC = {1:0.2f}$\pm${1:0.2f} (mean $\pm$ SD)'.format(class_name, np.mean(all_auc[i]), np.std(all_auc[i]))\
-    #             if n == 0 else None
-    #         ax.plot(fpr, tpr, lw=2., c=c_palette[c], label=label)
-    #
-    # plt.savefig(join(out_dir, 'combined_roc.svg'))
 
 
 if __name__ == '__main__':

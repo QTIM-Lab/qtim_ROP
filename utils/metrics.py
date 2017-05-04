@@ -79,6 +79,39 @@ def misclassifications(data, y_true, y_pred, classes, out_dir, n=10):
             class_count[yp] += 1
 
 
+def plot_roc_auc(predictions, ground_truth, name=''):
+
+    print predictions.shape
+    print ground_truth.shape
+
+    # Calculate ROC curve
+    y_pred = np.asarray(predictions).ravel()
+    y_true = np.asarray(ground_truth).ravel()
+
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+    roc_auc = auc(fpr, tpr)
+
+    # Plot
+    plt.plot(fpr, tpr, label='{}, AUC = {:.3f}'.format(name, roc_auc))
+
+    # Return index of best model by J statistic
+    J = [j_statistic(y_true, y_pred, t) for t in thresholds]
+
+    return thresholds[np.argmax(J)]
+
+
+def j_statistic(y_true, y_pred, thresh):
+
+    C = confusion_matrix(y_true, y_pred > thresh)
+    TN = C[0, 0]
+    FN = C[1, 0]
+    TP = C[1, 1]
+    FP = C[0, 1]
+
+    j = (TP / float(TP + FN)) + (TN / float(TN + FP)) - 1
+    return j
+
+
 def calculate_roc_auc(y_pred, y_true, col_names, out_path):
 
     n_classes = len(col_names)
