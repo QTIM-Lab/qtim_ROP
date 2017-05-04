@@ -23,7 +23,7 @@ def evaluate_cross_val(models, test_data, out_dir):
 
         # Get test images and ground truth
         test_imgs_dir = join(test_data, 'split_{}'.format(i), 'test', 'images')
-        gt_dir = join(test_data, 'split_{}'.format(i), 'first_manual')
+        gt_dir = join(test_data, 'split_{}'.format(i), 'test', 'first_manual')
         print "Testing on data from '{}'".format(test_imgs_dir)
 
         # Segment images using model
