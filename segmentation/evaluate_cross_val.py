@@ -37,7 +37,7 @@ def evaluate_cross_val(models, test_data, out_dir):
         y_pred = trained_model.segment_batch(img_list)
         if len(y_pred) == 0:
             print "Loading previous seg"
-            y_pred = [np.asarray(Image.open(img)).astype(np.float32) / 255. for img in seg_out_dir]
+            y_pred = [np.asarray(Image.open(img)).astype(np.float32) / 255. for img in find_images(seg_out_dir)]
 
         y_true = [np.asarray(Image.open(img)).astype(np.bool) for img in gt_list]
 
