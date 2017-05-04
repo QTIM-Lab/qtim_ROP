@@ -33,7 +33,7 @@ def create_mask(im_arr, erode=0):
     return seg_arr.astype(np.bool)
 
 
-def circular_mask(img):
+def circular_mask(img, cf=.98):
 
     # Generate approximate mask and estimate radius and retina center
     guide_mask = create_mask(img)
@@ -55,7 +55,6 @@ def circular_mask(img):
     retina_center[0] += x_shift
 
     # Generate a circle of the approximate size, centered based on the guide mask
-    cf = 0.98
     c_mask = np.zeros(img.shape)
     cv2.circle(c_mask, tuple(retina_center), int(radius * cf), (1, 1, 1), -1, 8, 0)
 

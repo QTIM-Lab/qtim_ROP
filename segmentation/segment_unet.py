@@ -35,7 +35,7 @@ class SegmentUnet(object):
 
         # Loop through chunks of the data, as there may be thousands of images to segment
         if self.out_dir is None:
-            data = [im for im in img_data]
+            data = sorted([im for im in img_data])
         else:
             data = [im for im in img_data if not isfile(join(self.out_dir, splitext(basename(im))[0] + '.png'))]
             print "{} image(s) already segmented".format(len(img_data) - len(data))
