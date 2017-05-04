@@ -22,14 +22,19 @@ def evaluate_cross_val(models, test_data, out_dir):
         trained_model = SegmentUnet(model_dir, out_dir=seg_out_dir)
 
         # Get test images and ground truth
-        imgs_dir = join(test_data, 'split_{}'.format(i), 'images')
+        test_imgs_dir = join(test_data, 'split_{}'.format(i), 'images')
         gt_dir = join(test_data, 'split_{}'.format(i), 'first_manual')
-        print "Testing on data from '{}'".format(imgs_dir)
+        print "Testing on data from '{}'".format(test_imgs_dir)
 
         # Segment images using model
-        y_pred = trained_model.segment_batch(imgs_dir)
-        y_true = [np.asarray(Image.open(img)).astype(np.bool)
-                  for img in sorted(find_images(gt_dir))]
+        img_list = find_images(test_imgs_dir)
+        gt_list = find_images(gt_dir)
+
+        print img_list
+        print gt_list
+
+        y_pred = trained_model.segment_batch(img_list)
+        y_true = [np.asarray(Image.open(img)).astype(np.bool) for img in gt_list]
 
         plot_roc_auc(y_pred, y_true, name="CV #{}".format(i))
 
