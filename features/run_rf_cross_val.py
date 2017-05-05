@@ -72,8 +72,8 @@ def run_cross_val(all_splits, out_dir):
             y_pred_best = y_pred[:, c] > thresh
             conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)
             print conf
-            print classification_report(y_true[:, c], y_pred_best[:, c])
-            print accuracy_score(y_true, y_pred)
+            print classification_report(y_true[:, c], y_pred_best)
+            print accuracy_score(y_true, y_pred_best)
 
             # If we're predicting on 'Plus', 0 -> No or Pre-Plus, 1 -> Plus
             # If we're predicting on 'No', 0 -> Pre-Plus or Plus, 1 -> No
