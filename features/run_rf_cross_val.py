@@ -64,6 +64,7 @@ def run_cross_val(all_splits, out_dir):
             # labels[class_name].append(y_test[:, c])
             thresh, fpr, tpr = plot_roc_auc(y_pred[:, c], y_true[:, c], name=class_name)
 
+            print "~~{}~~".format(class_name)
             print "Best threshold: {}".format(thresh)
             print "FPR/TPR: {}/{}".format(fpr, tpr)
 
