@@ -20,6 +20,9 @@ from methods import *
 from segmentation.segment_unet import segment
 from segmentation.mask_retina import *
 
+# Set the random seed
+np.random.seed(0)
+
 METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment,
            'unet_norm': unet_preproc,'morphology': binary_morph}
 DEFAULT_CLASSES = ['No', 'Pre-Plus', 'Plus']
@@ -86,6 +89,7 @@ class Pipeline(object):
         # Create DataFrame, indexed by ID
         df = pd.DataFrame(imgs_split, columns=['patient_id', 'id', 'session', 'view',
                                                'eye', 'class', 'full_path']).set_index('id')
+        # df = df.iloc[np.random.permutation(len(df))]
 
         # Group by class/patient, and split into five
         all_splits = {}  # to keep track of all splits of the data
@@ -129,6 +133,29 @@ class Pipeline(object):
 
             train_split = train_test_splits[i]['train']  # get the training data
             test_split = train_test_splits[i]['test']  # get the testing data
+
+            # There is a chance that data from the same patient are split in both sets (when
+            patient_intersection = set.intersection(set(train_split['patient_id'].values), set(test_split['patient_id'].values))
+
+            for pat in patient_intersection:
+
+                train_patients = train_split.loc[train_split['patient_id'] == pat]
+                test_patients = test_split.loc[test_split['patient_id'] == pat]
+
+                move_to_train = np.argmax([test_patients.shape[0], train_patients.shape[0]])
+                if move_to_train:
+                    train_split = train_split.append(test_patients)  # copy from test to train
+                    test_split = test_split[test_split.patient_id != pat]  # remove from test
+                else:
+                    test_split = test_split.append(train_patients)  # copy from train to test
+                    train_split = train_split[train_split.patient_id != pat]  # remove from train
+
+            # Re-check that there is no patient overlap
+            patient_intersection = set.intersection(set(train_split['patient_id'].values), set(test_split['patient_id'].values))
+            assert(len(patient_intersection) == 0)
+
+            # Confirms that the testing and training are split properly - same images don't appear in both
+            assert(all(x not in train_split.index.values for x in test_split.index.values))
 
             tr0 = train_split.shape[0]
             te0 = test_split.shape[0]
@@ -234,7 +261,7 @@ class Pipeline(object):
 
 def preprocess(im, args):
 
-    print "Pre-processing '{}'".format(im)
+    # print "Pre-processing '{}'".format(im)
     params, out_dir, augment = args['params'], args['out_dir'], args['augment']
 
     # Image metadata
