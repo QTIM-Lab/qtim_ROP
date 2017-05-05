@@ -156,7 +156,7 @@ class RetiNet(object):
             arch.writelines(self.model.to_json())
 
         # Create modified copy of config file
-        conf_eval = self.update_config()
+        conf_eval = self.update_config('final')
         with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'wb') as ce:
             yaml.dump(conf_eval, ce, default_flow_style=False)
 
@@ -166,12 +166,12 @@ class RetiNet(object):
         lr = np.load(join(self.experiment_dir, 'learning_rate.npy'))
         plot_LR(lr, join(self.experiment_dir, 'lr_plot' + self.ext))
 
-    def update_config(self):
+    def update_config(self, weights='final'):
 
         conf_eval = dict(self.config)
         conf_eval['mode'] = 'evaluate'
         conf_eval['network']['arch'] = 'model_arch.json'
-        conf_eval['network']['weights'] = 'best_weights.h5'
+        conf_eval['network']['weights'] = '{}_weights.h5'.format(weights)
 
         conf_eval['training_data'] = abspath(self.config['training_data'])
         conf_eval['validation_data'] = abspath(self.config['validation_data'])
