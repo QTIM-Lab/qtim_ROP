@@ -2,7 +2,7 @@ from os.path import basename, join, isfile
 from features.rf_cnn_codes import main as cnn_rf
 from utils.common import get_subdirs, make_sub_dir, dict_reverse
 from utils.metrics import plot_roc_auc, plot_confusion
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from keras.utils.np_utils import to_categorical
 from collections import defaultdict
 import numpy as np
@@ -54,8 +54,8 @@ def run_cross_val(all_splits, out_dir):
             y_true = np.load(y_true_out)
             y_pred = np.load(y_pred_out)
 
-        print "Dimensions of ground truth: {}".format(y_true.shape)
-        print "Dimensions of predictions: {}".format(y_pred.shape)
+        # print "Dimensions of ground truth: {}".format(y_true.shape)
+        # print "Dimensions of predictions: {}".format(y_pred.shape)
 
         # Evaluate each class individually
         for class_name, c in CLASSES.items():
@@ -72,6 +72,8 @@ def run_cross_val(all_splits, out_dir):
             y_pred_best = y_pred[:, c] > thresh
             conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)
             print conf
+            print classification_report(y_true[:, c], y_pred_best[:, c])
+            print accuracy_score(y_true, y_pred)
 
             # If we're predicting on 'Plus', 0 -> No or Pre-Plus, 1 -> Plus
             # If we're predicting on 'No', 0 -> Pre-Plus or Plus, 1 -> No
