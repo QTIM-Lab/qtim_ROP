@@ -103,8 +103,9 @@ def main(model_conf, test_data, out_dir, train_data=None):
 def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
 
     train_samples = X_train.shape[0]
+    print train_samples
 
-    X = np.concatenate(X_train, X_test)  # combine training and testing for dimensionality reduction
+    X = np.concatenate((X_train, X_test), axis=0)  # combine training and testing for dimensionality reduction
     T = tsne(X, 2, 50, 20.0)
     fig, ax = plt.subplots()
 
