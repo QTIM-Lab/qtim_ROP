@@ -78,16 +78,16 @@ def run_cross_val(all_splits, out_dir):
             # If we're predicting on 'Plus', 0 -> No or Pre-Plus, 1 -> Plus
             # If we're predicting on 'No', 0 -> Pre-Plus or Plus, 1 -> No
             classes = ['No or Pre-Plus', 'Plus'] if class_name == 'Plus' else ['Pre-Plus or Plus', 'No']
-            plot_confusion(conf, classes, join(results_dir, 'confusion_{}'.format(class_name)))
+            # plot_confusion(conf, classes, join(results_dir, 'confusion_{}'.format(class_name)))
 
-        # plt.title('ROC curve for prediction of "No" and "Plus"')
-        # plt.legend(loc='lower right')
-        # plt.plot([0, 1], [0, 1], 'k--')
-        # plt.xlim([-0.025, 1.025])
-        # plt.ylim([-0.025, 1.025])
-        # plt.ylabel('True Positive Rate')
-        # plt.xlabel('False Positive Rate')
-        # plt.savefig(join(out_dir, 'ROC_AUC_Per_Class_Split{}.svg'.format(i)))
+        plt.title('ROC curve for prediction of "No" and "Plus"')
+        plt.legend(loc='lower right')
+        plt.plot([0, 1], [0, 1], 'k--')
+        plt.xlim([-0.025, 1.025])
+        plt.ylim([-0.025, 1.025])
+        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate')
+        plt.savefig(join(out_dir, 'ROC_AUC_Per_Class_Split{}.svg'.format(i)))
 
     # Save predictions
     # save_predictions(predictions, labels, CLASSES, results_dir)
