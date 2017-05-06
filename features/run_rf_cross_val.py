@@ -33,11 +33,12 @@ def run_cross_val(all_splits, out_dir):
 
             # Define path to model
             cnn_model = join(split_dir, 'Split{}_Model'.format(i), 'Split{}_Model.yaml'.format(i))
+            train_data = join(split_dir, 'train.h5')
             test_data = join(split_dir, 'test.h5')
 
             # Get the test data, and use CNN + RF to predict
             print "Getting RF predictions from CNN features"
-            y_true, y_pred, cnn_features = cnn_rf(cnn_model, test_data, results_dir)
+            y_true, y_pred, cnn_features = cnn_rf(cnn_model, test_data, results_dir, train_data=train_data)
             # roc_auc, fpr, tpr = calculate_roc_auc(y_pred, to_categorical(y_test), cnn_features['classes'], None)
 
             # Convert ground truth to categorical (one column per class)

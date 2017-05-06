@@ -5,7 +5,7 @@ from utils.common import dict_reverse, make_sub_dir
 from utils.metrics import confusion_matrix, misclassifications
 from plotting import plot_confusion
 import numpy as np
-from os.path import join
+from os.path import join, isfile
 from tsne import tsne
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -26,37 +26,46 @@ def train_rf(net, train_data, out_dir):
     y_train = np.asarray(train_codes['y_true'])
 
     # T-SNE embedding
-    print "T-SNE visualisation of training features"
-    np.save(join(out_dir, 'cnn_train_features.npy'), X_train)
-    make_tsne(X_train, y_train, out_dir)
+    # print "T-SNE visualisation of training features"
+    # make_tsne(X_train, y_train, out_dir)
 
     print "Training RF..."
     rf.fit(X_train, y_train)
-    return rf
+    return rf, X_train, y_train
 
 
 def main(model_conf, test_data, out_dir, train_data=None):
 
     # Load model and set last layer
-    print "Loading model..."
+    print "Loading trained CNN model..."
     net = RetiNet(model_conf)
     net.set_intermediate('flatten_3')
 
     # Train/load random forest
     rf_out = join(out_dir, 'rf.pkl')
-    if train_data is not None:
+    train_features_out = join(out_dir, 'cnn_train_features.npy')
+    train_labels_out = join(out_dir, 'cnn_train_labels.npy')
+
+    if not isfile(rf_out):
         print "Training new RF on '{}'".format(train_data)
-        rf = train_rf(net, train_data, out_dir)
+        rf, X_train, y_train = train_rf(net, train_data, out_dir)
         joblib.dump(rf, rf_out)
+        np.save(train_features_out, X_train)
+        np.save(train_labels_out, y_train)
     else:
         print "Loading previously trained RF from '{}'".format(rf_out)
         rf = joblib.load(rf_out)
+        X_train = np.load(train_features_out)
+        y_train = np.load(train_labels_out)
 
     # Load test data
-    print "Getting CNN features using pre-trained network '{}'".format(net.experiment_name)
+    print "Extracting test features using pre-trained network '{}'".format(net.experiment_name)
     cnn_features = net.predict(test_data)
     X_test = cnn_features['probabilities']
     y_test = cnn_features['y_true']
+
+    # Make a t-SNE plot combining training and testing
+    make_tsne(X_train, y_train, X_test, y_test, out_dir)
 
     # Save features
     # f = h5py.File(test_data, 'r')
@@ -91,13 +100,27 @@ def main(model_conf, test_data, out_dir, train_data=None):
     #     plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion_{}.svg'.format(cn)))
 
 
-def make_tsne(X, y, out_dir):
+def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
 
+    train_samples = X_train.shape[0]
+
+    X = np.concatenate(X_train, X_test)  # combine training and testing for dimensionality reduction
     T = tsne(X, 2, 50, 20.0)
     fig, ax = plt.subplots()
-    ax.scatter(T[y == 0, 0], T[y == 0, 1], 20, label=LABELS[0], alpha=0.6)
-    ax.scatter(T[y == 1, 0], T[y == 1, 1], 20, label=LABELS[1], alpha=0.6)
-    ax.scatter(T[y == 2, 0], T[y == 2, 1], 20, label=LABELS[2], alpha=0.6)
+
+    T_train = T[:train_samples, :]
+    T_test = T[train_samples:, :]
+
+    # Plot the training points semi-transparently
+    ax.scatter(T_train[y_train == 0, 0], T_train[y_train == 0, 1], 20, label=LABELS[0], alpha=0.25)
+    ax.scatter(T_train[y_train == 2, 0], T_train[y_train == 2, 1], 20, label=LABELS[2], alpha=0.25)
+    ax.scatter(T_train[y_train == 1, 0], T_train[y_train == 1, 1], 20, label=LABELS[1], alpha=0.25)
+
+    # Plot the testing points more near opaque
+    ax.scatter(T_test[y_test == 0, 0], T_test[y_test == 0, 1], 20, label=LABELS[0], alpha=0.9)
+    ax.scatter(T_test[y_test == 2, 0], T_test[y_test == 2, 1], 20, label=LABELS[2], alpha=0.9)
+    ax.scatter(T_test[y_test == 1, 0], T_test[y_test == 1, 1], 20, label=LABELS[1], alpha=0.9)
+
     ax.legend()
     plt.savefig(join(out_dir, 'tsne.png'))
 
