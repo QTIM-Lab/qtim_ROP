@@ -9,6 +9,7 @@ from os.path import join, isfile
 from tsne import tsne
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 import h5py
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
@@ -106,21 +107,25 @@ def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
     print train_samples
 
     X = np.concatenate((X_train, X_test), axis=0)  # combine training and testing for dimensionality reduction
+    print X.shape
     T = tsne(X, 2, 50, 20.0)
     fig, ax = plt.subplots()
+
+    print T.shape
 
     T_train = T[:train_samples, :]
     T_test = T[train_samples:, :]
 
     # Plot the training points semi-transparently
-    ax.scatter(T_train[y_train == 0, 0], T_train[y_train == 0, 1], 20, label=LABELS[0], alpha=0.25)
-    ax.scatter(T_train[y_train == 2, 0], T_train[y_train == 2, 1], 20, label=LABELS[2], alpha=0.25)
-    ax.scatter(T_train[y_train == 1, 0], T_train[y_train == 1, 1], 20, label=LABELS[1], alpha=0.25)
+    sns.set_palette('colorblind')
+    ax.scatter(T_train[y_train == 0, 0], T_train[y_train == 0, 1], 20, label=LABELS[0], alpha=0.7)
+    ax.scatter(T_train[y_train == 2, 0], T_train[y_train == 2, 1], 20, label=LABELS[2], alpha=0.7)
+    ax.scatter(T_train[y_train == 1, 0], T_train[y_train == 1, 1], 20, label=LABELS[1], alpha=0.7)
 
     # Plot the testing points more near opaque
-    ax.scatter(T_test[y_test == 0, 0], T_test[y_test == 0, 1], 20, label=LABELS[0], alpha=0.9)
-    ax.scatter(T_test[y_test == 2, 0], T_test[y_test == 2, 1], 20, label=LABELS[2], alpha=0.9)
-    ax.scatter(T_test[y_test == 1, 0], T_test[y_test == 1, 1], 20, label=LABELS[1], alpha=0.9)
+    # ax.scatter(T_test[y_test == 0, 0], T_test[y_test == 0, 1], 20, label=LABELS[0], alpha=0.9)
+    # ax.scatter(T_test[y_test == 2, 0], T_test[y_test == 2, 1], 20, label=LABELS[2], alpha=0.9)
+    # ax.scatter(T_test[y_test == 1, 0], T_test[y_test == 1, 1], 20, label=LABELS[1], alpha=0.9)
 
     ax.legend()
     plt.savefig(join(out_dir, 'tsne.png'))
