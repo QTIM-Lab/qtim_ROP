@@ -7,9 +7,12 @@ from PIL import Image
 import numpy as np
 from utils.image import overlay_mask
 from utils.common import make_sub_dir, get_subdirs, write_hdf5
+from shutil import copy
+from segmentation.train_unet import train_unet
+import multiprocessing
 
 
-def unet_cross_val(data_dir, out_dir, mapping, splits):
+def unet_cross_val(data_dir, out_dir, mapping, splits, unet_conf):
 
     # Load spreadsheet
     with pd.ExcelFile(mapping) as xls:
@@ -29,25 +32,42 @@ def unet_cross_val(data_dir, out_dir, mapping, splits):
     # Combining Pre-Plus and Plus
     trainPlusIndex = CVFile['trainPlusIndex'][0]
     testPlusIndex = CVFile['testPlusIndex'][0]
-    plus_dir = make_sub_dir(out_dir, 'trainTestPlus')
-    generate_splits(trainPlusIndex, testPlusIndex, df, img_dir, mask_dir, seg_dir, plus_dir)
 
+    plus_dir = make_sub_dir(out_dir, 'trainTestPlus')
+    print "Generating splits for combined No and Pre-Plus"
+    generate_splits(trainPlusIndex, testPlusIndex, df, img_dir, mask_dir, seg_dir, plus_dir)
 
     # Combining No and Pre-Plus
     trainPrePIndex = CVFile['trainPrePIndex'][0]
     testPrePIndex = CVFile['testPrePIndex'][0]
 
     prep_dir = make_sub_dir(out_dir, 'trainTestPreP')
+    print "Generating splits for combined Pre-Plus and Plus"
     generate_splits(trainPrePIndex, testPrePIndex, df, img_dir, mask_dir, seg_dir, prep_dir)
 
+    # Train models
+    train_and_test(plus_dir, unet_conf, processes=1)
+    train_and_test(prep_dir, unet_conf, processes=1)
 
-def train_and_test(splits_dir):
+
+def train_and_test(splits_dir, unet_conf, processes=2):
+
+    conf_dicts = []
+    unet_src =  '/home/james/QTIM/data/ImageSets1-5/retina-unet'
 
     for split in get_subdirs(splits_dir):
 
-        model_dir = make_sub_dir(split, 'trained_unet')
+        # Train a model on this split's training data
+        conf_file = join(split, 'configuration.txt')
+        copy(unet_conf, conf_file)
+        conf_dicts.append({'config_path': conf_file, 'unet_src': unet_src})
 
-        pass
+    # Train several models in parallel
+    pool = multiprocessing.Pool(processes)
+    pool.map(train_unet, conf_dicts)
+
+    # Segmented the test split using this model
+
 
 def generate_splits(trainIndex, testIndex, df, img_dir, mask_dir, seg_dir, out_dir):
 
@@ -55,8 +75,9 @@ def generate_splits(trainIndex, testIndex, df, img_dir, mask_dir, seg_dir, out_d
     for i in range(trainIndex.shape[0]):
 
         split_dir = make_sub_dir(out_dir, 'split_{}'.format(i))
+        images_dir = make_sub_dir(split_dir, 'images')
 
-        if isdir(split_dir) and len(listdir(split_dir)) == 6:
+        if isdir(images_dir) and len(listdir(images_dir)) == 6:
             print "Data already processed for split #{}".format(i)
             continue
 
@@ -198,9 +219,9 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-i', '--images', dest='images', required=True, help="Folder of images, segs and masks")
     parser.add_argument('-o', '--out-dir', dest='out_dir', required=True, help="Output directory")
-
+    parser.add_argument('-u', '--unet-conf', dest='unet_conf', required=True, help="U-Net configuration.txt")
     parser.add_argument('-m', '--mapping', dest='mapping', required=True, help="Excel file defining the order of the images")
     parser.add_argument('-sp', '--splits', dest='splits', required=True, help=".mat file containing the splits to be generated")
 
     args = parser.parse_args()
-    unet_cross_val(args.images, args.out_dir, args.mapping, args.splits)
+    unet_cross_val(args.images, args.out_dir, args.mapping, args.splits, args.unet_conf)
