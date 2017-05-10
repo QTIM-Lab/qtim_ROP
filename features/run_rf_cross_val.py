@@ -57,6 +57,7 @@ def run_cross_val(all_splits, out_dir):
 
         # print "Dimensions of ground truth: {}".format(y_true.shape)
         # print "Dimensions of predictions: {}".format(y_pred.shape)
+        fig, ax = plt.subplots()
 
         # Evaluate each class individually
         for class_name, c in CLASSES.items():
@@ -71,7 +72,7 @@ def run_cross_val(all_splits, out_dir):
 
             # Make hard prediction at best threshold
             y_pred_best = y_pred[:, c] > thresh
-            conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)
+            conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)cd
             print conf
             print classification_report(y_true[:, c], y_pred_best)
             print accuracy_score(y_true[:, c], y_pred_best)

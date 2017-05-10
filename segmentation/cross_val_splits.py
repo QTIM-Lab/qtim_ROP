@@ -29,13 +29,13 @@ def unet_cross_val(data_dir, out_dir, mapping, splits, unet_conf):
     # Now split into training and testing
     CVFile = sio.loadmat(splits)
 
-    # Combining Pre-Plus and Plus
-    trainPlusIndex = CVFile['trainPlusIndex'][0]
-    testPlusIndex = CVFile['testPlusIndex'][0]
-
-    plus_dir = make_sub_dir(out_dir, 'trainTestPlus')
-    print "Generating splits for combined No and Pre-Plus"
-    generate_splits(trainPlusIndex, testPlusIndex, df, img_dir, mask_dir, seg_dir, plus_dir)
+    # # Combining Pre-Plus and Plus
+    # trainPlusIndex = CVFile['trainPlusIndex'][0]
+    # testPlusIndex = CVFile['testPlusIndex'][0]
+    #
+    # plus_dir = make_sub_dir(out_dir, 'trainTestPlus')
+    # print "Generating splits for combined No and Pre-Plus"
+    # generate_splits(trainPlusIndex, testPlusIndex, df, img_dir, mask_dir, seg_dir, plus_dir)
 
     # Combining No and Pre-Plus
     trainPrePIndex = CVFile['trainPrePIndex'][0]
@@ -46,14 +46,14 @@ def unet_cross_val(data_dir, out_dir, mapping, splits, unet_conf):
     generate_splits(trainPrePIndex, testPrePIndex, df, img_dir, mask_dir, seg_dir, prep_dir)
 
     # Train models
-    train_and_test(plus_dir, unet_conf, processes=1)
-    train_and_test(prep_dir, unet_conf, processes=1)
+    train_and_test(prep_dir, unet_conf, processes=2)
+    # train_and_test(plus_dir, unet_conf, processes=2)
 
 
 def train_and_test(splits_dir, unet_conf, processes=2):
 
     conf_dicts = []
-    unet_src =  '/home/james/QTIM/data/ImageSets1-5/retina-unet'
+    unet_src = '/home/james/QTIM/data/ImageSets1-5/retina-unet'
 
     for split in get_subdirs(splits_dir):
 
@@ -65,8 +65,6 @@ def train_and_test(splits_dir, unet_conf, processes=2):
     # Train several models in parallel
     pool = multiprocessing.Pool(processes)
     pool.map(train_unet, conf_dicts)
-
-    # Segmented the test split using this model
 
 
 def generate_splits(trainIndex, testIndex, df, img_dir, mask_dir, seg_dir, out_dir):

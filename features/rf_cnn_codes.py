@@ -15,7 +15,7 @@ import h5py
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def train_rf(net, train_data, out_dir):
+def train_rf(net, train_data):
 
     # Get CNN codes
     print "Getting features..."
@@ -49,7 +49,7 @@ def main(model_conf, test_data, out_dir, train_data=None):
 
     if not isfile(rf_out):
         print "Training new RF on '{}'".format(train_data)
-        rf, X_train, y_train = train_rf(net, train_data, out_dir)
+        rf, X_train, y_train = train_rf(net, train_data)
         joblib.dump(rf, rf_out)
         np.save(train_features_out, X_train)
         np.save(train_labels_out, y_train)
@@ -66,7 +66,7 @@ def main(model_conf, test_data, out_dir, train_data=None):
     y_test = cnn_features['y_true']
 
     # Make a t-SNE plot combining training and testing
-    make_tsne(X_train, y_train, X_test, y_test, out_dir)
+    make_tsne(X_train, y_train, X_test, np.asarray(y_test), out_dir)
 
     # Save features
     # f = h5py.File(test_data, 'r')
@@ -91,7 +91,6 @@ def main(model_conf, test_data, out_dir, train_data=None):
 
     return y_test, y_pred, cnn_features
 
-
     # # Confusion matrix, based on best threshold
     # for ci, cn in LABELS.items():
     #     best_thresh = thresh[ci][np.argmax(J[ci])]
@@ -104,12 +103,11 @@ def main(model_conf, test_data, out_dir, train_data=None):
 def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
 
     train_samples = X_train.shape[0]
-    print train_samples
 
     X = np.concatenate((X_train, X_test), axis=0)  # combine training and testing for dimensionality reduction
     print X.shape
     T = tsne(X, 2, 50, 20.0)
-    fig, ax = plt.subplots()
+    fig, ax = sns.plt.subplots()
 
     print T.shape
 
@@ -118,17 +116,20 @@ def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
 
     # Plot the training points semi-transparently
     sns.set_palette('colorblind')
-    ax.scatter(T_train[y_train == 0, 0], T_train[y_train == 0, 1], 20, label=LABELS[0], alpha=0.7)
-    ax.scatter(T_train[y_train == 2, 0], T_train[y_train == 2, 1], 20, label=LABELS[2], alpha=0.7)
-    ax.scatter(T_train[y_train == 1, 0], T_train[y_train == 1, 1], 20, label=LABELS[1], alpha=0.7)
+    ax.scatter(T_train[y_train == 0, 0], T_train[y_train == 0, 1], 20, label=LABELS[0], alpha=0.25)
+    ax.scatter(T_train[y_train == 2, 0], T_train[y_train == 2, 1], 20, label=LABELS[2], alpha=0.25)
+    ax.scatter(T_train[y_train == 1, 0], T_train[y_train == 1, 1], 20, label=LABELS[1], alpha=0.25)
 
     # Plot the testing points more near opaque
-    # ax.scatter(T_test[y_test == 0, 0], T_test[y_test == 0, 1], 20, label=LABELS[0], alpha=0.9)
-    # ax.scatter(T_test[y_test == 2, 0], T_test[y_test == 2, 1], 20, label=LABELS[2], alpha=0.9)
-    # ax.scatter(T_test[y_test == 1, 0], T_test[y_test == 1, 1], 20, label=LABELS[1], alpha=0.9)
+    ax.scatter(T_test[y_test == 0, 0], T_test[y_test == 0, 1], 20, label=LABELS[0], alpha=0.9)
+    ax.scatter(T_test[y_test == 2, 0], T_test[y_test == 2, 1], 20, label=LABELS[2], alpha=0.9)
+    ax.scatter(T_test[y_test == 1, 0], T_test[y_test == 1, 1], 20, label=LABELS[1], alpha=0.9)
 
     ax.legend()
     plt.savefig(join(out_dir, 'tsne.png'))
+
+    # TODO Create a dataframe with the following columns:
+    # 'x', 'y', 'z', 'train', 'label', 'misclassified', 'thumbnail'
 
 
 if __name__ == '__main__':
