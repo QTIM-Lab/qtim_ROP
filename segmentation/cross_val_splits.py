@@ -11,6 +11,8 @@ from shutil import copy
 from segmentation.train_unet import train_unet
 import multiprocessing
 
+UNET_SRC = '/mnt/eminas01/James/ImageSets1-5/retina-unet'
+
 
 def unet_cross_val(data_dir, out_dir, mapping, splits, unet_conf):
 
@@ -53,14 +55,13 @@ def unet_cross_val(data_dir, out_dir, mapping, splits, unet_conf):
 def train_and_test(splits_dir, unet_conf, processes=2):
 
     conf_dicts = []
-    unet_src = '/home/james/QTIM/data/ImageSets1-5/retina-unet'
 
     for split in get_subdirs(splits_dir):
 
         # Train a model on this split's training data
         conf_file = join(split, 'configuration.txt')
         copy(unet_conf, conf_file)
-        conf_dicts.append({'config_path': conf_file, 'unet_src': unet_src})
+        conf_dicts.append({'config_path': conf_file, 'unet_src': UNET_SRC})
 
     # Train several models in parallel
     pool = multiprocessing.Pool(processes)
