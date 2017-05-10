@@ -34,14 +34,13 @@ def train_unet(conf_dict):
 
     # Run the experiment
     chdir(unet_src)
-    # cmd = run_GPU + 'nohup python -u {} {} > '.format(unet_src, basename(config_path)) + join(result_dir, result_dir + '_training.nohup')
-    cmd = 'nohup python -u ./src/retinaNN_training.py {} > '.format(config_path) + join(result_dir, name_experiment + '_training.nohup')
+    cmd = run_GPU + 'nohup python -u {} {} > '.format(unet_src, basename(config_path)) + join(result_dir, result_dir + '_training.nohup')
+    # cmd = 'nohup python -u ./src/retinaNN_training.py {} > '.format(config_path) + join(result_dir, name_experiment + '_training.nohup')
 
     if nohup:
         print "\n2. Run the training on GPU with nohup"
         # system(run_GPU +' nohup python -u ./src/retinaNN_training.py ' + config_path + '> ' +'./'+name_experiment+'/'+name_experiment+'_training.nohup')
         system(cmd)
-        # print cmd
     else:
         print "\n2. Run the training on GPU (no nohup)"
         system(run_GPU +' python ./src/retinaNN_training.py ' + config_path)
