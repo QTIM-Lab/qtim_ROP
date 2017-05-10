@@ -5,7 +5,7 @@ from utils.common import find_images
 import scipy.io as sio
 from PIL import Image
 import numpy as np
-from utils.image import overlay_mask
+# from utils.image import overlay_mask
 from utils.common import make_sub_dir, get_subdirs, write_hdf5
 from shutil import copy
 from segmentation.train_unet import train_unet
@@ -159,7 +159,7 @@ def check_overlay(imgs, masks, segs, out_dir, i=0):
 
     example_img, example_mask, example_seg = imgs[i], masks[i], segs[i]
     assert example_img.shape == example_mask.shape == example_seg.shape
-    overlay_mask(example_img * example_mask, example_seg[:, :, 0], join(out_dir, '{}.png'.format(i)))
+    # overlay_mask(example_img * example_mask, example_seg[:, :, 0], join(out_dir, '{}.png'.format(i)))
 
 
 def images_by_index(index, df, location, col='filename'):
