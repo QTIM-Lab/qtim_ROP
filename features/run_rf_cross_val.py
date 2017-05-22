@@ -1,10 +1,10 @@
-from os.path import basename, join, isfile
+from os.path import basename, join, isfile, dirname
 from features.rf_cnn_codes import main as cnn_rf
 from utils.common import get_subdirs, make_sub_dir, dict_reverse
 from utils.metrics import plot_roc_auc, plot_confusion
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from keras.utils.np_utils import to_categorical
-from collections import defaultdict
+from metadata import image_to_metadata
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -14,7 +14,7 @@ from glob import glob
 CLASSES = {'No': 0, 'Plus': 1}  #, 'Pre-Plus': 2}
 
 
-def run_cross_val(all_splits, out_dir):
+def run_cross_val(all_splits, out_dir, csv_file):
 
     # predictions = defaultdict(list)
     # labels = defaultdict(list)
@@ -35,6 +35,10 @@ def run_cross_val(all_splits, out_dir):
             cnn_model = join(split_dir, 'Split{}_Model'.format(i), 'Split{}_Model.yaml'.format(i))
             train_data = join(split_dir, 'train.h5')
             test_data = join(split_dir, 'test.h5')
+
+            # Get a list of original image paths that correspond to the test images
+            test_names =  join(split_dir, 'testing.csv')
+            test_mapping = map_test_to_original(test_names, csv_file)
 
             # Get the test data, and use CNN + RF to predict
             print "Getting RF predictions from CNN features"
@@ -72,7 +76,7 @@ def run_cross_val(all_splits, out_dir):
 
             # Make hard prediction at best threshold
             y_pred_best = y_pred[:, c] > thresh
-            conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)cd
+            conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)
             print conf
             print classification_report(y_true[:, c], y_pred_best)
             print accuracy_score(y_true[:, c], y_pred_best)
@@ -120,6 +124,29 @@ def run_cross_val(all_splits, out_dir):
     # print J
 
 
+def map_test_to_original(test_csv, original_csv, img_path=None):
+
+    original_list = []
+
+    if img_path is None:
+        img_path = join(dirname(original_csv), 'Posterior')
+
+    # Load CSV files for test and original data
+    test_df = pd.DataFrame.from_csv(test_csv)
+    original_df = pd.DataFrame.from_csv(original_csv)
+
+    # For each test image, get its corresponding raw image
+    for test_index, test_row in test_df.iterrows():
+
+        original_image = original_df.iloc[test_index]['imageName']  # image name
+        class_dir = image_to_metadata(original_image)['class']  # class directory
+        original_path = join(img_path, class_dir, original_image)  # full path to image
+
+        original_list.append(original_path)
+
+    return original_list
+
+
 def save_predictions(predictions, labels, class_dict, out_dir):
 
     # Save as CSV
@@ -140,6 +167,12 @@ def save_predictions(predictions, labels, class_dict, out_dir):
 
 if __name__ == '__main__':
 
-    import sys
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
 
-    run_cross_val(sys.argv[1], sys.argv[2])
+    parser.add_argument('-s', '--splits', dest='splits', required=True)
+    parser.add_argument('-o', '--out-dir', dest='out_dir', required=True)
+    parser.add_argument('-c', '--csv-file', dest='csv_file', required=True)
+    args = parser.parse_args()
+
+    run_cross_val(args.splits, args.out_dir, args.csv_file)

@@ -1,5 +1,5 @@
 import sys
-from os import chdir, mkdir, system
+from os import chdir, mkdir, system, getcwd
 from os.path import dirname, exists, join, basename
 from shutil import copy
 import ConfigParser
@@ -33,14 +33,16 @@ def train_unet(conf_dict):
     copy(config_path, join(result_dir, name_experiment + '_configuration.txt'))
 
     # Run the experiment
+    cwd = getcwd()
     chdir(unet_src)
-    cmd = run_GPU + 'nohup python -u {} {} > '.format(unet_src, basename(config_path)) + join(result_dir, result_dir + '_training.nohup')
+
+    cmd = run_GPU + 'nohup python -u ./src/retinaNN_training.py {} > '.format(unet_src, basename(config_path)) + join(result_dir, name_experiment + '_training.nohup')
     # cmd = 'nohup python -u ./src/retinaNN_training.py {} > '.format(config_path) + join(result_dir, name_experiment + '_training.nohup')
 
     if nohup:
         print "\n2. Run the training on GPU with nohup"
         # system(run_GPU +' nohup python -u ./src/retinaNN_training.py ' + config_path + '> ' +'./'+name_experiment+'/'+name_experiment+'_training.nohup')
-        system(cmd)
+        # system(cmd)
     else:
         print "\n2. Run the training on GPU (no nohup)"
         system(run_GPU +' python ./src/retinaNN_training.py ' + config_path)
