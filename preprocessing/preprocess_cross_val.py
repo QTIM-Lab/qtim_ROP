@@ -79,7 +79,8 @@ class Pipeline(object):
     def run(self):
 
         # Get paths to all images
-        im_files = find_images(join(self.input_dir, '*'))
+        # im_files = find_images(join(self.input_dir, '*'))
+        im_files = find_images(join(self.input_dir))
         assert (len(im_files) > 0)
 
         # Split images into metadata
@@ -105,7 +106,7 @@ class Pipeline(object):
 
             # Create list of unique patients and randomly shuffle it
             all_patients = [pg for p_id, pg in p_groups]
-            shuffle(all_patients)
+            # shuffle(all_patients)
 
             # Define split size to achieve 5 splits
             split_size = int(len(all_patients) * .2)
@@ -139,7 +140,7 @@ class Pipeline(object):
             train_split = train_test_splits[i]['train']  # get the training data
             test_split = train_test_splits[i]['test']  # get the testing data
 
-            # There is a chance that data from the same patient are split in both sets (when
+            # There is a chance that data from the same patient are split in both sets
             patient_intersection = set.intersection(set(train_split['patient_id'].values), set(test_split['patient_id'].values))
 
             for pat in patient_intersection:
@@ -227,8 +228,11 @@ class Pipeline(object):
 
             for img_path in imgs[class_]:
 
-                id = basename(img_path).split('_')[1]
-                original_image = df.loc[id]['original']
+                try:
+                    id = basename(img_path).split('_')[1]
+                    original_image = df.loc[id]['original']
+                except KeyError:
+                    raise
 
                 assert(all(original_image.split('_')[j] == basename(img_path).split('_')[j] for j in range(0, 5)))
 

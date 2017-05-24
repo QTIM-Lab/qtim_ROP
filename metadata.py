@@ -3,7 +3,7 @@
 from os.path import basename, dirname, splitext, join
 import pandas as pd
 import yaml
-from common import find_images, make_sub_dir
+from utils.common import find_images, make_sub_dir
 
 QUERY = 'subjectID == "{subjectID}" and eye == "{eye}" and reader == "{gold}" and Session == "{session}"'
 VIEWS = ['posterior', 'nasal', 'temporal']
