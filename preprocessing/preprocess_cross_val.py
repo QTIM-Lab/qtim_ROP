@@ -79,7 +79,8 @@ class Pipeline(object):
     def run(self):
 
         # Get paths to all images
-        im_files = find_images(join(self.input_dir, '*'))
+        # im_files = find_images(join(self.input_dir, '*'))
+        im_files = find_images(join(self.input_dir))
         assert (len(im_files) > 0)
 
         # Split images into metadata
@@ -89,7 +90,12 @@ class Pipeline(object):
         # Create DataFrame, indexed by ID
         df = pd.DataFrame(imgs_split, columns=['patient_id', 'id', 'session', 'view',
                                                'eye', 'class', 'full_path']).set_index('id')
-        # df = df.iloc[np.random.permutation(len(df))]
+
+        # Add a column with the names of the original images
+        orig_names = [self.labels.iloc[int(i)]['imageName'] for i in df.index.values]
+        df['original'] = orig_names
+
+        assert(all(int(x['original'].split('_')[1]) == int(index) for index, x in df.iterrows()))
 
         # Group by class/patient, and split into five
         all_splits = {}  # to keep track of all splits of the data
@@ -100,7 +106,7 @@ class Pipeline(object):
 
             # Create list of unique patients and randomly shuffle it
             all_patients = [pg for p_id, pg in p_groups]
-            shuffle(all_patients)
+            # shuffle(all_patients)
 
             # Define split size to achieve 5 splits
             split_size = int(len(all_patients) * .2)
@@ -134,7 +140,7 @@ class Pipeline(object):
             train_split = train_test_splits[i]['train']  # get the training data
             test_split = train_test_splits[i]['test']  # get the testing data
 
-            # There is a chance that data from the same patient are split in both sets (when
+            # There is a chance that data from the same patient are split in both sets
             patient_intersection = set.intersection(set(train_split['patient_id'].values), set(test_split['patient_id'].values))
 
             for pat in patient_intersection:
@@ -185,31 +191,31 @@ class Pipeline(object):
             print "Preprocessing training data..."
 
             if len(find_images(join(train_dir, '*'))) == 0:
-                optimization_pool = Pool(self.processes)
+                pool = Pool(self.processes)
                 subprocess = partial(preprocess, args={'params': self, 'augment': True, 'out_dir': train_dir})
                 train_imgs = list(train_split['full_path'])
-                _ = optimization_pool.map(subprocess, train_imgs)
+                _ = pool.map(subprocess, train_imgs)
 
-            self.generate_h5(find_images_by_class(train_dir), join(split_dir, 'train.h5'), random_sample=True)
+            self.generate_h5(find_images_by_class(train_dir), join(split_dir, 'train.h5'), train_split, random_sample=True)
 
             # Pre-process (but don't augment or randomly sample) the test set
             print "Preprocessing testing data..."
             if len(find_images(join(test_dir, '*'))) == 0:
 
-                optimization_pool = Pool(self.processes)
+                pool = Pool(self.processes)
                 subprocess = partial(preprocess, args={'params': self, 'augment': False, 'out_dir': test_dir})
                 test_imgs = list(test_split['full_path'])
-                _ = optimization_pool.map(subprocess, test_imgs)
+                _ = pool.map(subprocess, test_imgs)
 
-            self.generate_h5(find_images_by_class(test_dir), join(split_dir, 'test.h5'), random_sample=False)
+            self.generate_h5(find_images_by_class(test_dir), join(split_dir, 'test.h5'), test_split, random_sample=False)
 
-    def generate_h5(self, imgs, out_file, random_sample=True, classes=DEFAULT_CLASSES):
+    def generate_h5(self, imgs, out_file, df, random_sample=True, classes=DEFAULT_CLASSES):
 
         class_sizes = {c: len(x) for c, x in imgs.items()}
 
-        train_arr = []
-        train_labels = []
-        print '\n---'
+        img_arr = []
+        img_labels = []
+        original_images = []
 
         for cidx, class_ in enumerate(classes):
 
@@ -220,43 +226,55 @@ class Pipeline(object):
                 random_train = self.choose_random(imgs[class_], removal_num)
                 imgs[class_] = random_train
 
-            for ti in imgs[class_]:
-                train_arr.append(np.asarray(Image.open(ti)))
-                train_labels.append(class_)
+            for img_path in imgs[class_]:
+
+                try:
+                    id = basename(img_path).split('_')[1]
+                    original_image = df.loc[id]['original']
+                except KeyError:
+                    raise
+
+                assert(all(original_image.split('_')[j] == basename(img_path).split('_')[j] for j in range(0, 5)))
+
+                img_arr.append(np.asarray(Image.open(img_path)))
+                img_labels.append(class_)
+                original_images.append(original_image)
 
             print "{} ({}): {}".format(out_file, class_, len(imgs[class_]))
 
         # Save results
-        train_data = np.transpose(np.asarray(train_arr), (0, 3, 2, 1))
-        train_labels = np.asarray(train_labels)
+        train_data = np.transpose(np.asarray(img_arr), (0, 3, 2, 1))
+        img_labels = np.asarray(img_labels)
+        original_images = np.asarray(original_images)
 
         with h5py.File(out_file, "w") as f:
             f.create_dataset('data', data=train_data, dtype=train_data.dtype)
-            f.create_dataset('labels', data=train_labels, dtype=train_labels.dtype)
+            f.create_dataset('labels', data=img_labels, dtype=img_labels.dtype)
+            f.create_dataset('original_files', data=original_images, dtype=original_images.dtype)
 
     def choose_random(self, imgs, to_remove):
         return np.random.choice(imgs, len(imgs) - to_remove, replace=False)
 
-    def preserve_originals(self, imgs, to_remove):
-
-        # Sort the augmented images alphabetically and split into chunks (of augment_size)
-        imgs = sorted(imgs)
-        assert(len(imgs) % self.augment_size == 0)
-        unique_chunks = [imgs[i:i+self.augment_size] for i in xrange(0, len(imgs), self.augment_size)]
-
-        # Calculate how many images we need to remove in each chunk (some chunks likely smaller than others)
-        total_proportion = float(to_remove) / float(len(imgs))
-        remove_per_chunk = int(np.ceil(len(unique_chunks[0]) * total_proportion))
-
-        # Loop through each chunk and sample the images needed
-        subsampled = []
-        for chunk in unique_chunks:
-
-            # Randomly sample the chunk for image to keep
-            sub_chunk = np.random.choice(chunk, self.augment_size - remove_per_chunk, replace=False)
-            subsampled.extend(sub_chunk)
-
-        return subsampled
+    # def preserve_originals(self, imgs, to_remove):
+    #
+    #     # Sort the augmented images alphabetically and split into chunks (of augment_size)
+    #     imgs = sorted(imgs)
+    #     assert(len(imgs) % self.augment_size == 0)
+    #     unique_chunks = [imgs[i:i+self.augment_size] for i in xrange(0, len(imgs), self.augment_size)]
+    #
+    #     # Calculate how many images we need to remove in each chunk (some chunks likely smaller than others)
+    #     total_proportion = float(to_remove) / float(len(imgs))
+    #     remove_per_chunk = int(np.ceil(len(unique_chunks[0]) * total_proportion))
+    #
+    #     # Loop through each chunk and sample the images needed
+    #     subsampled = []
+    #     for chunk in unique_chunks:
+    #
+    #         # Randomly sample the chunk for image to keep
+    #         sub_chunk = np.random.choice(chunk, self.augment_size - remove_per_chunk, replace=False)
+    #         subsampled.extend(sub_chunk)
+    #
+    #     return subsampled
 
 
 def preprocess(im, args):
@@ -327,7 +345,7 @@ def preprocess(im, args):
     else:
         Image.fromarray(preprocessed_im).save(join(class_dir, meta['prefix'] + '.png'))
 
-    return True
+    return im
 
 if __name__ == '__main__':
 
