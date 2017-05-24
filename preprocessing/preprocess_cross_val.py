@@ -12,7 +12,7 @@ import addict
 import pandas as pd
 import yaml
 from utils.common import make_sub_dir, find_images_by_class, find_images
-from random import shuffle
+from random import shuffle, seed
 from scipy.misc import imresize
 
 from metadata import image_to_metadata
@@ -21,7 +21,7 @@ from segmentation.segment_unet import segment
 from segmentation.mask_retina import *
 
 # Set the random seed
-np.random.seed(0)
+seed(101)
 
 METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment,
            'unet_norm': unet_preproc,'morphology': binary_morph}
@@ -106,7 +106,7 @@ class Pipeline(object):
 
             # Create list of unique patients and randomly shuffle it
             all_patients = [pg for p_id, pg in p_groups]
-            # shuffle(all_patients)
+            shuffle(all_patients)
 
             # Define split size to achieve 5 splits
             split_size = int(len(all_patients) * .2)
