@@ -11,7 +11,7 @@ from shutil import copy
 from segmentation.train_unet import train_unet
 import multiprocessing
 
-UNET_SRC = '/mnt/eminas01/James/ImageSets1-5/retina-unet'
+UNET_SRC = '/root/eminas/James/ImageSets1-5/retina-unet'
 
 
 def unet_cross_val(data_dir, out_dir, mapping, splits, unet_conf):
@@ -48,7 +48,7 @@ def unet_cross_val(data_dir, out_dir, mapping, splits, unet_conf):
     generate_splits(trainPrePIndex, testPrePIndex, df, img_dir, mask_dir, seg_dir, prep_dir)
 
     # Train models
-    train_and_test(prep_dir, unet_conf, processes=2)
+    train_and_test(prep_dir, unet_conf, processes=1)
     # train_and_test(plus_dir, unet_conf, processes=2)
 
 

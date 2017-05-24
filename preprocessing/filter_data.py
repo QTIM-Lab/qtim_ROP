@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from shutil import copy
 from utils.common import make_sub_dir
-from os.path import join
+from os.path import join, isfile
 
 
 def filter_data(src_dir, dst_dir, mapping):
@@ -27,7 +27,9 @@ def filter_data(src_dir, dst_dir, mapping):
 
             src_img = join(src_dir, class_, img_row['imageName'])
             dst_img = join(dst_dir, class_, img_row['imageName'])
-
+            if not isfile(src_img):
+                print "'{}' is missing".format(src_img)
+                exit()
             print "Copying '{}' to '{}'".format(src_img, dst_img)
             copy(src_img, dst_img)
 
