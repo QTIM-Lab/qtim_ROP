@@ -14,7 +14,7 @@ from glob import glob
 CLASSES = {'No': 0, 'Plus': 1}  #, 'Pre-Plus': 2}
 
 
-def run_cross_val(all_splits, out_dir, csv_file):
+def run_cross_val(all_splits, out_dir):
 
     # predictions = defaultdict(list)
     # labels = defaultdict(list)
@@ -172,7 +172,6 @@ if __name__ == '__main__':
 
     parser.add_argument('-s', '--splits', dest='splits', required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', required=True)
-    parser.add_argument('-c', '--csv-file', dest='csv_file', required=True)
     args = parser.parse_args()
 
-    run_cross_val(args.splits, args.out_dir, args.csv_file)
+    run_cross_val(args.splits, args.out_dir)
