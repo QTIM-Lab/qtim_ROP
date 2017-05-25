@@ -103,16 +103,18 @@ def main(model_conf, test_data, out_dir, train_data=None):
 def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
 
     train_samples = X_train.shape[0]
-
     X = np.concatenate((X_train, X_test), axis=0)  # combine training and testing for dimensionality reduction
-    print X.shape
-    T = tsne(X, 2, 50, 20.0)
+
+    T = tsne(X, 2, 50, 20.0)  # default parameters for now
     fig, ax = sns.plt.subplots()
 
-    print T.shape
-
+    # Split the training and testing T-SNE, save result
     T_train = T[:train_samples, :]
     T_test = T[train_samples:, :]
+
+    np.save(join(out_dir, 'tsne_all.npy'), T)
+    np.save(join(out_dir, 'tsne_train.npy'), T_train)
+    np.save(join(out_dir, 'tsne_test.npy'), T_test)
 
     # Plot the training points semi-transparently
     sns.set_palette('colorblind')
@@ -126,7 +128,7 @@ def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
     ax.scatter(T_test[y_test == 1, 0], T_test[y_test == 1, 1], 20, label=LABELS[1], alpha=0.9)
 
     ax.legend()
-    plt.savefig(join(out_dir, 'tsne.png'))
+    plt.savefig(join(out_dir, 'tsne_plot.png'))
 
     # TODO Create a dataframe with the following columns:
     # 'x', 'y', 'z', 'train', 'label', 'misclassified', 'thumbnail'

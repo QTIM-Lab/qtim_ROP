@@ -37,8 +37,8 @@ def run_cross_val(all_splits, out_dir, csv_file):
             test_data = join(split_dir, 'test.h5')
 
             # Get a list of original image paths that correspond to the test images
-            test_names =  join(split_dir, 'testing.csv')
-            test_mapping = map_test_to_original(test_names, csv_file)
+            # test_names =  join(split_dir, 'testing.csv')
+            # test_mapping = map_test_to_original(test_names, csv_file)
 
             # Get the test data, and use CNN + RF to predict
             print "Getting RF predictions from CNN features"
