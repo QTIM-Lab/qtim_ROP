@@ -36,7 +36,16 @@ def train_rf(net, train_data):
     return rf, X_train, y_train
 
 
-def main(model_conf, test_data, out_dir, train_data=None):
+def main(model_conf, test_data, raw_images, out_dir, train_data=None):
+    """
+    
+    :param model_conf: YAML file of pre-trained CNN
+    :param test_data: HDF5 file of data to test with
+    :param raw_images: directory of raw images (referenced in the HDF5 file under 'original_images')
+    :param out_dir: output directory for the RF and inference results
+    :param train_data: data with which to train the random forest, if not already existing
+    :return: 
+    """
 
     # Load model and set last layer
     print "Loading trained CNN model..."
@@ -81,7 +90,8 @@ def main(model_conf, test_data, out_dir, train_data=None):
     plot_confusion(confusion, labels, join(out_dir, 'confusion.svg'))
 
     misclass_dir = make_sub_dir(out_dir, 'misclassified')
-    misclassifications(h5py.File(test_data, 'r')['data'], y_test, y_pred_classes, cnn_features['classes'], misclass_dir)
+    misclassifications(h5py.File(test_data, 'r')['original_files'], raw_images,
+                       y_test, y_pred_classes, cnn_features['classes'], misclass_dir)
 
     # Predict probabilities
     print "Getting RF predictions..."
@@ -107,7 +117,6 @@ def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
 
     saved_tsne = join(out_dir, 'tsne_all.npy')
     if not isfile(saved_tsne):
-        
         X = np.concatenate((X_train, X_test), axis=0)  # combine training and testing for dimensionality reduction
         T = tsne(X, 2, 50, 20.0)  # default parameters for now
         np.save(saved_tsne, T)

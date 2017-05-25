@@ -8,7 +8,7 @@ from utils.common import dict_reverse, make_sub_dir
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from keras.utils.np_utils import to_categorical
 from plotting import plot_confusion
-import seaborn as sns
+from PIL import Image
 from itertools import cycle
 from sklearn.metrics import roc_curve, auc
 from scipy import interp
@@ -57,19 +57,19 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     calculate_roc_auc(y_pred, y_true, col_names, join(out_dir, 'roc_auc' + ext))
 
 
-# Predict data
-def misclassifications(data, y_true, y_pred, classes, out_dir, n=10):
+def misclassifications(file_names, img_path, y_true, y_pred, classes, out_dir, n=10):
 
     class_count = [0] * (np.max(y_true) + 1)
     fig, ax = plt.subplots()
 
     classes = dict_reverse(classes)
 
-    for img, yt, yp in zip(data, y_true, y_pred):
+    for img, yt, yp in zip(file_names, y_true, y_pred):
 
         if yt != yp and class_count[yp] < n:
 
             plt.cla()
+            img = Image.open(join(img_path, img))
             ax.imshow(np.transpose(img, (1, 2, 0)))
             ax.text(5, 10, 'True: {}'.format(classes[yt]), fontdict=FONT)
             ax.text(5, 25, 'Predicted: {}'.format(classes[yp]), fontdict=FONT)
