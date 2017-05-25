@@ -7,6 +7,7 @@ from plotting import plot_confusion
 import numpy as np
 from os.path import join, isfile
 from tsne import tsne
+import itertools
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -103,29 +104,27 @@ def main(model_conf, test_data, out_dir, train_data=None):
 def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
 
     train_samples = X_train.shape[0]
-    X = np.concatenate((X_train, X_test), axis=0)  # combine training and testing for dimensionality reduction
 
-    T = tsne(X, 2, 50, 20.0)  # default parameters for now
-    fig, ax = sns.plt.subplots()
+    saved_tsne = join(out_dir, 'tsne_all.npy')
+    if not isfile(saved_tsne):
+        
+        X = np.concatenate((X_train, X_test), axis=0)  # combine training and testing for dimensionality reduction
+        T = tsne(X, 2, 50, 20.0)  # default parameters for now
+        np.save(saved_tsne, T)
+    else:
+        T = np.load(saved_tsne)
 
     # Split the training and testing T-SNE, save result
     T_train = T[:train_samples, :]
     T_test = T[train_samples:, :]
 
-    np.save(join(out_dir, 'tsne_all.npy'), T)
-    np.save(join(out_dir, 'tsne_train.npy'), T_train)
-    np.save(join(out_dir, 'tsne_test.npy'), T_test)
-
-    # Plot the training points semi-transparently
-    sns.set_palette('colorblind')
-    ax.scatter(T_train[y_train == 0, 0], T_train[y_train == 0, 1], 20, label=LABELS[0], alpha=0.25)
-    ax.scatter(T_train[y_train == 2, 0], T_train[y_train == 2, 1], 20, label=LABELS[2], alpha=0.25)
-    ax.scatter(T_train[y_train == 1, 0], T_train[y_train == 1, 1], 20, label=LABELS[1], alpha=0.25)
-
-    # Plot the testing points more near opaque
-    ax.scatter(T_test[y_test == 0, 0], T_test[y_test == 0, 1], 20, label=LABELS[0], alpha=0.9)
-    ax.scatter(T_test[y_test == 2, 0], T_test[y_test == 2, 1], 20, label=LABELS[2], alpha=0.9)
-    ax.scatter(T_test[y_test == 1, 0], T_test[y_test == 1, 1], 20, label=LABELS[1], alpha=0.9)
+    # Plot the training and testing points differently
+    pal = itertools.cycle(sns.color_palette('colorblind')[:3])
+    fig, ax = sns.plt.subplots()
+    for c in (0, 2, 1):
+        color = next(pal)
+        ax.scatter(T_train[y_train == c, 0], T_train[y_train == c, 1], 20, label=LABELS[c], alpha=0.1, color=color)
+        ax.scatter(T_test[y_test == c, 0], T_test[y_test == c, 1], 30, label=LABELS[c], alpha=0.9, color=color)
 
     ax.legend()
     plt.savefig(join(out_dir, 'tsne_plot.png'))
