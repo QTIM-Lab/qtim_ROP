@@ -79,6 +79,15 @@ def misclassifications(file_names, img_path, y_true, y_pred, classes, out_dir, n
             class_count[yp] += 1
 
 
+def roc_auc_by_class(y_pred, y_true, classes):
+
+    best_thresh, fpr, tpr = {}, {}, {}
+    for class_name, c in classes.items():
+        # predictions[class_name].append(y_pred[:, c])
+        # labels[class_name].append(y_test[:, c])
+        best_thresh['class_name'], fpr, tpr = plot_roc_auc(y_pred[:, c], y_true[:, c], name=class_name)
+
+
 def plot_roc_auc(predictions, ground_truth, name=''):
 
     # Calculate ROC curve

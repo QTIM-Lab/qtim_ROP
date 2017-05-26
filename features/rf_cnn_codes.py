@@ -44,7 +44,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     :param raw_images: directory of raw images (referenced in the HDF5 file under 'original_images')
     :param out_dir: output directory for the RF and inference results
     :param train_data: data with which to train the random forest, if not already existing
-    :return: 
+    :return: ground truth, predictions and computed features for the test data provided
     """
 
     # Load model and set last layer
