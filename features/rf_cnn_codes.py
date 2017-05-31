@@ -6,7 +6,7 @@ from utils.metrics import confusion_matrix, misclassifications
 from plotting import plot_confusion
 import numpy as np
 from os.path import join, isfile
-from tsne import tsne
+from visualisation.tsne import tsne
 import itertools
 import matplotlib.pyplot as plt
 import pandas as pd

@@ -66,11 +66,11 @@ def misclassifications(file_names, img_path, y_true, y_pred, classes, out_dir, n
 
     for img, yt, yp in zip(file_names, y_true, y_pred):
 
-        if yt != yp and class_count[yp] < n:
+        if yt != yp:  # and class_count[yp] < n:
 
             plt.cla()
-            img = Image.open(join(img_path, img))
-            ax.imshow(np.transpose(img, (1, 2, 0)))
+            img = np.asarray(Image.open(join(img_path, img)))
+            ax.imshow(img)  # np.transpose(img, (1, 2, 0)))
             ax.text(5, 10, 'True: {}'.format(classes[yt]), fontdict=FONT)
             ax.text(5, 25, 'Predicted: {}'.format(classes[yp]), fontdict=FONT)
             ax.axis('off')
