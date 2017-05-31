@@ -12,7 +12,7 @@ from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
-from keras.utils.visualize_util import plot
+# from keras.utils.visualize_util import plot
 from keras.utils.np_utils import to_categorical
 
 from utils.common import *
@@ -57,7 +57,7 @@ class RetiNet(object):
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
             self._configure_network(build=True)
-            plot(self.model, join(self.experiment_dir, 'final_model.png'))
+            # plot(self.model, join(self.experiment_dir, 'final_model.png'))
 
         elif self.config['mode'] == 'evaluate':
 

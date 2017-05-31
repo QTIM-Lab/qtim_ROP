@@ -114,7 +114,6 @@ def segment(im_arr, unet):  # static method
     seg = recompone_overlap(pred_imgs, h, w, unet.stride_x, unet.stride_y)
 
     # Remove singleton dimensions and apply mask
-
     return apply_mask(seg[0], im_mask[0])
 
 if __name__ == "__main__":

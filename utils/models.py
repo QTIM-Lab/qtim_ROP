@@ -3,7 +3,7 @@ from os.path import split, join, sep, isfile
 import keras.backend as K
 from keras.models import model_from_json, Sequential
 from keras.layers import Activation, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from keras.utils.visualize_util import plot
+# from keras.utils.visualize_util import plot
 from keras.callbacks import Callback
 
 import json
@@ -65,7 +65,7 @@ def simple_CNN(out_dir=None):
         with open(model_out, 'w') as json_file:
             json_file.write(model.to_json())
 
-        plot(model, to_file=join(out_dir, 'arch.png'), show_shapes=True)
+        # plot(model, to_file=join(out_dir, 'arch.png'), show_shapes=True)
 
 
 def deep_CNN(out_dir=None):
