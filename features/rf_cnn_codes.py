@@ -154,4 +154,4 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--out-dir', dest='out_dir', help="Output directory for results", required=True)
 
     args = parser.parse_args()
-    main(args.model_config, args.raw_images, args.test_data, args.out_dir, train_data=args.training_data)
+    main(args.model_config, args.test_data, args.raw_images, args.out_dir, train_data=args.training_data)
