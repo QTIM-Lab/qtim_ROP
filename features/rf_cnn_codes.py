@@ -41,7 +41,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     
     :param model_conf: YAML file of pre-trained CNN
     :param test_data: HDF5 file of data to test with
-    :param raw_images: directory of raw images (referenced in the HDF5 file under 'original_images')
+    :param raw_images: directory of raw images (referenced in the HDF5 file under 'original_files')
     :param out_dir: output directory for the RF and inference results
     :param train_data: data with which to train the random forest, if not already existing
     :return: ground truth, predictions and computed features for the test data provided
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', dest='model_config', help="YAML file for model to test", required=True)
     parser.add_argument('-tr', '--train', dest='training_data', help="HDF5 file for training data", default=None)
     parser.add_argument('-te', '--test', dest='test_data', help="HDF5 file for test data", required=True)
+    parser.add_argument('-r', '--raw', dest='raw_images', help="Folder of original (raw) images", required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help="Output directory for results", required=True)
 
-
     args = parser.parse_args()
-    main(args.model_config,  args.test_data, args.out_dir, train_data=args.training_data)
+    main(args.model_config, args.raw_images, args.test_data, args.out_dir, train_data=args.training_data)
