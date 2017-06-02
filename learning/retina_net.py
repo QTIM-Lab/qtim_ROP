@@ -95,8 +95,8 @@ class RetiNet(object):
             predictions = Dense(3, activation='softmax')(x)
 
             self.model = Model(input=base_model.input, output=predictions)
-            for layer in base_model.layers:
-                layer.trainable = fine_tuning
+            # for layer in base_model.layers:
+            #     layer.trainable = fine_tuning
 
         else:
 

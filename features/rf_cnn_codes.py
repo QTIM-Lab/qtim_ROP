@@ -2,7 +2,8 @@ from learning.retina_net import RetiNet
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 from utils.common import dict_reverse, make_sub_dir
-from utils.metrics import confusion_matrix, misclassifications
+from utils.metrics import confusion_matrix, misclassifications, plot_roc_auc
+from keras.utils.np_utils import to_categorical
 from plotting import plot_confusion
 import numpy as np
 from os.path import join, isfile
@@ -96,10 +97,8 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     print "Getting RF predictions..."
     y_pred = rf.predict_proba(X_test)
 
-    # col_names = dict_reverse(cnn_features['classes'])
-    # roc, thresh, J = roc_auc(y_pred, to_categorical(y_test), col_names, join(out_dir, 'roc_auc.svg'))
-
-    return y_test, y_pred, cnn_features
+    col_names = dict_reverse(cnn_features['classes'])
+    roc, thresh, J = plot_roc_auc(y_pred, to_categorical(y_test), join(out_dir, 'roc_auc.svg'))
 
     # # Confusion matrix, based on best threshold
     # for ci, cn in LABELS.items():
@@ -108,6 +107,10 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     #     confusion = confusion_matrix(to_categorical(y_test)[:, ci], y_pred[:, ci] > best_thresh)
     #     print confusion
     #     plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion_{}.svg'.format(cn)))
+
+    return y_test, y_pred, cnn_features
+
+
 
 
 def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
@@ -131,7 +134,7 @@ def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):
     fig, ax = sns.plt.subplots()
     for c in (0, 2, 1):
         color = next(pal)
-        ax.scatter(T_train[y_train == c, 0], T_train[y_train == c, 1], 20, label=LABELS[c], alpha=0.1, color=color)
+        ax.scatter(T_train[y_train == c, 0], T_train[y_train == c, 1], 20, alpha=0.1, color=color)
         ax.scatter(T_test[y_test == c, 0], T_test[y_test == c, 1], 30, label=LABELS[c], alpha=0.9, color=color)
 
     ax.legend()
