@@ -79,9 +79,8 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     make_tsne(X_train, y_train, X_test, np.asarray(y_test), out_dir)
 
     # Save features
-    # f = h5py.File(test_data, 'r')
-    # index_col = 'filenames' if 'filenames' in f:
-    # pd.DataFrame(data=X_test, index=f['filenames']).to_csv(join(out_dir, 'test_features.csv'))
+    f = h5py.File(test_data, 'r')
+    pd.DataFrame(data=X_test, index=f['original_files']).to_csv(join(out_dir, 'test_features.csv'))
 
     # Predict classes
     y_pred_classes = rf.predict(X_test)
