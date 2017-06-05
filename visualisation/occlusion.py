@@ -48,7 +48,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
         if not isfile(hmaps_out):
 
-            heatmaps = np.zeros(shape=(x_dim, y_dim, no_imgs))
+            heatmaps = np.zeros(shape=(no_imgs, x_dim, y_dim))
 
             for x in range(0, x_dim):
                 for y in range(0, y_dim):
@@ -61,8 +61,8 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
                     occ_probabilites = model.predict_on_batch(img_arr)
 
                     # Assign heatmap value as probability of class, as predicted without occlusion
-                    for occ_prob, raw_pred in zip(occ_probabilites, raw_predictions):
-                        heatmaps[x, y] = occ_prob[raw_pred]
+                    for i, occ_prob, raw_pred in enumerate(zip(occ_probabilites, raw_predictions)):
+                        heatmaps[i, x, y] = occ_prob[raw_pred]
 
             np.save(hmaps_out, heatmaps)
 
@@ -76,8 +76,8 @@ def plot_heatmaps(img_arr, heatmaps, out_dir):
     for j, (img, h_map) in enumerate(zip(img_arr, heatmaps)):
         f = plt.figure()
 
-        print img.shape
-        plt.imshow(np.transpose(img, (2, 0, 1)))
+        img = np.transpose(img, (1, 2, 0))
+        plt.imshow(img, cmap='gray')
         plt.imshow(h_map, cmap=plt.cm.viridis, alpha=0.7, interpolation='bilinear')
         plt.savefig(join(out_dir, '{}.png'.format(j)))
 
