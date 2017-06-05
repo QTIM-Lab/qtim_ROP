@@ -11,7 +11,7 @@ from utils.common import find_images_by_class, make_sub_dir
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def occlusion_heatmaps(model_config, test_data, out_dir, n_imgs=None, window_size=12):
+def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_size=12):
 
     # Load model
     model = RetiNet(model_config).model
@@ -21,7 +21,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, n_imgs=None, window_siz
 
         class_dir = make_sub_dir(out_dir, class_)
 
-        no_imgs = len(img_list) if n_imgs is None else n_imgs
+        no_imgs = len(img_list) if no_imgs is None else no_imgs
         img_arr = []
 
         for img_path in img_list[:no_imgs]:  # TODO use full set, just one test img for now
@@ -87,9 +87,9 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model-config', dest='model_config', help='Model config (YAML) file', required=True)
     parser.add_argument('-t', '--test-data', dest='test_data', help='Test data', required=True)
     parser.add_argument('-w', '--window-size', dest='window_size', help='Size of occluded patch', default=12)
-    parser.add_argument('-n', '--n-imgs', dest='n_imgs', help='Number of images to test with', default=None)
+    parser.add_argument('-n', '--no-imgs', dest='no_imgs', help='Number of images to test with', default=None)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help='Output directory', required=True)
 
     args = parser.parse_args()
 
-    occlusion_heatmaps(args.model_config, args.test_data, args.out_dir, n_imgs=args.no_imgs, window_size=args.window_size)
+    occlusion_heatmaps(args.model_config, args.test_data, args.out_dir, no_imgs=args.no_imgs, window_size=args.window_size)
