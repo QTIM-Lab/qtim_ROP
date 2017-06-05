@@ -37,4 +37,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    occlusion_heatmaps(args.test_data, args.out_dir, window_size=args.window_size)
+    occlusion_heatmaps(args.model_config, args.test_data, args.out_dir, window_size=args.window_size)
