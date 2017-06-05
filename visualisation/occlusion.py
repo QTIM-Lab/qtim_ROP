@@ -1,12 +1,12 @@
 import cv2
 import numpy as np
 from learning.retina_net import RetiNet
-from utils.common import find_images
+from utils.common import find_images_by_class
 
 
 def occlusion_heatmaps(model_config, test_data, out_dir, window_size=12):
 
-    imgs_by_class = find_images(test_data)
+    imgs_by_class = find_images_by_class(test_data)
 
     for class_, img_list in imgs_by_class.items():
 
