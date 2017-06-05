@@ -3,7 +3,7 @@ import numpy as np
 from learning.retina_net import RetiNet
 from utils.common import find_images_by_class
 
-CLASSES = {'No': 0, 'Plus': 1, 'Pre-Plus': 2}
+CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
 def occlusion_heatmaps(model_config, test_data, out_dir, window_size=12):
