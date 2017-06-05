@@ -2,7 +2,7 @@ from learning.retina_net import RetiNet
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 from utils.common import dict_reverse, make_sub_dir
-from utils.metrics import confusion_matrix, misclassifications, plot_roc_auc
+from utils.metrics import confusion_matrix, misclassifications, plot_ROC_by_class
 from keras.utils.np_utils import to_categorical
 from plotting import plot_confusion
 import numpy as np
@@ -98,7 +98,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     y_pred = rf.predict_proba(X_test)
 
     col_names = dict_reverse(cnn_features['classes'])
-    roc, thresh, J = plot_roc_auc(y_pred, to_categorical(y_test), join(out_dir, 'roc_auc.svg'))
+    roc, thresh, J = plot_ROC_by_class(y_pred, to_categorical(y_test), join(out_dir, 'roc_auc.svg'))
 
     # # Confusion matrix, based on best threshold
     # for ci, cn in LABELS.items():
@@ -109,8 +109,6 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     #     plot_confusion(confusion, ['Not Plus', 'Plus'], join(out_dir, 'confusion_{}.svg'.format(cn)))
 
     return y_test, y_pred, cnn_features
-
-
 
 
 def make_tsne(X_train, y_train, X_test, y_test, out_dir, misclassifed=None):

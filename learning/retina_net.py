@@ -13,6 +13,7 @@ from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 # from keras.utils.visualize_util import plot
+from googlenet_custom_layers import PoolHelper, LRN
 from keras.utils.np_utils import to_categorical
 
 from utils.common import *
@@ -101,7 +102,6 @@ class RetiNet(object):
         else:
 
             if 'googlenet' in type_:
-                from googlenet_custom_layers import PoolHelper, LRN
                 custom_objects = {"PoolHelper": PoolHelper, "LRN": LRN}
                 mod_str = 'GoogLeNet'
             else:

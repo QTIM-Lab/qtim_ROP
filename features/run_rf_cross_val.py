@@ -1,7 +1,7 @@
 from os.path import basename, join, isfile, dirname
 from features.rf_cnn_codes import main as cnn_rf
 from utils.common import get_subdirs, make_sub_dir, dict_reverse
-from utils.metrics import plot_roc_auc, plot_confusion
+from utils.metrics import plot_ROC_splits, plot_PR_splits, plot_confusion
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from keras.utils.np_utils import to_categorical
 from metadata import image_to_metadata
@@ -10,14 +10,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from glob import glob
+from itertools import cycle
 
 CLASSES = {'No': 0, 'Plus': 1}  #, 'Pre-Plus': 2}
 
 
 def run_cross_val(all_splits, raw_images, out_dir):
 
-    # predictions = defaultdict(list)
-    # labels = defaultdict(list)
+    y_pred_all = []
+    y_true_all = []
 
     for i, split_dir in enumerate(sorted(get_subdirs(all_splits))):
 
@@ -59,41 +60,47 @@ def run_cross_val(all_splits, raw_images, out_dir):
             y_true = np.load(y_true_out)
             y_pred = np.load(y_pred_out)
 
-        # print "Dimensions of ground truth: {}".format(y_true.shape)
-        # print "Dimensions of predictions: {}".format(y_pred.shape)
+            y_true_all.append(y_true)
+            y_pred_all.append(y_pred)
+
+    # ROC curves - all splits
+    for class_ in CLASSES.items():
         fig, ax = plt.subplots()
+        plot_ROC_splits(y_true_all, y_pred_all, class_)
+        plt.savefig(join(out_dir, 'ROC_AUC_{}_AllSplits.png'.format(class_[0])))
+        plt.savefig(join(out_dir, 'ROC_AUC_{}_AllSplits.svg'.format(class_[0])))
 
-        # Evaluate each class individually
-        for class_name, c in CLASSES.items():
+    # PR curves - all splits
+    for class_ in CLASSES.items():
+        fig, ax = plt.subplots()
+        plot_PR_splits(y_true_all, y_pred_all, class_)
+        plt.savefig(join(out_dir, 'PR_AUC_{}_AllSplits.png'.format(class_[0])))
+        plt.savefig(join(out_dir, 'PR_AUC_{}_AllSplits.svg'.format(class_[0])))
 
-            # predictions[class_name].append(y_pred[:, c])
-            # labels[class_name].append(y_test[:, c])
-            thresh, fpr, tpr = plot_roc_auc(y_pred[:, c], y_true[:, c], name=class_name)
-
-            print "~~{}~~".format(class_name)
-            print "Best threshold: {}".format(thresh)
-            print "FPR/TPR: {}/{}".format(fpr, tpr)
-
-            # Make hard prediction at best threshold
-            y_pred_best = y_pred[:, c] > thresh
-            conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)
-            print conf
-            print classification_report(y_true[:, c], y_pred_best)
-            print accuracy_score(y_true[:, c], y_pred_best)
+        # print "~~{}~~".format(class_name)
+        # print "Best threshold: {}".format(thresh)
+        # print "FPR/TPR: {}/{}".format(fpr, tpr)
+        #
+        # # Make hard prediction at best threshold
+        # y_pred_best = y_pred[:, c] > thresh
+        # conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)
+        # print conf
+        # print classification_report(y_true[:, c], y_pred_best)
+        # print accuracy_score(y_true[:, c], y_pred_best)
 
             # If we're predicting on 'Plus', 0 -> No or Pre-Plus, 1 -> Plus
             # If we're predicting on 'No', 0 -> Pre-Plus or Plus, 1 -> No
-            classes = ['No or Pre-Plus', 'Plus'] if class_name == 'Plus' else ['Pre-Plus or Plus', 'No']
+            # classes = ['No or Pre-Plus', 'Plus'] if class_name == 'Plus' else ['Pre-Plus or Plus', 'No']
             # plot_confusion(conf, classes, join(results_dir, 'confusion_{}'.format(class_name)))
-
-        plt.title('ROC curve for prediction of "No" and "Plus"')
-        plt.legend(loc='lower right')
-        plt.plot([0, 1], [0, 1], 'k--')
-        plt.xlim([-0.025, 1.025])
-        plt.ylim([-0.025, 1.025])
-        plt.ylabel('True Positive Rate')
-        plt.xlabel('False Positive Rate')
-        plt.savefig(join(out_dir, 'ROC_AUC_Per_Class_Split{}.svg'.format(i)))
+    #
+    # plt.title('ROC curve for prediction of "No" and "Plus"')
+    # plt.legend(loc='lower right')
+    # plt.plot([0, 1], [0, 1], 'k--')
+    # plt.xlim([-0.025, 1.025])
+    # plt.ylim([-0.025, 1.025])
+    # plt.ylabel('True Positive Rate')
+    # plt.xlabel('False Positive Rate')
+    # plt.savefig(join(out_dir, 'ROC_AUC_Per_Class_Combined.svg'))
 
     # Save predictions
     # save_predictions(predictions, labels, CLASSES, results_dir)
