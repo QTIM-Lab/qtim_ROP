@@ -3,6 +3,8 @@ import numpy as np
 from learning.retina_net import RetiNet
 from utils.common import find_images_by_class
 
+CLASSES = {'No': 0, 'Plus': 1, 'Pre-Plus': 2}
+
 
 def occlusion_heatmaps(model_config, test_data, out_dir, window_size=12):
 
@@ -21,13 +23,13 @@ def occlusion_heatmaps(model_config, test_data, out_dir, window_size=12):
             # Load and prepare image
             img = cv2.imread(img_path)
             img = img.transpose((2, 0, 1))
-
             img_arr.append(img)
 
+    # Create single array of inputs
     img_arr = np.stack(img_arr, axis=0)
     print img_arr.shape
 
-    x = model.predict(img)
+    x = model.predict_on_batch(img_arr)
     print x
 
 if __name__ == '__main__':
