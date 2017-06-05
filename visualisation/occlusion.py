@@ -24,7 +24,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, n_imgs=None, window_siz
         no_imgs = len(img_list) if n_imgs is None else n_imgs
         img_arr = []
 
-        for img_path in img_list[:1]:  # TODO use full set, just one test img for now
+        for img_path in img_list[:no_imgs]:  # TODO use full set, just one test img for now
 
             # Load and prepare image
             img = cv2.imread(img_path)
