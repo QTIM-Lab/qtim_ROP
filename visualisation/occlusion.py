@@ -21,7 +21,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
         class_dir = make_sub_dir(out_dir, class_)
 
-        no_imgs = len(img_list) if no_imgs is None else no_imgs
+        no_imgs = len(img_list) if no_imgs is None else int(no_imgs)
         img_arr = []
 
         for img_path in img_list[:no_imgs]:  # TODO use full set, just one test img for now
@@ -75,7 +75,9 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 def plot_heatmaps(img_arr, heatmaps, out_dir):
     for j, (img, h_map) in enumerate(zip(img_arr, heatmaps)):
         f = plt.figure()
-        plt.imshow(img.tranpose((2, 0, 1)))
+
+        print img.shape
+        plt.imshow(np.transpose(img, (2, 0, 1)))
         plt.imshow(h_map, cmap=plt.cm.viridis, alpha=0.7, interpolation='bilinear')
         plt.savefig(join(out_dir, '{}.png'.format(j)))
 
