@@ -66,7 +66,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
                     occ_probabilites = model.predict_on_batch(occ_img)
 
                     # Assign heatmap value as probability of class, as predicted without occlusion
-                    for i, occ_prob, raw_pred in enumerate(zip(occ_probabilites, raw_predictions)):
+                    for i, (occ_prob, raw_pred) in enumerate(zip(occ_probabilites, raw_predictions)):
                         heatmaps[i, x, y] = occ_prob[raw_pred]
 
             np.save(hmaps_out, heatmaps)
