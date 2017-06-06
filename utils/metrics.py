@@ -120,6 +120,9 @@ def plot_PR_splits(y_true_all, y_pred_all, (class_name, class_index)):
 
 def plot_ROC_by_class(y_true, y_pred, classes, ls='-'):
 
+    print y_true.shape
+    print y_pred.shape
+
     best_thresh = {}
     for class_name, c in classes.items():  # for each class
 

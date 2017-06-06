@@ -78,7 +78,8 @@ def plot_heatmaps(img_arr, heatmaps, out_dir):
 
         img = np.transpose(img, (1, 2, 0))
         plt.imshow(img, cmap='gray')
-        plt.imshow(h_map, cmap=plt.cm.viridis, alpha=0.7, interpolation='bilinear')
+        plt.imshow(h_map, cmap=plt.cm.magma, alpha=0.7, interpolation='bilinear')
+        plt.colorbar()
         plt.axis('off')
         plt.savefig(join(out_dir, '{}.png'.format(j)), bbox_inches='tight')
 
