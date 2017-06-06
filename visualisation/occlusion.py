@@ -60,7 +60,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
                     occ_img = np.copy(img_arr)  # create copy
                     occ_img[:, :, x_range, y_range] = 0
 
-                    cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)))
+                    cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)), np.transpose(occ_img[0], (1, 2, 0)))
 
                     # Get predictions for current occluded region
                     occ_probabilites = model.predict_on_batch(occ_img)
@@ -79,12 +79,12 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
 def plot_heatmaps(img_arr, heatmaps, out_dir):
     for j, (img, h_map) in enumerate(zip(img_arr, heatmaps)):
-        f = plt.figure()
 
         img = np.transpose(img, (1, 2, 0))
         plt.imshow(img, cmap='gray')
         plt.imshow(h_map, cmap=plt.cm.viridis, alpha=0.7, interpolation='bilinear')
-        plt.savefig(join(out_dir, '{}.png'.format(j)))
+        plt.axis('off)')
+        plt.savefig(join(out_dir, '{}.png'.format(j)), bbox_inches='tight')
 
 if __name__ == '__main__':
 
