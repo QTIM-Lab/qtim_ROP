@@ -24,7 +24,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
         no_imgs = len(img_list) if no_imgs is None else int(no_imgs)
         img_arr = []
 
-        for img_path in img_list[:no_imgs]:  # TODO use full set, just one test img for now
+        for img_path in img_list[:no_imgs]:
 
             # Load and prepare image
             img = cv2.imread(img_path)
@@ -45,6 +45,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
         hw = window_size / 2
 
         hmaps_out = join(class_dir, 'heatmaps.npy')
+        debug_dir = make_sub_dir(class_dir, 'debug')
 
         if not isfile(hmaps_out):
 
@@ -55,10 +56,14 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
                     x_range = np.clip(np.arange(x-hw, x+hw), 0, x_dim-1)
                     y_range = np.clip(np.arange(y-hw, y+hw), 0, y_dim-1)
-                    img_arr[:, :, x_range, y_range] = 0
+
+                    occ_img = np.copy(img_arr)  # create copy
+                    occ_img[:, :, x_range, y_range] = 0
+
+                    cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)))
 
                     # Get predictions for current occluded region
-                    occ_probabilites = model.predict_on_batch(img_arr)
+                    occ_probabilites = model.predict_on_batch(occ_img)
 
                     # Assign heatmap value as probability of class, as predicted without occlusion
                     for i, occ_prob, raw_pred in enumerate(zip(occ_probabilites, raw_predictions)):
