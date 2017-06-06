@@ -11,7 +11,7 @@ from utils.common import find_images_by_class, make_sub_dir
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_size=12):
+def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_size=24):
 
     # Load model
     model = RetiNet(model_config).model
@@ -33,7 +33,6 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
         # Create single array of inputs
         img_arr = np.stack(img_arr, axis=0)
-        print img_arr.shape
 
         # Get raw predictions
         raw_probabilities = model.predict_on_batch(img_arr)
@@ -45,7 +44,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
         hw = window_size / 2
 
         hmaps_out = join(class_dir, 'heatmaps.npy')
-        debug_dir = make_sub_dir(class_dir, 'debug')
+        # debug_dir = make_sub_dir(class_dir, 'debug')
 
         if not isfile(hmaps_out):
 
@@ -54,13 +53,10 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
             for x in range(0, x_dim):
                 for y in range(0, y_dim):
 
-                    x_range = np.clip(np.arange(x-hw, x+hw), 0, x_dim-1)
-                    y_range = np.clip(np.arange(y-hw, y+hw), 0, y_dim-1)
-
                     occ_img = np.copy(img_arr)  # create copy
-                    occ_img[:, :, x_range, y_range] = 0
+                    occ_img[:, :, np.max([0, x-hw]):np.min([x+hw, x_dim]), np.max([0, y-hw]):np.min([y+hw, y_dim])] = 0
 
-                    cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)), np.transpose(occ_img[0], (1, 2, 0)))
+                    # cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)), np.transpose(occ_img[0], (1, 2, 0)))
 
                     # Get predictions for current occluded region
                     occ_probabilites = model.predict_on_batch(occ_img)
@@ -93,7 +89,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-m', '--model-config', dest='model_config', help='Model config (YAML) file', required=True)
     parser.add_argument('-t', '--test-data', dest='test_data', help='Test data', required=True)
-    parser.add_argument('-w', '--window-size', dest='window_size', help='Size of occluded patch', default=12)
+    parser.add_argument('-w', '--window-size', dest='window_size', help='Size of occluded patch', default=24)
     parser.add_argument('-n', '--no-imgs', dest='no_imgs', help='Number of images to test with', default=None)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help='Output directory', required=True)
 
