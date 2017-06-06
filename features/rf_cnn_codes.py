@@ -98,7 +98,17 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     y_pred = rf.predict_proba(X_test)
 
     col_names = dict_reverse(cnn_features['classes'])
-    roc, thresh, J = plot_ROC_by_class(y_pred, to_categorical(y_test), join(out_dir, 'roc_auc.svg'))
+    LABELS.pop('Pre-Plus')
+    roc, thresh, J = plot_ROC_by_class(y_pred, to_categorical(y_test), LABELS)
+
+    plt.title('Receiver operating characteristic')
+    plt.legend(loc='lower right')
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([-0.025, 1.025])
+    plt.ylim([-0.025, 1.025])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    join(out_dir, 'roc_auc.svg')
 
     # # Confusion matrix, based on best threshold
     # for ci, cn in LABELS.items():
