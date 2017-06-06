@@ -98,7 +98,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     y_pred = rf.predict_proba(X_test)
 
     col_names = dict_reverse(cnn_features['classes'])
-    LABELS.pop('Pre-Plus')
+    LABELS.pop(2)  # remove Pre-Plus for ROC curve
     roc, thresh, J = plot_ROC_by_class(y_pred, to_categorical(y_test), LABELS)
 
     plt.title('Receiver operating characteristic')
