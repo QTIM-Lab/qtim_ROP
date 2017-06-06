@@ -55,10 +55,10 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
                     occ_img = np.copy(img_arr)  # create copy
 
-                    x_range = range(np.max([0, x-hw]), np.min([x+hw, x_dim]))
-                    y_range = range(np.max([0, y-hw]), np.min([y+hw, y_dim]))
+                    x_min, x_max = np.max([0, x-hw]), np.min([x+hw, x_dim])
+                    y_min, y_max = np.max([0, y-hw]), np.min([y+hw, y_dim])
 
-                    occ_img[:, :, x_range, y_range] = 0
+                    occ_img[:, :, x_min:x_max, y_min:y_max] = 0
 
                     # cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)), np.transpose(occ_img[0], (1, 2, 0)))
 
@@ -68,7 +68,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
                     # Assign heatmap value as probability of class, as predicted without occlusion
                     for i, (occ_prob, raw_pred) in enumerate(zip(occ_probabilities, raw_predictions)):
-                        heatmaps[i, x_range, y_range] = occ_prob[raw_pred] * 100
+                        heatmaps[i, x_min:x_max, y_min:y_max] = occ_prob[raw_pred] * 100
 
             np.save(hmaps_out, heatmaps)
 
