@@ -96,11 +96,10 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     # Predict probabilities
     print "Getting RF predictions..."
     y_pred = rf.predict_proba(X_test)
-
-    col_names = dict_reverse(cnn_features['classes'])
     LABELS.pop(2)  # remove Pre-Plus for ROC curve
-    plot_ROC_by_class(to_categorical(y_test), y_pred, dict_reverse(LABELS))
 
+    fig, ax = plt.subplots()
+    plot_ROC_by_class(to_categorical(y_test), y_pred, dict_reverse(LABELS))
     plt.title('Receiver operating characteristic')
     plt.legend(loc='lower right')
     plt.plot([0, 1], [0, 1], 'k--')
