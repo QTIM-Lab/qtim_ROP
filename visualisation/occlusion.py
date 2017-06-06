@@ -50,20 +50,25 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
             heatmaps = np.zeros(shape=(no_imgs, x_dim, y_dim))
 
-            for x in range(0, x_dim):
-                for y in range(0, y_dim):
+            for x in range(0, x_dim, hw):
+                for y in range(0, y_dim, hw):
 
                     occ_img = np.copy(img_arr)  # create copy
-                    occ_img[:, :, np.max([0, x-hw]):np.min([x+hw, x_dim]), np.max([0, y-hw]):np.min([y+hw, y_dim])] = 0
+
+                    x_range = range(np.max([0, x-hw]), np.min([x+hw, x_dim]))
+                    y_range = range(np.max([0, y-hw]), np.min([y+hw, y_dim]))
+
+                    occ_img[:, :, x_range, y_range] = 0
 
                     # cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)), np.transpose(occ_img[0], (1, 2, 0)))
 
                     # Get predictions for current occluded region
-                    occ_probabilites = model.predict_on_batch(occ_img)
+                    occ_probabilities = model.predict_on_batch(occ_img)
+                    print occ_probabilities
 
                     # Assign heatmap value as probability of class, as predicted without occlusion
-                    for i, (occ_prob, raw_pred) in enumerate(zip(occ_probabilites, raw_predictions)):
-                        heatmaps[i, x, y] = occ_prob[raw_pred]
+                    for i, (occ_prob, raw_pred) in enumerate(zip(occ_probabilities, raw_predictions)):
+                        heatmaps[i, x_range, y_range] = occ_prob[raw_pred] * 100
 
             np.save(hmaps_out, heatmaps)
 
@@ -74,8 +79,10 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
 
 def plot_heatmaps(img_arr, heatmaps, out_dir):
+
     for j, (img, h_map) in enumerate(zip(img_arr, heatmaps)):
 
+        fig, ax = plt.subplots()
         img = np.transpose(img, (1, 2, 0))
         plt.imshow(img, cmap='gray')
         plt.imshow(h_map, cmap=plt.cm.magma, alpha=0.7, interpolation='bilinear')

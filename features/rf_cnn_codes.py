@@ -108,7 +108,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     plt.ylim([-0.025, 1.025])
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
-    join(out_dir, 'roc_auc.svg')
+    plt.savefig(join(out_dir, 'roc_auc.svg'))
 
     # # Confusion matrix, based on best threshold
     # for ci, cn in LABELS.items():
