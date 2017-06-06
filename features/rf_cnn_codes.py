@@ -99,7 +99,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
 
     col_names = dict_reverse(cnn_features['classes'])
     LABELS.pop(2)  # remove Pre-Plus for ROC curve
-    roc, thresh, J = plot_ROC_by_class(y_pred, to_categorical(y_test), dict_reverse(LABELS))
+    roc, thresh, J = plot_ROC_by_class(to_categorical(y_test), y_pred, dict_reverse(LABELS))
 
     plt.title('Receiver operating characteristic')
     plt.legend(loc='lower right')
