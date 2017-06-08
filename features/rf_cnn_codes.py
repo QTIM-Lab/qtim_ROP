@@ -25,7 +25,7 @@ def train_rf(net, train_data):
 
     # Create random forest
     rf = RandomForestClassifier(n_estimators=100, class_weight='balanced_subsample')
-    X_train = train_codes['probabilities']
+    X_train = train_codes['y_pred']
     y_train = np.asarray(train_codes['y_true'])
 
     # T-SNE embedding
@@ -73,7 +73,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     # Load test data
     print "Extracting test features using pre-trained network '{}'".format(net.experiment_name)
     cnn_features = net.predict(test_data)
-    X_test = cnn_features['probabilities']
+    X_test = cnn_features['y_pred']
     y_test = cnn_features['y_true']
 
     # Make a t-SNE plot combining training and testing

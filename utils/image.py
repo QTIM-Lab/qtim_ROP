@@ -3,7 +3,9 @@ import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.np_utils import to_categorical
 import SimpleITK as sitk
+import cv2
 import h5py
+from utils.common import find_images
 
 
 def overlay_mask(img, mask, out):
@@ -12,6 +14,22 @@ def overlay_mask(img, mask, out):
     overlay = sitk.LabelOverlay(img_gray, sitk.GetImageFromArray(mask))
     sitk.WriteImage(overlay, out)
     return sitk.GetArrayFromImage(overlay)
+
+
+def imgs_to_th_array(img_dir):
+
+    img_arr = []
+
+    for img_path in find_images(img_dir):
+
+        # Load and prepare image
+        img = cv2.imread(img_path)
+        img = img.transpose((2, 0, 1))  # channels first
+        img_arr.append(img)
+
+    # Create single array of inputs
+    img_arr = np.stack(img_arr, axis=0)  # samples, channels, rows, cols
+    return img_arr
 
 
 def create_generator(data_path, input_shape, batch_size=32, training=True):

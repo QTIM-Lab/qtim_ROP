@@ -186,7 +186,7 @@ class RetiNet(object):
             n_samples = datagen.x.shape[0]
 
         predictions = self.model.predict_generator(datagen, n_samples)
-        data_dict = {'data': datagen, 'classes': class_indices, 'y_true': y_true[:n_samples], 'probabilities': predictions}
+        data_dict = {'data': datagen, 'classes': class_indices, 'y_true': y_true[:n_samples], 'y_pred': predictions}
 
         cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
         # pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
