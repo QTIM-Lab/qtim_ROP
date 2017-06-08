@@ -30,6 +30,7 @@ def get_raw_scores(model_config, test_data):
 
             # Load and prepare image
             img_names.append(basename(img_path))
+            img_classes.append(class_)
             img = cv2.imread(img_path)
             img = img.transpose((2, 0, 1))
             img_arr.append(img)
@@ -57,4 +58,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     raw_scores = get_raw_scores(args.model_config, args.test_data)
-    print raw_scores
+    raw_scores.to_csv(join(args.out_dir, 'raw_scores.csv'))
