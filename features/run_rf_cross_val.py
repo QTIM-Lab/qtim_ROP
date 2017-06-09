@@ -1,16 +1,14 @@
-from os.path import basename, join, isfile, dirname
-from features.rf_cnn_codes import main as cnn_rf
-from utils.common import get_subdirs, make_sub_dir, dict_reverse
-from utils.metrics import plot_ROC_splits, plot_PR_splits, plot_confusion
-from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
-from keras.utils.np_utils import to_categorical
-from metadata import image_to_metadata
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
-from glob import glob
-from itertools import cycle
+from os.path import basename, join, isfile, dirname
+
+import matplotlib.pyplot as plt
+import numpy as np
+from keras.utils.np_utils import to_categorical
+
+from evaluation.metrics import plot_ROC_splits, plot_PR_splits
+from features.rf_cnn_codes import main as cnn_rf
+from metadata import image_to_metadata
+from utils.common import get_subdirs, make_sub_dir
 
 CLASSES = {'No': 0, 'Plus': 1}  #, 'Pre-Plus': 2}
 

@@ -19,42 +19,42 @@ FONT = {'family': 'sans-serif',
         'size': 14}
 
 
-def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
-
-    # Get useful information from data dictionary
-    predictions, datagen, y_true, class_indices = [data_dict[x] for x in ['probabilities', 'data', 'y_true', 'classes']]
-
-    # Create data frames for predictions and ground truth
-    cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
-    pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
-    true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
-    pred_df.to_csv(join(out_dir, 'predictions.csv'))
-    true_df.to_csv(join(out_dir, 'ground_truth.csv'))
-
-    # For the sake of calculating confusion matrices
-    if y_pred is None:
-        y_pred = np.argmax(predictions, axis=1)
-
-    # Confusion
-    labels = [k[0] for k in sorted(class_indices.items(), key=lambda x: x[1])]
-    confusion = confusion_matrix(y_true, y_pred)
-
-    plot_confusion(confusion, labels, join(out_dir, 'confusion' + ext))
-    with open(join(out_dir, 'confusion.csv'), 'wb') as conf_csv:
-        pd.DataFrame(data=confusion).to_csv(conf_csv)
-
-    print "Accuracy: {}".format(accuracy_score(y_true, y_pred))
-    print classification_report(y_true, y_pred)
-
-    # Misclassified images  #  TODO fix bug when classes < 3
-    misclassified_dir = make_sub_dir(out_dir, 'misclassified')
-    misclassifications(datagen.x, y_true, y_pred, class_indices, misclassified_dir)
-
-    # ROC/AUC
-    col_names = {k: v for k, v in enumerate(y_true.columns)}
-    y_pred = predictions.as_matrix()
-    y_true = y_true.as_matrix()
-    calculate_roc_auc(y_pred, y_true, col_names, join(out_dir, 'roc_auc' + ext))
+# def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
+#
+#     # Get useful information from data dictionary
+#     predictions, datagen, y_true, class_indices = [data_dict[x] for x in ['probabilities', 'data', 'y_true', 'classes']]
+#
+#     # Create data frames for predictions and ground truth
+#     cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
+#     pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
+#     true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
+#     pred_df.to_csv(join(out_dir, 'predictions.csv'))
+#     true_df.to_csv(join(out_dir, 'ground_truth.csv'))
+#
+#     # For the sake of calculating confusion matrices
+#     if y_pred is None:
+#         y_pred = np.argmax(predictions, axis=1)
+#
+#     # Confusion
+#     labels = [k[0] for k in sorted(class_indices.items(), key=lambda x: x[1])]
+#     confusion = confusion_matrix(y_true, y_pred)
+#
+#     plot_confusion(confusion, labels, join(out_dir, 'confusion' + ext))
+#     with open(join(out_dir, 'confusion.csv'), 'wb') as conf_csv:
+#         pd.DataFrame(data=confusion).to_csv(conf_csv)
+#
+#     print "Accuracy: {}".format(accuracy_score(y_true, y_pred))
+#     print classification_report(y_true, y_pred)
+#
+#     # Misclassified images  #  TODO fix bug when classes < 3
+#     misclassified_dir = make_sub_dir(out_dir, 'misclassified')
+#     misclassifications(datagen.x, y_true, y_pred, class_indices, misclassified_dir)
+#
+#     # ROC/AUC
+#     col_names = {k: v for k, v in enumerate(y_true.columns)}
+#     y_pred = predictions.as_matrix()
+#     y_true = y_true.as_matrix()
+#     calculate_roc_auc(y_pred, y_true, col_names, join(out_dir, 'roc_auc' + ext))
 
 
 def misclassifications(file_names, img_path, y_true, y_pred, classes, out_dir, n=10):
@@ -165,19 +165,11 @@ def plot_PR_by_class(y_pred, y_true, classes, out_path):
     return best_thresh
 
 
-# def plot_roc_auc(predictions, ground_truth):
-#
-#     # Predictions and ground truth as numpy arrays
-#     y_pred = np.asarray(predictions).ravel()
-#     y_true = np.asarray(ground_truth).ravel()
-#
-#     # Get ROC curves
-#     fpr, tpr, thresholds = roc_curve(y_true, y_pred)
-#
-#     # Return index of best model by J statistic
-#
-#
-#     return thresholds[Ji], fpr[Ji], tpr[Ji]
+def confusion(y_true, y_pred, classes, out_path):
+
+    confusion = confusion_matrix(y_true, y_pred)
+    labels = [k[0] for k in sorted(classes.items(), key=lambda x: x[1])]
+    plot_confusion(confusion, labels, out_path)
 
 
 def j_statistic(y_true, y_pred, thresh):

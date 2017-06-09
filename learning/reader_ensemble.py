@@ -1,10 +1,12 @@
+import pandas as pd
 from os.path import join, basename
+
 import numpy as np
 from scipy.stats import mode
-import pandas as pd
+
+from evaluation.metrics import calculate_metrics
 from learning.retina_net import RetiNet
 from utils.common import get_subdirs, make_sub_dir
-from utils.metrics import calculate_metrics
 
 OPTIONS = ('vote', 'average', 'confidence', 'weighted_average', 'merge')
 

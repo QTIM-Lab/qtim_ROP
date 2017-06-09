@@ -1,7 +1,7 @@
-from learning.retina_net import RetiNet
-from utils.metrics import calculate_metrics
-from os.path import join
 import numpy as np
+
+from evaluation.metrics import calculate_metrics
+from learning.retina_net import RetiNet
 from utils.common import make_sub_dir
 
 

@@ -3,6 +3,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 from retina_net import RetiNet
 from utils.image import imgs_to_th_array
+from os.path import join
+from glob import glob
 
 
 class RetinaRF(object):
@@ -51,6 +53,18 @@ class RetinaRF(object):
 
         features = self.cnn.predict(img_data)
         return features
+
+
+def locate_config(search_dir):
+
+    try:
+        config_file = glob(join(search_dir, '*.yaml'))[0]
+        rf_pkl = glob(join(search_dir, '*.pkl'))[0]
+    except IndexError:
+        print "Missing CNN (.yaml) or RF (.pkl) file - unable to load"
+        raise
+
+    return config_file, rf_pkl
 
 if __name__ == '__main__':
 

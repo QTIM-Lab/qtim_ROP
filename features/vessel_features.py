@@ -1,17 +1,16 @@
+import pandas as pd
 from glob import glob
 from os.path import join, isfile
-import pandas as pd
-from skimage.morphology import skeletonize
+
 from skimage.morphology import remove_small_objects
+from skimage.morphology import skeletonize
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.model_selection import StratifiedShuffleSplit
+
+from evaluation.metrics import roc_auc
 from features.tracing import VesselTree
 from geom import *
 from utils.common import make_sub_dir, dict_reverse
-from utils.metrics import roc_auc
-import joblib
-
 
 CLASS_LABELS = {'normal': 0, 'pre-plus': 2, 'plus': 1}
 

@@ -3,9 +3,7 @@
 import matplotlib
 matplotlib.use('Agg')
 from os import chdir, getcwd
-from os.path import dirname, basename, splitext, abspath
-import numpy as np
-import csv
+from os.path import dirname, splitext, abspath
 
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
@@ -14,11 +12,10 @@ from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 # from keras.utils.visualize_util import plot
 from googlenet_custom_layers import PoolHelper, LRN
-from keras.utils.np_utils import to_categorical
 
 from utils.common import *
 from utils.image import create_generator
-from utils.metrics import calculate_metrics
+from evaluation.metrics import calculate_metrics
 from utils.models import SGDLearningRateTracker
 
 from plotting import *

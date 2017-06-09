@@ -1,18 +1,20 @@
-from learning.retina_net import RetiNet
+import itertools
+import pandas as pd
+from os.path import join, isfile
+
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from keras.utils.np_utils import to_categorical
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
-from utils.common import dict_reverse, make_sub_dir
-from utils.metrics import confusion_matrix, misclassifications, plot_ROC_by_class
-from keras.utils.np_utils import to_categorical
+
+from evaluation.metrics import confusion_matrix, misclassifications, plot_ROC_by_class
+from learning.retina_net import RetiNet
 from plotting import plot_confusion
-import numpy as np
-from os.path import join, isfile
+from utils.common import dict_reverse, make_sub_dir
 from visualisation.tsne import tsne
-import itertools
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-import h5py
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
