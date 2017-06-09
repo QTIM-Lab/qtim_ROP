@@ -27,7 +27,7 @@ def evaluate_ensemble(models_dir, test_images, out_dir, rf=False):
             model = RetinaRF(model_config, rf_pkl=rf_pkl)
         else:
             config_file = glob(join(model_dir, '*.yaml'))[0]
-            model = RetiNet(config_file)
+            model = RetiNet(config_file).model
 
         # Predicted probabilities
         print "Making predictions..."
