@@ -52,7 +52,8 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--models', dest='models', help='Folder of models', required=True)
     parser.add_argument('-i', '--images', dest='images', help='Images to test', required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help='Output directory', required=True)
-    parser.add_argument('-r', '--rf', action='store_true', dest=rf, help='Use random forest on CNN features?', default=False)
+    parser.add_argument('-r', '--rf', action='store_true', dest='rf', help='Use random forest on CNN features?',
+                        default=False)
     args = parser.parse_args()
 
     evaluate_ensemble(args.models, args.images, args.out_dir, rf=args.rf)
