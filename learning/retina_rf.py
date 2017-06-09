@@ -35,13 +35,13 @@ class RetinaRF(object):
 
         return self.rf, X_train, y_train
 
-    def predict(self, test_data):
+    def predict(self, img_arr):
 
         if self.rf is None:
             raise ValueError('RF not trained - call train first or pass RF pickle file in constructor')
 
         # Extract features using CNN
-        img_arr = imgs_to_th_array(test_data)
+        # img_arr = imgs_to_th_array(test_data)
         self.cnn.set_intermediate(self.feature_layer)
         features = self.cnn.model.predict_on_batch(img_arr)
 

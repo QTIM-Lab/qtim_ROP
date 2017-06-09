@@ -13,6 +13,7 @@ def evaluate_ensemble(models_dir, test_images, out_dir):
 
     # Get images and true classes
     img_arr, y_true = imgs_by_class_to_th_array(test_images, CLASS_LABELS)
+    print img_arr.shape
 
     y_pred_ensemble = []
 
@@ -20,10 +21,12 @@ def evaluate_ensemble(models_dir, test_images, out_dir):
     for i, model_dir in enumerate(get_subdirs(models_dir)):
 
         # Load model
+        print "Loading CNN/RF #{}".format(i)
         model_config, rf_pkl = locate_config(model_dir)
         cnn_rf = RetinaRF(model_config, rf_pkl=rf_pkl)
 
         # Predicted probabilities
+        print "Making predictions..."
         y_preda = cnn_rf.predict(img_arr)
         y_pred_ensemble.append(y_preda)
 
@@ -42,7 +45,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
 
     parser.add_argument('-m', '--models', dest='models', help='Folder of models', required=True)
-    parser.add_argument('-i', '--images', dest='test_images', help='Images to test', required=True)
+    parser.add_argument('-i', '--images', dest='images', help='Images to test', required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help='Output directory', required=True)
 
     args = parser.parse_args()
