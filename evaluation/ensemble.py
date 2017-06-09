@@ -34,7 +34,8 @@ def evaluate_ensemble(models_dir, test_images, out_dir):
         confusion(y_true, y_pred, CLASS_LABELS, join(out_dir, 'confusion_{}.png'.format(i)))
 
     # Evaluate ensemble
-    y_pred_ensemble = np.mean(np.dstack(y_pred_ensemble), axis=2)
+    y_preda_ensemble = np.mean(np.dstack(y_pred_ensemble), axis=2)
+    y_pred_ensemble = np.argmax(y_preda_ensemble, axis=1)
     confusion(y_true, y_pred_ensemble, CLASS_LABELS, join(out_dir, 'confusion_ensemble.png'))
 
 
