@@ -7,16 +7,17 @@ from utils.image import imgs_to_th_array
 
 class RetinaRF(object):
 
-    def __init__(self, model_config, rf_pkl=None):
+    def __init__(self, model_config, rf_pkl=None, feature_layer='flatten_3'):
 
         self.model_config = model_config
         self.cnn = RetiNet(model_config)
+        self.feature_layer = feature_layer
         self.rf = None if rf_pkl is None else joblib.load(rf_pkl)
 
-    def train(self, training_data, trees=100, feature_layer='flatten_3', rf_out=None):
+    def train(self, training_data, trees=100,rf_out=None):
 
         # Use CNN to extract features
-        self.cnn.set_intermediate(feature_layer)
+        self.cnn.set_intermediate(self.feature_layer)
         features = self.extract_features(training_data)
 
         # Create random forest
@@ -39,6 +40,7 @@ class RetinaRF(object):
 
         # Extract features using CNN
         img_arr = imgs_to_th_array(test_data)
+        self.cnn.set_intermediate(self.feature_layer)
         features = self.cnn.model.predict_on_batch(img_arr)
 
         # Return raw predictions (probabilities)
