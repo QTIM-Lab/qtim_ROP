@@ -5,6 +5,7 @@ from learning.retina_rf import RetiNet, RetinaRF, locate_config
 from os.path import join
 from glob import glob
 import numpy as np
+from sklearn.metrics import cohen_kappa_score
 
 CLASS_LABELS = {'No': 0, 'Plus': 1, 'Pre-Plus': 2}
 
@@ -36,6 +37,8 @@ def evaluate_ensemble(models_dir, test_images, out_dir, rf=False):
 
         y_pred = np.argmax(y_preda, axis=1)
         confusion(y_true, y_pred, CLASS_LABELS, join(out_dir, 'confusion_{}.png'.format(i)))
+
+        print cohen_kappa_score(y_true, y_pred, weights='quadratic')
 
     # Evaluate ensemble
     y_preda_ensemble = np.mean(np.dstack(y_pred_ensemble), axis=2)

@@ -10,23 +10,46 @@ import numpy as np
 from utils.common import find_images, find_images_by_class
 from learning.retina_net import RetiNet
 import re
+from sklearn.metrics import cohen_kappa_score
 
 
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
+SHEET_CLASSES = {1: 0, 2: 2, 3: 1}  # ugh
 
 
-def compare_scores(spreadsheet, img_dir):
+def compare_scores(spreadsheet, model_scores, img_dir):
 
+    # Open spreadsheet
     df = pd.read_excel(spreadsheet, "Sheet1")
     sheet_names = df['Origin'].dropna().values
     img_names = sorted([basename(x) for x in find_images(join(img_dir, '*'))])
-    _, matched = match_names(sheet_names, img_names)
 
-    # Create new column with matched names
-    df.insert(1, 'ImageName', '')
-    df['ImageName'][0:len(img_names)] = matched
+    # # Create new column with matched names
+    # _, matched = match_names(sheet_names, img_names)
+    # df.insert(1, 'ImageName', '')
+    # df['ImageName'][0:len(img_names)] = matched
 
-    print df
+    # Get reader names
+    reader_names = df.columns.values[2:10]
+    no_readers = len(reader_names)
+
+    kappa_map = np.zeros(shape=(no_readers, no_readers))
+
+    for i, reader0 in enumerate(reader_names):
+        for j, reader1 in enumerate(reader_names):
+
+            r0_scores = df[reader0].values[:100]
+            r1_scores = df[reader1].values[:100]
+
+            k = cohen_kappa_score(r0_scores, r1_scores, weights='quadratic')
+            kappa_map[i, j] = k
+
+    # Plot readers
+    anon_readers = ['Reader #{}'.format(i) for i in range(0, no_readers)]
+    df_kappa = pd.DataFrame(kappa_map, columns=anon_readers, index=anon_readers)
+    h = sns.heatmap(df_kappa, annot=True)
+    h.set_xticklabels(h.get_xticklabels(), rotation=30)
+    sns.plt.savefig('hmap.png')
 
 
 def match_names(sheet_names, img_names):
