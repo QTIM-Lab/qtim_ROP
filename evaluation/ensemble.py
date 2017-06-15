@@ -1,10 +1,11 @@
 from utils.common import make_sub_dir, get_subdirs
 from utils.image import imgs_by_class_to_th_array
 from metrics import confusion
-from learning.retina_rf import RetiNet, RetinaRF, locate_config
-from os.path import join
+from learning.retina_net import RetiNet, RetinaRF, locate_config
+from os.path import join, exists
 from glob import glob
 import numpy as np
+from scipy.stats import mode
 from sklearn.metrics import cohen_kappa_score
 
 CLASS_LABELS = {'No': 0, 'Plus': 1, 'Pre-Plus': 2}
@@ -16,34 +17,42 @@ def evaluate_ensemble(models_dir, test_images, out_dir, rf=False):
     img_arr, y_true = imgs_by_class_to_th_array(test_images, CLASS_LABELS)
     print img_arr.shape
 
-    y_pred_ensemble = []
+    y_pred_all = []
 
     # Load each model
     for i, model_dir in enumerate(get_subdirs(models_dir)):
 
         # Load model
-        print "Loading CNN/RF #{}".format(i)
         if rf:
+            print "Loading CNN+RF #{}".format(i)
             model_config, rf_pkl = locate_config(model_dir)
             model = RetinaRF(model_config, rf_pkl=rf_pkl)
         else:
+            print "Loading CNN #{}".format(i)
             config_file = glob(join(model_dir, '*.yaml'))[0]
             model = RetiNet(config_file).model
 
         # Predicted probabilities
         print "Making predictions..."
-        y_preda = model.predict(img_arr)
-        y_pred_ensemble.append(y_preda)
+        ypred_out = join(out_dir, 'ypred_{}.npy'.format(i))
 
+        if not exists(ypred_out):
+            y_preda = model.predict(img_arr)
+            np.save(ypred_out, y_preda)
+        else:
+            y_preda = np.load(ypred_out)
+
+        y_pred_all.append(y_preda)
         y_pred = np.argmax(y_preda, axis=1)
-        confusion(y_true, y_pred, CLASS_LABELS, join(out_dir, 'confusion_{}.png'.format(i)))
 
-        print cohen_kappa_score(y_true, y_pred, weights='quadratic')
+        kappa = cohen_kappa_score(y_true, y_pred, weights='quadratic')
+        confusion(y_true, y_pred, CLASS_LABELS, join(out_dir, 'confusion_split{}_k={:.3f}.png'.format(i, kappa)))
 
     # Evaluate ensemble
-    y_preda_ensemble = np.mean(np.dstack(y_pred_ensemble), axis=2)
+    y_preda_ensemble = np.mean(np.dstack(y_pred_all), axis=2)
     y_pred_ensemble = np.argmax(y_preda_ensemble, axis=1)
-    confusion(y_true, y_pred_ensemble, CLASS_LABELS, join(out_dir, 'confusion_ensemble.png'))
+    kappa = cohen_kappa_score(y_true, y_pred_ensemble)
+    confusion(y_true, y_pred_ensemble, CLASS_LABELS, join(out_dir, 'confusion_ensemble_k={:.3f}.png'.format(kappa)))
 
 
 if __name__ == '__main__':
