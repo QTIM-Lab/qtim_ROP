@@ -46,7 +46,7 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
                 y_pred = model.predict(img_arr)
             else:
                 model = RetiNet(cnn_model).model
-                y_pred = model.predict_on_batch(img_arr)g
+                y_pred = model.predict_on_batch(img_arr)
 
             # Serialize predictions
             np.save(y_true_out, y_true)
