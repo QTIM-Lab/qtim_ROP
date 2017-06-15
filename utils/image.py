@@ -77,6 +77,16 @@ def create_generator(data_path, input_shape, batch_size=32, training=True):
 
         return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, class_indices
 
+
+def hdf5_images_and_labels(data_path):
+
+    f = h5py.File(data_path, 'r')
+    class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
+    classes = [class_indices[k] for k in f['labels']]
+    labels = to_categorical(classes)
+    return f['data'], labels, class_indices
+
+
 def normalize(img):
 
     img_min, img_max = np.min(img), np.max(img)

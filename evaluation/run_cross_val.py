@@ -6,14 +6,15 @@ import numpy as np
 from keras.utils.np_utils import to_categorical
 
 from evaluation.metrics import plot_ROC_splits, plot_PR_splits
-from features.rf_cnn_codes import main as cnn_rf
 from metadata import image_to_metadata
+from learning.retina_net import RetiNet, RetinaRF, locate_config
 from utils.common import get_subdirs, make_sub_dir
+from utils.image import hdf5_images_and_labels
 
 CLASSES = {'No': 0, 'Plus': 1}  #, 'Pre-Plus': 2}
 
 
-def run_cross_val(all_splits, raw_images, out_dir):
+def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
 
     y_pred_all = []
     y_true_all = []
@@ -35,17 +36,17 @@ def run_cross_val(all_splits, raw_images, out_dir):
             train_data = join(split_dir, 'train.h5')
             test_data = join(split_dir, 'test.h5')
 
-            # Get a list of original image paths that correspond to the test images
-            # test_names =  join(split_dir, 'testing.csv')
-            # test_mapping = map_test_to_original(test_names, csv_file)
+            # Data and ground truth
+            img_arr, y_true, _ = hdf5_images_and_labels(test_data)
 
-            # Get the test data, and use CNN + RF to predict
-            print "Getting RF predictions from CNN features"
-            y_true, y_pred, cnn_features = cnn_rf(cnn_model, test_data, raw_images, results_dir, train_data=train_data)
-            # roc_auc, fpr, tpr = calculate_roc_auc(y_pred, to_categorical(y_test), cnn_features['classes'], None)
-
-            # Convert ground truth to categorical (one column per class)
-            y_true = to_categorical(y_true)  # binarize true labels
+            # Get model predictions
+            if use_rf:
+                rf_pkl = join(split_dir, 'rf.pkl')
+                model = RetinaRF(cnn_model, rf_pkl=rf_pkl)
+                y_pred = model.predict(img_arr)
+            else:
+                model = RetiNet(cnn_model).model
+                y_pred = model.predict_on_batch(img_arr)g
 
             # Serialize predictions
             np.save(y_true_out, y_true)
@@ -67,66 +68,6 @@ def run_cross_val(all_splits, raw_images, out_dir):
         plot_ROC_splits(y_true_all, y_pred_all, class_)
         plt.savefig(join(out_dir, 'ROC_AUC_{}_AllSplits.png'.format(class_[0])))
         plt.savefig(join(out_dir, 'ROC_AUC_{}_AllSplits.svg'.format(class_[0])))
-
-    # PR curves - all splits
-    for class_ in CLASSES.items():
-        fig, ax = plt.subplots()
-        plot_PR_splits(y_true_all, y_pred_all, class_)
-        plt.savefig(join(out_dir, 'PR_AUC_{}_AllSplits.png'.format(class_[0])))
-        plt.savefig(join(out_dir, 'PR_AUC_{}_AllSplits.svg'.format(class_[0])))
-
-        # print "~~{}~~".format(class_name)
-        # print "Best threshold: {}".format(thresh)
-        # print "FPR/TPR: {}/{}".format(fpr, tpr)
-        #
-        # # Make hard prediction at best threshold
-        # y_pred_best = y_pred[:, c] > thresh
-        # conf = confusion_matrix(y_true=y_true[:, c], y_pred=y_pred_best)
-        # print conf
-        # print classification_report(y_true[:, c], y_pred_best)
-        # print accuracy_score(y_true[:, c], y_pred_best)
-
-            # If we're predicting on 'Plus', 0 -> No or Pre-Plus, 1 -> Plus
-            # If we're predicting on 'No', 0 -> Pre-Plus or Plus, 1 -> No
-            # classes = ['No or Pre-Plus', 'Plus'] if class_name == 'Plus' else ['Pre-Plus or Plus', 'No']
-            # plot_confusion(conf, classes, join(results_dir, 'confusion_{}'.format(class_name)))
-    #
-    # plt.title('ROC curve for prediction of "No" and "Plus"')
-    # plt.legend(loc='lower right')
-    # plt.plot([0, 1], [0, 1], 'k--')
-    # plt.xlim([-0.025, 1.025])
-    # plt.ylim([-0.025, 1.025])
-    # plt.ylabel('True Positive Rate')
-    # plt.xlabel('False Positive Rate')
-    # plt.savefig(join(out_dir, 'ROC_AUC_Per_Class_Combined.svg'))
-
-    # Save predictions
-    # save_predictions(predictions, labels, CLASSES, results_dir)
-
-    # Plot ROC curves for No and Plus classes, combined across all splits
-    # fig, ax = plt.subplots()
-
-    # J = {}
-    # for class_name, c in CLASSES.items():
-    #
-    #     if class_name == 'Pre-Plus':
-    #         continue
-    #
-    #     # Concatenate predictions and labels across all splits
-    #     pred = np.concatenate([np.asarray(predictions[class_name][x]) for x in range(0, 5)])
-    #     labels = np.concatenate([np.asarray(labels[class_name][x]) for x in range(0, 5)])
-    #
-    #     print pred.shape
-    #     print labels.shape
-    #
-    #     j, fpr, tpr = plot_roc_auc(pred, labels, name=class_name)
-    #     print j
-    #     print fpr
-    #     print tpr
-    #
-    #     J[class_name] = j
-    #
-    # print J
 
 
 def map_test_to_original(test_csv, original_csv, img_path=None):
