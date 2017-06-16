@@ -35,7 +35,7 @@ class ReaderEnsemble(object):
 
             # Predict class probabilities using current model
             print "Generating predictions for model '{}".format(model.experiment_name)
-            data_dict = model.predict(test_data)
+            data_dict = model.evaluate(test_data)
 
             pred_prob = data_dict['probabilities']
             all_probs.append(pred_prob)  # keep probabilities

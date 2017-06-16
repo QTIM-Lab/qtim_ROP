@@ -10,7 +10,7 @@ VIEWS = ['posterior', 'nasal', 'temporal']
 
 
 dir_name = dirname(__file__)
-conf_name = join(dir_name, 'config/conf.yaml')
+conf_name = join(dir_name, 'config', 'conf.yaml')
 with open(conf_name) as y:
     conf = yaml.load(y)
 

@@ -176,7 +176,11 @@ class RetiNet(object):
         conf_eval['validation_data'] = abspath(self.config['validation_data'])
         return conf_eval
 
-    def predict(self, data_path, n_samples=None):
+    def predict(self, img_arr):
+
+        return self.model.predict_on_batch(img_arr)
+
+    def evaluate(self, data_path, n_samples=None):
 
         logging.info("Evaluating model for on {}".format(data_path))
         datagen, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
@@ -244,9 +248,20 @@ class RetinaRF(object):
         y_pred = self.rf.predict_proba(features)
         return y_pred
 
+    def evaluate(self, data_path):
+
+        # Get features
+        self.cnn.set_intermediate(self.feature_layer)
+        data_dict = self.extract_features(data_path)
+
+        # Get RF predictions
+        y_pred = self.rf.predict_proba(data_dict['y_pred'])
+        data_dict['y_pred'] = y_pred
+        return data_dict
+
     def extract_features(self, img_data):
 
-        features = self.cnn.predict(img_data)
+        features = self.cnn.evaluate(img_data)
         return features
 
 
@@ -277,5 +292,5 @@ if __name__ == '__main__':
         r.train()
     else:
         # Evaluate on validation data and calculate metrics
-        data_dict = r.predict(args.data)
+        data_dict = r.evaluate(args.data)
         calculate_metrics(data_dict, out_dir=r.eval_dir)

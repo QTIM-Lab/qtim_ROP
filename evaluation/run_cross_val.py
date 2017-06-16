@@ -32,21 +32,20 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
         if (not isfile(y_true_out)) or (not isfile(y_pred_out)):
 
             # Define path to model
-            cnn_model = join(split_dir, 'Split{}_Model'.format(i), 'Split{}_Model.yaml'.format(i))
+            cnn_model = join(split_dir, 'Split{}_Model.yaml'.format(i))
             train_data = join(split_dir, 'train.h5')
             test_data = join(split_dir, 'test.h5')
-
-            # Data and ground truth
-            img_arr, y_true, _ = hdf5_images_and_labels(test_data)
 
             # Get model predictions
             if use_rf:
                 rf_pkl = join(split_dir, 'rf.pkl')
                 model = RetinaRF(cnn_model, rf_pkl=rf_pkl)
-                y_pred = model.predict(img_arr)
             else:
-                model = RetiNet(cnn_model).model
-                y_pred = model.predict_on_batch(img_arr)
+                model = RetiNet(cnn_model)
+
+            data_dict = model.evaluate(test_data)
+            y_true = data_dict['y_true']
+            y_pred = data_dict['y_pred']
 
             # Serialize predictions
             np.save(y_true_out, y_true)
