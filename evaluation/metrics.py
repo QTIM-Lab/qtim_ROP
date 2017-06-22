@@ -85,11 +85,13 @@ def misclassifications(file_names, img_path, y_true, y_pred, classes, out_dir, n
 def plot_ROC_splits(y_true_all, y_pred_all, (class_name, class_index)):
 
     line_styles = cycle(['-', '--', '-.', ':', 'solid'])
+    all_aucs = []
 
     for split_no, (y_true_split, y_pred_split) in enumerate(zip(y_true_all, y_pred_all)):
 
         fpr, tpr, thresholds = roc_curve(y_true_split[:, class_index], y_pred_split[:, class_index])
         roc_auc = auc(fpr, tpr)
+        all_aucs.append(roc_auc)
 
         plt.plot(fpr, tpr, label='CV #{}, AUC = {:.3f}'.format(split_no + 1, roc_auc), linestyle=next(line_styles))
 
@@ -100,6 +102,8 @@ def plot_ROC_splits(y_true_all, y_pred_all, (class_name, class_index)):
     plt.ylim([-0.025, 1.025])
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
+
+    return all_aucs
 
 
 def plot_PR_splits(y_true_all, y_pred_all, (class_name, class_index)):
@@ -186,6 +190,19 @@ def j_statistic(y_true, y_pred, thresh):
     j = (TP / float(TP + FN)) + (TN / float(TN + FP)) - 1
     return j
 
+
+def fpr_and_tpr(y_true, y_pred):
+
+    C = confusion_matrix(y_true, y_pred)
+    TN = C[0, 0]
+    FN = C[1, 0]
+    TP = C[1, 1]
+    FP = C[0, 1]
+
+    tpr = TP / float(TP + FN)
+    fpr = FP / float(FP + TN)
+
+    return fpr, tpr
 
 # def calculate_roc_auc(y_pred, y_true, col_names, out_path):
 #

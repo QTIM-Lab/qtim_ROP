@@ -38,9 +38,11 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
 
             # Get model predictions
             if use_rf:
+                print "Using CNN + RF for prediction"
                 rf_pkl = join(split_dir, 'rf.pkl')
                 model = RetinaRF(cnn_model, rf_pkl=rf_pkl)
             else:
+                print "Using CNN only"
                 model = RetiNet(cnn_model)
 
             data_dict = model.evaluate(test_data)
@@ -54,19 +56,21 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
         else:
 
             # Load previous results
-            print "Loading previous RF predictions"
+            print "Loading previous predictions"
             y_true = np.load(y_true_out)
             y_pred = np.load(y_pred_out)
 
-            y_true_all.append(y_true)
-            y_pred_all.append(y_pred)
+        y_true_all.append(y_true)
+        y_pred_all.append(y_pred)
 
     # ROC curves - all splits
     for class_ in CLASSES.items():
         fig, ax = plt.subplots()
-        plot_ROC_splits(y_true_all, y_pred_all, class_)
+        all_aucs = plot_ROC_splits(y_true_all, y_pred_all, class_)
         plt.savefig(join(out_dir, 'ROC_AUC_{}_AllSplits.png'.format(class_[0])))
         plt.savefig(join(out_dir, 'ROC_AUC_{}_AllSplits.svg'.format(class_[0])))
+
+        print "AUC for class '{}': {} +/- {}".format(class_[0], np.mean(all_aucs), np.std(all_aucs))
 
 
 def map_test_to_original(test_csv, original_csv, img_path=None):
@@ -116,8 +120,10 @@ if __name__ == '__main__':
     parser = ArgumentParser()
 
     parser.add_argument('-s', '--splits', dest='splits', help='Directory of trained CNNs', required=True)
-    parser.add_argument('-r', '--raw-images', dest='raw_images', help='Directory of all raw images', required=True)
+    parser.add_argument('-i', '--raw-images', dest='raw_images', help='Directory of all raw images', required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help='Output directory for results', required=True)
+    parser.add_argument('-r', '--rf', dest='use_rf', help='Use random forest?', action='store_true', default=False)
+
     args = parser.parse_args()
 
-    run_cross_val(args.splits, args.raw_images, args.out_dir)
+    run_cross_val(args.splits, args.raw_images, args.out_dir, use_rf=args.use_rf)
