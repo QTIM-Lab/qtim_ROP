@@ -94,7 +94,7 @@ ENV/
 
 # Various files
 retinaunet/
-config/
+config/conf.yaml
 download_retina_data.py
 statistics.py
 *.sh

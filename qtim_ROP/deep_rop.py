@@ -61,10 +61,10 @@ def classify(image_path, out_dir):
     # CNN initialization
     print "Initializing classifier network"
     model_config, rf_pkl = locate_config(classifier_dir)
-    cnn = RetinaRF(model_config, rf_pkl=rf_pkl)
+    cnn = RetiNet(model_config)
 
     # Feature extraction + inference
-    inf_dir = make_sub_dir(working_dir, 'preprocessed')
+    # inf_dir = make_sub_dir(working_dir, 'preprocessed')
 
     input_img = cv2.imread(prep_out)
     input_img = np.expand_dims(input_img.transpose((2, 0, 1)), axis=0)  # channels first
