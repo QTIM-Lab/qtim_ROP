@@ -138,11 +138,6 @@ if __name__ == "__main__":
 
         if results:
             results = np.asarray(results).transpose((1, 2, 0))
-        # print results.shape
-        #
-        # f = h5py.File(join(args.out_dir, 'all_segs.h5'), 'w')
-        # f.create_dataset('segmentations', data=results)
-        # f.close()
 
     elif isfile(args.images):
         seg_result = segment(np.asarray(Image.open(args.images)), unet)

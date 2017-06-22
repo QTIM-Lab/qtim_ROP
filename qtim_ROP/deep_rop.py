@@ -55,7 +55,7 @@ def classify(image_path, out_dir):
     # Pre-process image
     prep_dir = make_sub_dir(working_dir, 'preprocessed')
     prep_out = join(prep_dir, img_name + '.bmp')
-    prep_conf = yaml.load(open(abspath(join(dirname(__file__), 'config/preprocessing.yaml'))))['pipeline']
+    prep_conf = yaml.load(open(abspath(join(dirname(__file__), 'config', 'preprocessing.yaml'))))['pipeline']
     preprocess(seg_out, prep_out, prep_conf)
 
     # CNN initialization
