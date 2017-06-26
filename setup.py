@@ -13,7 +13,7 @@ setup(
     url='https://github.com/QTIM-Lab/qtim_ROP', # use the URL to the github repo
     download_url = 'https://github.com/QTIM-Lab/qtim_ROP/tarball/0.2',
     keywords=['retina', 'retinopathy of prematurity', 'plus disease', 'machine learning', 'deep learning', 'CNN'],
-    install_requires=['numpy', 'scipy', 'appdirs', 'seaborn', 'pandas', 'matplotlib', 'keras<=1.2.1', 'h5py', 'theano'],
+    install_requires=['numpy', 'scipy', 'appdirs', 'seaborn', 'pandas', 'matplotlib', 'keras<=1.2.1', 'h5py', 'scikit-learn', 'scikit-image'],
     package_data={'qtim_ROP': ['config/preprocessing.yaml']},
     classifiers=[],
 )

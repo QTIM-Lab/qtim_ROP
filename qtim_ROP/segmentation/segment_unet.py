@@ -59,7 +59,7 @@ class SegmentUnet(object):
             # Get predictions
             print "Running predictions..."
             predictions = self.model.predict(img_patches, batch_size=32, verbose=2)
-            pred_imgs = pred_to_imgs(predictions)
+            pred_imgs = pred_to_imgs(predictions, self.patch_x, self.patch_y)
 
             # Reconstruct images
             img_segs = recompone_overlap(pred_imgs, new_height, new_width, self.stride_x, self.stride_y)
