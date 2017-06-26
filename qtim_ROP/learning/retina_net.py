@@ -4,23 +4,24 @@ import matplotlib
 matplotlib.use('Agg')
 from os import chdir, getcwd
 from os.path import dirname, splitext, abspath
-
+from itertools import cycle
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.utils.np_utils import to_categorical
-# from keras.utils.visualize_util import plot
 from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 
 from ..utils.common import *
 from ..utils.image import create_generator
-from ..evaluation.metrics import calculate_metrics
 from ..utils.models import SGDLearningRateTracker
 from ..utils.plotting import *
+from ..visualisation.tsne import tsne
+from ..evaluation.metrics import calculate_metrics
+
 
 OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop, 'adadelta': Adadelta, 'adam': Adam}
 

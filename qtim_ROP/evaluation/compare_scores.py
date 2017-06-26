@@ -312,5 +312,5 @@ if __name__ == '__main__':
     #     raw_scores = get_raw_scores(args.model_dir, args.test_data)
     #     raw_scores.to_csv(join(args.out_dir, 'raw_scores.csv'))
 
-    # compare_scores(args.spreadsheet, raw_scores, args.test_data, args.out_dir)
-    compare_models(args.model_dir, args.test_data, args.spreadsheet, args.out_dir)
+    compare_scores(args.spreadsheet, raw_scores, args.test_data, args.out_dir)
+    # compare_models(args.model_dir, args.test_data, args.spreadsheet, args.out_dir)

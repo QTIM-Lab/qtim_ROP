@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from keras.utils.np_utils import to_categorical
 
-from evaluation.metrics import plot_ROC_splits, plot_PR_splits
-from metadata import image_to_metadata
-from learning.retina_net import RetiNet, RetinaRF, locate_config
-from utils.common import get_subdirs, make_sub_dir
-from utils.image import hdf5_images_and_labels
+from ..evaluation.metrics import plot_ROC_splits, plot_PR_splits
+from ..utils.metadata import image_to_metadata
+from ..learning.retina_net import RetiNet, RetinaRF, locate_config
+from ..utils.common import get_subdirs, make_sub_dir
+from ..utils.image import hdf5_images_and_labels
 
 CLASSES = {'No': 0, 'Plus': 1}  #, 'Pre-Plus': 2}
 
