@@ -110,7 +110,7 @@ def segment(im_arr, unet):  # static method
 
     img_patches, h, w, padded_mask = unet.pre_process(im_arr, im_mask)
     predictions = unet.model.predict(img_patches, batch_size=32, verbose=2)
-    pred_imgs = pred_to_imgs(predictions)
+    pred_imgs = pred_to_imgs(predictions, unet.patch_x, unet.patch_y)
     seg = recompone_overlap(pred_imgs, h, w, unet.stride_x, unet.stride_y)
 
     # Remove singleton dimensions and apply mask
