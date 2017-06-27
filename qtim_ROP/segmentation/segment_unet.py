@@ -15,8 +15,8 @@ try:
     from ..retinaunet.lib.extract_patches import *
     from ..retinaunet.lib.pre_processing import my_PreProc
 except ImportError:
-    print "Unable to import retinaunet - is it on your path?"
-    exit()
+    print "Unable to import retinaunet - git clone https://github.com/QTIM-Lab/retinaunet.git"
+    raise
 
 
 class SegmentUnet(object):
