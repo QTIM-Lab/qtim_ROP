@@ -38,9 +38,6 @@ class RetiNet(object):
         self.conf_dir = dirname(abspath(self.conf_file))
         self.experiment_name = splitext(basename(self.conf_file))[0]
 
-        self.history_file = join(self.experiment_dir, "history.csv")
-        self.lr_file = join(self.experiment_dir, 'learning_rate.npy')
-
         cwd = getcwd()
         chdir(self.conf_dir)
         self.train_data = abspath(self.config['training_data'])
@@ -70,6 +67,9 @@ class RetiNet(object):
             self.experiment_dir = self.conf_dir
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
             self._configure_network(build=False)
+        
+        self.history_file = join(self.experiment_dir, "history.csv")
+        self.lr_file = join(self.experiment_dir, 'learning_rate.npy')
 
         chdir(cwd)  # revert to original working directory
 
