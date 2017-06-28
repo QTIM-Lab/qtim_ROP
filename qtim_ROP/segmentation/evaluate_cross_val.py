@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from os.path import join
 import numpy as np
 from PIL import Image
-from utils.common import find_images, make_sub_dir
-from segmentation.segment_unet import SegmentUnet
+from ..utils.common import find_images, make_sub_dir
+from ..segmentation.segment_unet import SegmentUnet
 from evaluate_ensemble import plot_roc_auc
 import seaborn as sns
 

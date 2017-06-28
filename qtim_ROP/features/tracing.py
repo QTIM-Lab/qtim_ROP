@@ -2,12 +2,12 @@ from geom import *
 from os.path import join, isfile
 from sklearn.mixture import GaussianMixture
 import numpy as np
-import pickle
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from itertools import cycle
 from ..utils.common import make_sub_dir
 
-import matplotlib
 COLORS = []
 for name, hex in matplotlib.colors.cnames.iteritems():
     COLORS.append(name)
