@@ -15,8 +15,8 @@ try:
     from ..retinaunet.lib.extract_patches import *
     from ..retinaunet.lib.pre_processing import my_PreProc
 except ImportError:
-    print "Unable to import retinaunet - is it on your path?"
-    exit()
+    print "Unable to import retinaunet - git clone https://github.com/QTIM-Lab/retinaunet.git"
+    raise
 
 
 class SegmentUnet(object):
@@ -110,7 +110,7 @@ def segment(im_arr, unet):  # static method
 
     img_patches, h, w, padded_mask = unet.pre_process(im_arr, im_mask)
     predictions = unet.model.predict(img_patches, batch_size=32, verbose=2)
-    pred_imgs = pred_to_imgs(predictions)
+    pred_imgs = pred_to_imgs(predictions, unet.patch_x, unet.patch_y)
     seg = recompone_overlap(pred_imgs, h, w, unet.stride_x, unet.stride_y)
 
     # Remove singleton dimensions and apply mask

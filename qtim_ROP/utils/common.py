@@ -1,5 +1,5 @@
 from glob import glob
-from os import mkdir
+from os import mkdir, name as os_name
 from os.path import join, isdir, isfile, basename
 from shutil import copytree
 import logging
@@ -11,7 +11,9 @@ import h5py
 import yaml
 
 DEFAULT = ['No', 'Pre-Plus', 'Plus']
-EXTENSIONS = ['*.bmp', '*.png', '*.jpg', '*.tif', '*.jpeg', '*.gif']
+EXTENSIONS = ['*.bmp', '*png', '*.jpg', '*.jpeg', '*.tif', '*tiff', '*.gif']
+if os_name != 'nt':
+    EXTENSIONS.extend([ext.upper() for ext in EXTENSIONS])
 
 
 def make_sub_dir(dir_, sub, tree=None):

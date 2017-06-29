@@ -1,6 +1,7 @@
 import pandas as pd
 from os.path import basename, join, isfile, dirname
-
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.utils.np_utils import to_categorical

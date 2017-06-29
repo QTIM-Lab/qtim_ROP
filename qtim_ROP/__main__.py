@@ -44,7 +44,7 @@ class DeepROPCommands(object):
         if isdir(args.images):
             unet.segment_batch(find_images(args.images), batch_size=args.batch_size)
         else:
-            raise IOError("Please specify a valid image path or folder of images")
+            raise IOError("Please specify a valid folder of images")
 
     def classify_plus(self):
 

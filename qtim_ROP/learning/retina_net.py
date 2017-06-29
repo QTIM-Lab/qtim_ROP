@@ -55,6 +55,7 @@ class RetiNet(object):
             self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
 
+            print "Logging to '{}'".format(join(self.experiment_dir, 'training.log'))
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
             self._configure_network(build=True)
@@ -66,6 +67,9 @@ class RetiNet(object):
             self.experiment_dir = self.conf_dir
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
             self._configure_network(build=False)
+        
+        self.history_file = join(self.experiment_dir, "history.csv")
+        self.lr_file = join(self.experiment_dir, 'learning_rate.npy')
 
         chdir(cwd)  # revert to original working directory
 
@@ -142,15 +146,16 @@ class RetiNet(object):
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=train_gen.x.shape[0],
+            samples_per_epoch=train_gen.X.shape[0],
             nb_epoch=epochs,
             validation_data=val_gen,
-            nb_val_samples=val_gen.x.shape[0], callbacks=[checkpoint_tb, lr_tb])
+            nb_val_samples=val_gen.X.shape[0], callbacks=[checkpoint_tb, lr_tb])
 
         # Save model arch, weights and history
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
         np.save(join(self.experiment_dir, 'learning_rate.npy'), lr_tb.lr)
         self.model.save_weights(join(self.experiment_dir, 'final_weights.h5'))
+        self.plot_history()
 
         with open(join(self.experiment_dir, 'model_arch.json'), 'w') as arch:
             arch.writelines(self.model.to_json())
@@ -160,10 +165,14 @@ class RetiNet(object):
         with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'wb') as ce:
             yaml.dump(conf_eval, ce, default_flow_style=False)
 
+    def plot_history(self):
+
+        history = csv_to_dict(self.history_file)
+        lr = np.load(self.lr_file)
+
         # Plot histories
-        plot_accuracy(history.history, join(self.experiment_dir, 'accuracy' + self.ext))
-        plot_loss(history.history, join(self.experiment_dir, 'loss' + self.ext))
-        lr = np.load(join(self.experiment_dir, 'learning_rate.npy'))
+        plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
+        plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
         plot_LR(lr, join(self.experiment_dir, 'lr_plot' + self.ext))
 
     def update_config(self, weights='final'):
