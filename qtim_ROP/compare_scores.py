@@ -12,12 +12,12 @@ from glob import glob
 import cv2
 import numpy as np
 from scipy.stats import mode
-from ..utils.common import find_images, find_images_by_class
-from ..learning.retina_net import RetiNet, RetinaRF, locate_config
+from qtim_ROP.utils.common import find_images, find_images_by_class
+from qtim_ROP.learning.retina_net import RetiNet, RetinaRF, locate_config
 import re
 from sklearn.metrics import cohen_kappa_score, roc_curve
 from itertools import cycle
-from metrics import fpr_and_tpr
+from qtim_ROP.evaluation.metrics import fpr_and_tpr
 
 
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
@@ -175,15 +175,18 @@ def compare_scores(spreadsheet, model_scores, img_dir, out_dir):
     reader_scores['Consensus'] = reader_consensus
 
     # Get the raw model scores
-    dl_scores = model_scores[['p(No)', 'p(Pre-Plus)', 'p(Plus)']].values
-    arg_max = np.argmax(dl_scores, axis=1) + 1  # No: 0, Pre-Plus: 1, Plus: 2
-    reader_scores['DL'] = arg_max
+    scores_only = model_scores[['No', 'Pre-Plus', 'Plus']].values
+    arg_max = np.argmax(scores_only, axis=1) + 1  # No: 0, Pre-Plus: 1, Plus: 2
+    model_scores['DeepROP'] = arg_max
 
     # Create new column with matched names
     img_names = sorted([basename(x) for x in find_images(join(img_dir, '*'))])
     _, matched = match_names(origin_names, img_names)
     model_scores = model_scores.reindex(matched)  # same order as spreadsheet
     reader_scores.insert(1, 'Matched', matched)
+
+    # Add DeepROP scores
+    reader_scores['DeepROP'] = model_scores['DeepROP'].values
 
     # Add RSD labels
     rsd = [SHEET_CLASSES[x] for x in model_scores['RSD'].values]
@@ -205,8 +208,15 @@ def compare_scores(spreadsheet, model_scores, img_dir, out_dir):
             kappa_map[i, j] = k
 
     # Plot readers
+    mean_kappa = np.mean(kappa_map, axis=0)
+    new_order = reader_names[np.argsort(mean_kappa)]
+
     # anon_readers = ['Reader #{}'.format(i) for i in range(0, no_readers)]
     df_kappa = pd.DataFrame(kappa_map, columns=reader_names, index=reader_names)
+
+    df_kappa = df_kappa[new_order]
+    df_kappa = df_kappa.reindex(new_order)
+
     h = sns.heatmap(df_kappa, annot=True)
     h.set_xticklabels(h.get_xticklabels(), rotation=30)
     plt.gca().xaxis.tick_top()
@@ -305,12 +315,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # score_csv = join(args.out_dir, 'raw_scores.csv')
-    # if isfile(score_csv):
-    #     raw_scores = pd.DataFrame.from_csv(score_csv)
-    # else:
-    #     raw_scores = get_raw_scores(args.model_dir, args.test_data)
-    #     raw_scores.to_csv(join(args.out_dir, 'raw_scores.csv'))
+    score_csv = join(args.out_dir, 'raw_scores.csv')
+    if isfile(score_csv):
+        raw_scores = pd.DataFrame.from_csv(score_csv)
+    else:
+        raw_scores = get_model_scores(args.model_dir, args.test_data)
+        raw_scores.to_csv(join(args.out_dir, 'raw_scores.csv'))
 
     compare_scores(args.spreadsheet, raw_scores, args.test_data, args.out_dir)
     # compare_models(args.model_dir, args.test_data, args.spreadsheet, args.out_dir)
