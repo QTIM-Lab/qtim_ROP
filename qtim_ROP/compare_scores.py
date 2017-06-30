@@ -12,12 +12,14 @@ from glob import glob
 import cv2
 import numpy as np
 from scipy.stats import mode
-from qtim_ROP.utils.common import find_images, find_images_by_class
+from qtim_ROP.utils.common import find_images, dict_reverse
+from qtim_ROP.utils.image import imgs_by_class_to_th_array
 from qtim_ROP.learning.retina_net import RetiNet, RetinaRF, locate_config
 import re
 from sklearn.metrics import cohen_kappa_score, roc_curve
 from itertools import cycle
 from qtim_ROP.evaluation.metrics import fpr_and_tpr
+from qtim_ROP.visualisation.tsne import tsne
 
 
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
@@ -38,10 +40,19 @@ def compare_models(models, images, spreadsheet, out_dir):
         if isfile(split_pred):
             combined = pd.DataFrame.from_csv(split_pred)
         else:
+
+            # Get probabilistic output from the models
+            print "Generating predictions for {}".format(split_name)
             cnn_predictions = get_model_scores(model_dir, images, prefix=split_name + '_')
             rf_predictions = get_model_scores(model_dir, images, rf_pkl=join(model_dir, 'rf.pkl'), prefix=split_name + '_')
 
+            # Get features and compute t-SNE
+            cnn_features = get_model_features(model_dir, images, prefix=split_name + '_')
+            tsne_embedding = tsne(cnn_features, no_dims=1)
+            np.save(join(out_dir, 'tsne_{}.npy'.format(split_name)), tsne_embedding)
+
             combined = cnn_predictions.merge(rf_predictions, left_index=True, right_index=True, on='RSD', suffixes=['_CNN', '_RF'])
+            combined[split_name + '_tSNE'] = tsne_embedding
             combined.to_csv(split_pred)
 
         if model_scores is None:
@@ -66,9 +77,11 @@ def compare_models(models, images, spreadsheet, out_dir):
     model_scores = pd.concat([model_scores, ensemble_cnn_pred, ensemble_rf_pred], axis=1)
 
     # Get reader scores
-    reader_scores, origin_names = get_reader_scores(spreadsheet)
-    img_names = sorted([basename(x) for x in find_images(join(images, '*'))])
-    _, matched = match_names(origin_names, img_names)
+    # reader_scores, origin_names = get_reader_scores(spreadsheet)
+    # img_names = sorted([basename(x) for x in find_images(join(images, '*'))])
+    # _, matched = match_names(origin_names, img_names)
+    reader_scores = pd.DataFrame.from_csv(spreadsheet)
+    matched = reader_scores['Matched']
 
     # Move RSD to first position
     cols = list(model_scores.columns)
@@ -78,7 +91,6 @@ def compare_models(models, images, spreadsheet, out_dir):
 
     # Re-index model scores using matched names
     model_scores = model_scores.reindex(matched)  # same order as spreadsheet
-    reader_scores.insert(1, 'Matched', matched)
     reader_scores = reader_scores.set_index(['Matched'])
 
     # Save
@@ -95,7 +107,7 @@ def calculate_interrater_ROC(reader_scores, model_scores, out_dir):
     model_colors = cycle(d3['Category20'][12])
 
     # Model splits
-    model_cols = model_scores.columns.values[1:]
+    model_cols = [col for col in model_scores.columns.values[1:] if col.endswith('CNN')]
     model_splits = np.asarray([model_cols[i:i + 3] for i in xrange(0, len(model_cols), 3)])
 
     for class_index, class_name in {0: 'No', 2: 'Plus'}.items():
@@ -162,11 +174,11 @@ def get_reader_scores(spreadsheet):
 
 def compare_scores(spreadsheet, model_scores, img_dir, out_dir):
 
-    # # Open spreadsheet, keeping only the desired columns
-    reader_scores, origin_names = get_reader_scores(spreadsheet)
+    # Open spreadsheet, keeping only the desired columns
+    reader_scores = pd.DataFrame.from_csv(spreadsheet)
 
     # Calculate their consensus as mode score
-    reader_names = reader_scores.columns[2:]
+    reader_names = reader_scores.columns[3:]
     reader_consensus = mode(reader_scores[reader_names].values, axis=1)[0]
 
     # Anonymize reader names and add consensus column
@@ -180,10 +192,7 @@ def compare_scores(spreadsheet, model_scores, img_dir, out_dir):
     model_scores['DeepROP'] = arg_max
 
     # Create new column with matched names
-    img_names = sorted([basename(x) for x in find_images(join(img_dir, '*'))])
-    _, matched = match_names(origin_names, img_names)
-    model_scores = model_scores.reindex(matched)  # same order as spreadsheet
-    reader_scores.insert(1, 'Matched', matched)
+    model_scores = model_scores.reindex(reader_scores['Matched'].values)
 
     # Add DeepROP scores
     reader_scores['DeepROP'] = model_scores['DeepROP'].values
@@ -267,30 +276,14 @@ def match_names(sheet_names, img_names):
 def get_model_scores(model_dir, test_data, rf_pkl=None, prefix=''):
 
     # Load model
-
     if rf_pkl is not None:
         model_config, rf_pkl = locate_config(model_dir)
         model = RetinaRF(model_config, rf_pkl=rf_pkl)
     else:
         model_config = glob(join(model_dir, '*.yaml'))[0]
         model = RetiNet(model_config)
-    imgs_by_class = find_images_by_class(test_data)
 
-    img_arr, img_names, img_classes = [], [], []
-
-    for class_, img_list in imgs_by_class.items():
-
-        for img_path in img_list:
-
-            # Load and prepare image
-            img_names.append(basename(img_path))
-            img_classes.append(class_)
-            img = cv2.imread(img_path)
-            img = img.transpose((2, 0, 1))
-            img_arr.append(img)
-
-    # Create single array of inputs
-    img_arr = np.stack(img_arr, axis=0)
+    img_names, img_arr, img_classes = imgs_by_class_to_th_array(test_data, dict_reverse(CLASSES))
 
     # Get raw predictions
     y_pred = model.predict(img_arr)
@@ -299,28 +292,59 @@ def get_model_scores(model_dir, test_data, rf_pkl=None, prefix=''):
     reordered_cols = [df.columns.values[c] for c in [0, 2, 1]]
     df = df[reordered_cols]
 
-    df['RSD'] = img_classes
+    df['RSD'] = [CLASSES[c] for c in img_classes]
     return df
+
+
+def get_model_features(model_dir, test_data, layer_name='flatten_3', prefix=''):
+
+    # Load model
+    model_config = glob(join(model_dir, '*.yaml'))[0]
+    model = RetiNet(model_config)
+    model.set_intermediate(layer_name)
+
+    # Load images
+    img_names, img_arr, img_classes = imgs_by_class_to_th_array(test_data, dict_reverse(CLASSES))
+
+    # Get raw features
+    features = model.predict(img_arr)
+    return pd.DataFrame(data=features, index=img_names)
 
 
 if __name__ == '__main__':
 
     from argparse import ArgumentParser
-    parser = ArgumentParser()
+    import sys
 
+    command_parser = ArgumentParser()
+    command_parser.add_argument('command', help='Command to run')
+    command = command_parser.parse_args(sys.argv[1:2]).command
+
+    # Parse other arguments
+    parser = ArgumentParser()
     parser.add_argument('-m', '--model-dir', dest='model_dir', help='Model directory', required=True)
     parser.add_argument('-t', '--test-data', dest='test_data', help='Test data', required=True)
     parser.add_argument('-s', '--spreadsheet', dest='spreadsheet', help='Spreadsheet of reader scores', required=True)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help='Output directory', required=True)
+    args = parser.parse_args(sys.argv[2:])
 
-    args = parser.parse_args()
+    if command == 'readers':
 
-    score_csv = join(args.out_dir, 'raw_scores.csv')
-    if isfile(score_csv):
-        raw_scores = pd.DataFrame.from_csv(score_csv)
+        score_csv = join(args.out_dir, 'raw_scores.csv')
+        if isfile(score_csv):
+            raw_scores = pd.DataFrame.from_csv(score_csv)
+        else:
+            raw_scores = get_model_scores(args.model_dir, args.test_data)
+            raw_scores.to_csv(join(args.out_dir, 'raw_scores.csv'))
+
+        compare_scores(args.spreadsheet, raw_scores, args.test_data, args.out_dir)
+
+    elif command == 'models':
+        compare_models(args.model_dir, args.test_data, args.spreadsheet, args.out_dir)
     else:
-        raw_scores = get_model_scores(args.model_dir, args.test_data)
-        raw_scores.to_csv(join(args.out_dir, 'raw_scores.csv'))
+        raise ValueError("Invalid command '{}'".format(command))
 
-    compare_scores(args.spreadsheet, raw_scores, args.test_data, args.out_dir)
-    # compare_models(args.model_dir, args.test_data, args.spreadsheet, args.out_dir)
+
+
+
+
