@@ -1,4 +1,3 @@
-from time import strftime
 from appdirs import AppDirs
 from os import makedirs
 from os.path import *
@@ -6,11 +5,12 @@ import yaml
 from PIL import Image
 import cv2
 import numpy as np
-from sklearn.externals import joblib
+from pkg_resources import get_distribution
+__version__ = get_distribution('qtim_ROP').version
 
 from segmentation.segment_unet import SegmentUnet, segment
 from preprocessing.preprocess import preprocess
-from learning.retina_net import RetiNet, RetinaRF, locate_config
+from learning.retina_net import RetiNet, locate_config
 from utils.common import make_sub_dir
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
@@ -63,9 +63,6 @@ def classify(image_path, out_dir):
     model_config, rf_pkl = locate_config(classifier_dir)
     cnn = RetiNet(model_config)
 
-    # Feature extraction + inference
-    # inf_dir = make_sub_dir(working_dir, 'preprocessed')
-
     input_img = cv2.imread(prep_out)
     input_img = np.expand_dims(input_img.transpose((2, 0, 1)), axis=0)  # channels first
     y_preda = cnn.predict(input_img)[0]
@@ -78,7 +75,7 @@ def classify(image_path, out_dir):
 def initialize():
 
     # Setup appdirs
-    dirs = AppDirs("DeepROP", "QTIM", version="0.1")
+    dirs = AppDirs("DeepROP", "QTIM", version=__version__)
 
     conf_dir = dirs.user_config_dir
     conf_file = join(conf_dir, 'config.yaml')
