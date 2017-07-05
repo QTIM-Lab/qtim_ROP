@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import matplotlib
-matplotlib.use('Agg')
 from os import chdir, getcwd
 from os.path import dirname, splitext, abspath
 from itertools import cycle

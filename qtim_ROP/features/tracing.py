@@ -2,8 +2,6 @@ from geom import *
 from os.path import join, isfile
 from sklearn.mixture import GaussianMixture
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from itertools import cycle
 from ..utils.common import make_sub_dir

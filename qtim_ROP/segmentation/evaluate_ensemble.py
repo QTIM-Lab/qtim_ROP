@@ -1,7 +1,4 @@
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
 from os.path import join, basename, isfile
 import numpy as np
 from PIL import Image
