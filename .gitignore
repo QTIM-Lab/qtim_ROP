@@ -93,7 +93,6 @@ ENV/
 *.yaml
 
 # Various files
-retinaunet/
 config/conf.yaml
 download_retina_data.py
 statistics.py
