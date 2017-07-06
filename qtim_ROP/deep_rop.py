@@ -5,8 +5,12 @@ import yaml
 from PIL import Image
 import cv2
 import numpy as np
-from pkg_resources import get_distribution
-__version__ = get_distribution('qtim_ROP').version
+from pkg_resources import get_distribution, DistributionNotFound
+
+try:
+    __version__ = get_distribution('qtim_ROP').version
+except DistributionNotFound:
+    __version__ = None
 
 from segmentation.segment_unet import SegmentUnet, segment
 from preprocessing.preprocess import preprocess
