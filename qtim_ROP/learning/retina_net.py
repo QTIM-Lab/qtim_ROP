@@ -134,7 +134,13 @@ class RetiNet(object):
 
         # Create generators
         train_gen, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
-        val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
+
+        if self.val_data:
+            val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
+            no_val_samples = val_gen.X.shape[0]
+        else:
+            val_gen = None
+            no_val_samples = None
 
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
@@ -147,7 +153,7 @@ class RetiNet(object):
             samples_per_epoch=train_gen.X.shape[0],
             nb_epoch=epochs,
             validation_data=val_gen,
-            nb_val_samples=val_gen.X.shape[0], callbacks=[checkpoint_tb, lr_tb])
+            nb_val_samples=no_val_samples, callbacks=[checkpoint_tb, lr_tb])
 
         # Save model arch, weights and history
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
