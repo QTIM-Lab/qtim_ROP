@@ -30,8 +30,8 @@ def classify(image_path, out_dir):
         exit()
 
     # Create output directory
-    # dir_name = strftime("%Y%m%d_%H%M%S")
-    working_dir = out_dir  # make_sub_dir(out_dir, dir_name)
+    if not isdir(out_dir):
+        makedirs(out_dir)
 
     # Load image
     img_name = splitext(basename(image_path))[0]
@@ -41,7 +41,7 @@ def classify(image_path, out_dir):
     img_arr = imresize(img_arr, (480, 640), interp='bicubic')
 
     # Vessel segmentation
-    seg_dir = make_sub_dir(working_dir, 'segmentation')
+    seg_dir = make_sub_dir(out_dir, 'segmentation')
     seg_out = join(seg_dir, img_name + '.bmp')
 
     if not isfile(seg_out):
@@ -61,7 +61,7 @@ def classify(image_path, out_dir):
     classifier_dir = conf_dict['classifier_directory']
 
     # Pre-process image
-    prep_dir = make_sub_dir(working_dir, 'preprocessed')
+    prep_dir = make_sub_dir(out_dir, 'preprocessed')
     prep_out = join(prep_dir, img_name + '.bmp')
     prep_conf = yaml.load(open(abspath(join(dirname(__file__), 'config', 'preprocessing.yaml'))))['pipeline']
     preprocess(seg_out, prep_out, prep_conf)
