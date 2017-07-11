@@ -4,6 +4,7 @@ from os.path import *
 import yaml
 from PIL import Image
 import cv2
+from scipy.misc import imresize
 import numpy as np
 from pkg_resources import get_distribution, DistributionNotFound
 
@@ -35,6 +36,9 @@ def classify(image_path, out_dir):
     # Load image
     img_name = splitext(basename(image_path))[0]
     img_arr = np.asarray(cv2.imread(image_path))
+
+    # Resize to 640 x 480
+    img_arr = imresize(img_arr, (480, 640), interp='bicubic')
 
     # Vessel segmentation
     seg_dir = make_sub_dir(working_dir, 'segmentation')
