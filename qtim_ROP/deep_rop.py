@@ -1,18 +1,10 @@
-from appdirs import AppDirs
 from os import makedirs
 from os.path import *
-import yaml
 from PIL import Image
 import cv2
 from scipy.misc import imresize
 import numpy as np
-from pkg_resources import get_distribution, DistributionNotFound
-
-try:
-    __version__ = get_distribution('qtim_ROP').version
-except DistributionNotFound:
-    __version__ = None
-
+import yaml
 from segmentation.segment_unet import SegmentUnet, segment
 from preprocessing.preprocess import preprocess
 from learning.retina_net import RetiNet, locate_config
@@ -21,12 +13,10 @@ from utils.common import make_sub_dir
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def classify(image_path, out_dir):
-
-    conf_dict, conf_file = initialize()
+def classify(image_path, out_dir, conf_dict):
 
     if any(v is None for v in conf_dict.values()):
-        print "Please edit '{}' and specify the segmentation/classifier models to use".format(conf_file)
+        print "Please run 'deeprop configure' to specify the models for segmentation and classification"
         exit()
 
     # Create output directory
@@ -78,35 +68,3 @@ def classify(image_path, out_dir):
 
     print "\n### {} classified as '{}' with {:.1f} % probability ###"\
         .format(basename(image_path), LABELS[arg_max], y_preda[arg_max] * 100)
-
-
-def initialize():
-
-    # Setup appdirs
-    dirs = AppDirs("DeepROP", "QTIM", version=__version__)
-
-    conf_dir = dirs.user_config_dir
-    conf_file = join(conf_dir, 'config.yaml')
-
-    if not isdir(conf_dir):
-        makedirs(conf_dir)
-
-    if not isfile(conf_file):
-        config_dict = {'unet_directory': None, 'classifier_directory': None}
-        with open(conf_file, 'w') as f:
-            yaml.dump(config_dict, f, default_flow_style=False)
-
-    return yaml.load(open(conf_file, 'r')), conf_file
-
-
-if __name__ == '__main__':
-
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser()
-    parser.add_argument('-i', '--images', help='Fundus image to classify', dest='image_path', required=True)
-    parser.add_argument('-o', '--out-dir', help='Folder to output results', dest='out_dir', required=True)
-    args = parser.parse_args()
-
-    classify(args.image_path, args.out_dir)
-
