@@ -4,7 +4,7 @@ import qtim_ROP
 from utils.common import find_images
 from appdirs import AppDirs
 from os import makedirs
-from os.path import isdir, isfile, join
+from os.path import isdir, isfile, join, abspath
 import yaml
 from pkg_resources import get_distribution, DistributionNotFound
 
@@ -24,9 +24,9 @@ class DeepROPCommands(object):
             usage='''deeprop <command> [<args>]
 
             The following commands are available:
-               classify_plus                Configure DeepROP models to use for segmentation and classification
+               configure                    Configure DeepROP models to use for segmentation and classification
                segment_vessels              Perform vessel segmentation using a trained U-Net
-               classify_plus                Classify plus disease in retinal images using a trained CNN
+               classify_plus                Classify plus disease in retinal images
             ''')
 
         parser.add_argument('command', help='Command to run')
@@ -50,13 +50,14 @@ class DeepROPCommands(object):
         args = parser.parse_args(sys.argv[2:])
 
         if not (args.unet or args.classifier):
-            print ("DeepROP: no models specified."
-                   "\nCurrent segmentation model: {unet_directory}"
-                   "\nCurrent classifier model: {classifier_directory}".format(**self.conf_dict))
+            print "DeepROP: no models specified."
+            parser.print_usage()
+            print "Current segmentation model: {unet_directory}"\
+                  "\nCurrent classifier model: {classifier_directory}".format(**self.conf_dict)
             exit(1)
 
-        self.conf_dict['unet_directory'] = args.unet
-        self.conf_dict['classifier_directory'] = args.classifier
+        self.conf_dict['unet_directory'] = abspath(args.unet)
+        self.conf_dict['classifier_directory'] = abspath(args.classifier)
         yaml.dump(self.conf_dict, open(self.conf_file, 'w'), default_flow_style=False)
         print "Configuration updated!"
 
