@@ -28,7 +28,7 @@ def preprocess(src_img, dst_img, params):
     cropped_im = resized_im[crop_height:-crop_height, crop_width:-crop_width]
 
     Image.fromarray(cropped_im).save(dst_img)
-
+    return cropped_im
 
 if __name__ == '__main__':
 

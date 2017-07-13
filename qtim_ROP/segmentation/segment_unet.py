@@ -21,7 +21,7 @@ except ImportError:
 
 class SegmentUnet(object):
 
-    def __init__(self, unet_dir, out_dir=None, stride=(8, 8), erode=10):
+    def __init__(self, unet_dir, out_dir=None, stride=(8, 8), erode=10, ext='.png'):
 
         self.model = load_model(unet_dir)
         self.out_dir = out_dir
@@ -30,20 +30,23 @@ class SegmentUnet(object):
         self.stride_x, self.stride_y = stride[0], stride[1]
         self.erode = erode
         self.patch_x, self.patch_y = 48, 48
+        self.ext = ext
 
     def segment_batch(self, img_data, batch_size=100):
 
-        # Loop through chunks of the data, as there may be thousands of images to segment
+        # Lists to keep track of images already segmented, to segment, and failed
+        newly_segmented, already_segmented, failures = [], [], []
+
         if self.out_dir is None:
-            data = [im for im in img_data]
+            to_segment = [im for im in img_data]
         else:
-            data = [im for im in img_data if not isfile(join(self.out_dir, splitext(basename(im))[0] + '.png'))]
-            print "{} image(s) already segmented".format(len(img_data) - len(data))
+            to_segment = [im for im in img_data if not isfile(join(self.out_dir, splitext(basename(im))[0] + self.ext))]
+            already_segmented = [join(self.out_dir, splitext(basename(im))[0] + self.ext)
+                                 for im in img_data if im not in to_segment]
+            print "{} image(s) already segmented".format(len(already_segmented))
 
-        chunks = [data[x:x + batch_size] for x in xrange(0, len(data), batch_size)]
-        final_results = []
-
-        invalid = []
+        # Split into chunks of size batch_size
+        chunks = [to_segment[x:x + batch_size] for x in xrange(0, len(to_segment), batch_size)]
 
         for chunk_no, img_list in enumerate(chunks):
 
@@ -51,7 +54,7 @@ class SegmentUnet(object):
 
             # Load images and create masks
             imgs_original, masks, skipped = imgs_to_unet_array(img_list, erode=self.erode)
-            invalid.extend(skipped)
+            failures.extend(skipped)
 
             # Pre-process the images, and return as patches (TODO: get patch size from the model)
             img_patches, new_height, new_width, padded_masks = self.pre_process(imgs_original, masks)
@@ -68,22 +71,24 @@ class SegmentUnet(object):
 
                 # Mask the segmentation and transpose
                 seg_masked = apply_mask(seg, mask)
-                final_results.append(np.squeeze(seg_masked))
 
                 # Save masked segmentation
                 if self.out_dir is not None:
                     name, ext = splitext(basename(im_name))
-                    filename = join(self.out_dir, name)
-                    print "Writing {}".format(filename)
-                    visualize(seg_masked, filename)
+                    filename = join(self.out_dir, name) + self.ext
+                    newly_segmented.append(filename)
+                    # print "Writing {}".format(filename)
+                    # Save masked segmentation
+                    vessel_img = (seg_masked * 255).astype(np.uint8).reshape((seg_masked.shape[0], seg_masked.shape[1]))
+                    Image.fromarray(vessel_img).save(filename)
 
-        if len(invalid) > 0 and self.out_dir is not None:
+        if len(failures) > 0 and self.out_dir is not None:
             with open(join(self.out_dir, 'invalid.csv')) as f_inv:
                 writer = csv.writer(f_inv)
-                for img in invalid:
+                for img in failures:
                     writer.writerow([img])
 
-        return final_results
+        return newly_segmented, already_segmented, failures
 
     def pre_process(self, imgs_original, masks):
 

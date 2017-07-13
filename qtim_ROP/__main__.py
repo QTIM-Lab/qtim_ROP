@@ -84,11 +84,11 @@ class DeepROPCommands(object):
         from argparse import ArgumentParser
 
         parser = ArgumentParser()
-        parser.add_argument('-i', '--image', help='Fundus image to classify', dest='image_path', required=True)
+        parser.add_argument('-i', '--image-dir', help='Folder of images to classify', dest='image_dir', required=True)
         parser.add_argument('-o', '--out-dir', help='Folder to output results', dest='out_dir', required=True)
         args = parser.parse_args(sys.argv[2:])
 
-        qtim_ROP.deep_rop.classify(args.image_path, args.out_dir, self.conf_dict)
+        qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict)
 
 
 def initialize(unet=None, classifier=None):

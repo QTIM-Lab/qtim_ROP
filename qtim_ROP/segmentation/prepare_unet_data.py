@@ -8,8 +8,7 @@ import numpy as np
 import yaml
 from ..utils.common import write_hdf5
 from scipy.misc import imresize
-
-from ..segmentation.mask_retina import create_mask
+from mask_retina import create_mask
 
 
 class RetinalDataset(object):

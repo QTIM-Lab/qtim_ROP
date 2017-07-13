@@ -2,34 +2,40 @@ from os.path import isdir, basename
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.np_utils import to_categorical
-import SimpleITK as sitk
+#import SimpleITK as sitk
 import cv2
 import h5py
+from scipy.misc import imresize
 from ..utils.common import find_images, find_images_by_class
 
 
 def overlay_mask(img, mask, out):
 
-    img_gray = sitk.GetImageFromArray(np.mean(img, axis=2).astype(np.uint8))
-    overlay = sitk.LabelOverlay(img_gray, sitk.GetImageFromArray(mask))
-    sitk.WriteImage(overlay, out)
-    return sitk.GetArrayFromImage(overlay)
+    # img_gray = sitk.GetImageFromArray(np.mean(img, axis=2).astype(np.uint8))
+    # overlay = sitk.LabelOverlay(img_gray, sitk.GetImageFromArray(mask))
+    # sitk.WriteImage(overlay, out)
+    # return sitk.GetArrayFromImage(overlay)
+    return NotImplementedError()
 
 
-def imgs_to_th_array(img_dir):
+def imgs_to_th_array(img_dir, resize=(480, 640)):
 
-    img_arr = []
+    img_names, img_arr = [], []
 
     for img_path in find_images(img_dir):
 
         # Load and prepare image
         img = cv2.imread(img_path)
+        if resize and img.shape != resize:
+            img_arr = imresize(img_arr, (480, 640), interp='bicubic')
+
+        img_names.append(basename(img_path))
         img = img.transpose((2, 0, 1))  # channels first
         img_arr.append(img)
 
     # Create single array of inputs
     img_arr = np.stack(img_arr, axis=0)  # samples, channels, rows, cols
-    return img_arr
+    return img_arr, img_names
 
 
 def imgs_by_class_to_th_array(img_dir, class_labels):
