@@ -13,7 +13,7 @@ setup(
     url='https://github.com/QTIM-Lab/qtim_ROP',
     download_url = 'https://github.com/QTIM-Lab/qtim_ROP/tarball/0.2',
     keywords=['retina', 'retinopathy of prematurity', 'plus disease', 'machine learning', 'deep learning', 'CNN'],
-    install_requires=['opencv-python', 'SimpleITK', 'appdirs', 'seaborn', 'pandas', 'matplotlib', 'keras==1.2.1',
+    install_requires=['opencv-python', 'SimpleITK', 'appdirs', 'seaborn', 'pandas', 'matplotlib', 'keras>=1.2.0',
                       'h5py', 'scikit-learn', 'scikit-image'],
     package_data={'qtim_ROP': ['config/preprocessing.yaml']},
     classifiers=[],
