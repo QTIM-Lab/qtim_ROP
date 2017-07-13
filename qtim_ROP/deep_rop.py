@@ -13,11 +13,11 @@ from utils.image import find_images
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def classify(image_dir, out_dir, conf_dict, force=False):
+def classify(input_imgs, out_dir, conf_dict):
 
     if any(v is None for v in conf_dict.values()):
         print "Please run 'deeprop configure' to specify the models for segmentation and classification"
-        exit()
+        exit(1)
 
     # Create directories
     if not isdir(out_dir):
@@ -29,15 +29,22 @@ def classify(image_dir, out_dir, conf_dict, force=False):
     csv_out = join(out_dir, "DeepROP_{}.csv".format(time.strftime("%Y%m%d-%H%M%S")))
 
     # Identify all images
-    image_files = find_images(image_dir)
+    if isdir(input_imgs):
+        image_files = find_images(input_imgs)
+    elif isfile(input_imgs):
+        image_files = [input_imgs]
+    else:
+        image_files = []
+        print "Please specify a valid image file or a folder of images."
+        exit(1)
+
     newly_segmented, already_segmented = [], []
 
     try:
         unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext)
         newly_segmented, already_segmented, failures = unet.segment_batch(image_files)
     except IOError:
-        print "Couldn't find model for segmentation - please check the config file"
-        exit()
+        print "Unable to locate segmentation model - use 'deeprop configure' to update model location"
 
     # Resizing images for inference
     classifier_dir = conf_dict['classifier_directory']
@@ -55,7 +62,6 @@ def classify(image_dir, out_dir, conf_dict, force=False):
     # Reshape array - samples, channels, height, width
     preprocessed_arr = np.asarray(preprocessed_arr).transpose((0, 3, 1, 2))
     print preprocessed_arr.shape
-    #input_img = np.expand_dims(input_img.transpose((2, 0, 1)), axis=0)  # channels first
 
     # CNN initialization
     print "Initializing classifier"
