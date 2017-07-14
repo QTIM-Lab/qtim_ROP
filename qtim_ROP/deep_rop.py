@@ -13,7 +13,7 @@ from utils.image import find_images
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def classify(input_imgs, out_dir, conf_dict):
+def classify(input_imgs, out_dir, conf_dict, batch_size=10):
 
     if any(v is None for v in conf_dict.values()):
         print "Please run 'deeprop configure' to specify the models for segmentation and classification"
@@ -42,7 +42,7 @@ def classify(input_imgs, out_dir, conf_dict):
 
     try:
         unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext)
-        newly_segmented, already_segmented, failures = unet.segment_batch(image_files)
+        newly_segmented, already_segmented, failures = unet.segment_batch(image_files, batch_size=batch_size)
     except IOError:
         print "Unable to locate segmentation model - use 'deeprop configure' to update model location"
 
