@@ -91,7 +91,7 @@ class DeepROPCommands(object):
                             type=int, default=10)
         args = parser.parse_args(sys.argv[2:])
 
-        qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict, batch_size=args.batch)
+        qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict, batch_size=args.batch_size)
 
 
 def initialize(unet=None, classifier=None):
