@@ -131,9 +131,13 @@ def create_googlenet(no_classes=3, no_features=None):
 
     loss1_drop_fc = Dropout(0.7)(loss1_fc)
 
-    loss1_classifier = Dense(no_classes, name='loss1/classifier', W_regularizer=l2(0.0002))(loss1_drop_fc)
+    loss1_tmp = Dense(no_classes, name='loss1/classifier_plus', W_regularizer=l2(0.0002))(loss1_drop_fc)
 
-    loss1_classifier_act = Activation('softmax')(loss1_classifier)
+    if no_classes == 1:
+        loss1_classifier_act = loss1_tmp
+    else:
+        loss1_classifier = loss1_tmp
+        loss1_classifier_act = Activation('softmax')(loss1_classifier)
 
     inception_4b_1x1 = Convolution2D(160, 1, 1, border_mode='same', activation='relu', name='inception_4b/1x1',
                                      W_regularizer=l2(0.0002))(inception_4a_output)
@@ -224,9 +228,13 @@ def create_googlenet(no_classes=3, no_features=None):
 
     loss2_drop_fc = Dropout(0.7)(loss2_fc)
 
-    loss2_classifier = Dense(no_classes, name='loss2/classifier', W_regularizer=l2(0.0002))(loss2_drop_fc)
+    loss2_tmp = Dense(no_classes, name='loss2/classifier_plus', W_regularizer=l2(0.0002))(loss2_drop_fc)
 
-    loss2_classifier_act = Activation('softmax')(loss2_classifier)
+    if no_classes == 1:
+        loss2_classifier_act = loss2_tmp
+    else:
+        loss2_classifier = loss2_tmp
+        loss2_classifier_act = Activation('softmax')(loss2_classifier)
 
     inception_4e_1x1 = Convolution2D(256, 1, 1, border_mode='same', activation='relu', name='inception_4e/1x1',
                                      W_regularizer=l2(0.0002))(inception_4d_output)
@@ -323,11 +331,14 @@ def create_googlenet(no_classes=3, no_features=None):
 
     pool5_drop_7x7_s1 = Dropout(0.4)(loss3_features)
 
-    loss3_classifier = Dense(no_classes, name='loss3/classifier', W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
+    loss3_tmp = Dense(no_classes, name='loss3/classifier_plus', W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
+    if no_classes == 1:
+        loss3_classifier_act = loss3_tmp
+    else:
+        loss3_classifier = loss3_tmp
+        loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
 
-    loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
-
-    googlenet = Model(input=input, output=[loss3_classifier_act])
+    googlenet = Model(input=input, output=[loss1_classifier_act, loss2_classifier_act, loss3_classifier_act])
 
     return googlenet
 
