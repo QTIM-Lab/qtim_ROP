@@ -73,12 +73,16 @@ def classify(input_imgs, out_dir, conf_dict, batch_size=10):
     generate_report(img_names, y_preda, csv_out)
 
 
-def generate_report(img_names, y_preda, csv_out):
+def generate_report(img_names, y_preda, csv_out, y_true=None):
 
     cols = ["P({})".format(LABELS[i]) for i in range(0, 3)]
     df = pd.DataFrame(data=y_preda, columns=cols, index=img_names)
     df = df[['P(No)', 'P(Pre-Plus)', 'P(Plus)']]
     df['Prediction'] = [LABELS[a] for a in np.argmax(y_preda, axis=1)]
+
+    if y_true is not None:
+        df['Ground truth'] = y_true
+
     df['Campbell Formula'] = df['P(No)'] + (2 * df['P(Pre-Plus)']) + (3 * df['P(Plus)'])
 
     print df

@@ -8,13 +8,14 @@ from qtim_ROP.utils.common import find_images, make_sub_dir
 QUERY = 'subjectID == "{subjectID}" and eye == "{eye}" and reader == "{gold}" and Session == "{session}"'
 VIEWS = ['posterior', 'nasal', 'temporal']
 
-
-dir_name = dirname(__file__)
-conf_name = join(dir_name, 'config', 'conf.yaml')
-with open(conf_name) as y:
-    conf = yaml.load(y)
-
-GOLD = conf['golden_reader']
+try:
+    dir_name = dirname(__file__)
+    conf_name = join(dir_name, 'config', 'conf.yaml')
+    with open(conf_name) as y:
+        conf = yaml.load(y)
+    GOLD = conf['golden_reader']
+except IOError:
+    GOLD = None
 
 
 def image_to_metadata(im_path):

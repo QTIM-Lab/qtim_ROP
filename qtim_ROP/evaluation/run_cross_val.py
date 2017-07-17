@@ -2,13 +2,11 @@ import pandas as pd
 from os.path import basename, join, isfile, dirname
 import matplotlib.pyplot as plt
 import numpy as np
-from keras.utils.np_utils import to_categorical
-
-from ..evaluation.metrics import plot_ROC_splits, plot_PR_splits
-from ..utils.metadata import image_to_metadata
-from ..learning.retina_net import RetiNet, RetinaRF, locate_config
-from ..utils.common import get_subdirs, make_sub_dir
-from ..utils.image import hdf5_images_and_labels
+from glob import glob
+from qtim_ROP.evaluation.metrics import plot_ROC_splits
+from qtim_ROP.utils.metadata import image_to_metadata
+from qtim_ROP.learning.retina_net import RetiNet, RetinaRF
+from qtim_ROP.utils.common import get_subdirs, make_sub_dir
 
 CLASSES = {'No': 0, 'Plus': 1}  #, 'Pre-Plus': 2}
 
@@ -31,7 +29,8 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
         if (not isfile(y_true_out)) or (not isfile(y_pred_out)):
 
             # Define path to model
-            cnn_model = join(split_dir, 'Split{}_Model.yaml'.format(i))
+            cnn_model = glob(join(split_dir, '*.yaml'))[0]
+            #cnn_model = join(split_dir, 'Split{}_Model.yaml'.format(i))
             train_data = join(split_dir, 'train.h5')
             test_data = join(split_dir, 'test.h5')
 
