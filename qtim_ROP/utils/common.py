@@ -1,11 +1,10 @@
 from glob import glob
 from os import mkdir, name as os_name
-from os.path import join, isdir, isfile, basename
+from os.path import join, isdir, isfile
 from shutil import copytree
 import logging
 import sys
-from PIL import Image
-import numpy as np
+import subprocess as sp
 import pandas as pd
 import h5py
 import yaml
@@ -112,3 +111,11 @@ def series_to_plot_dict(series, key, value):
 def dict_reverse(my_dict):
 
     return {v: k for k, v in my_dict.items()}
+
+
+def get_git_revision_hash():
+    return sp.check_output(['git', 'rev-parse', 'HEAD'])
+
+
+def get_git_revision_short_hash():
+    return sp.check_output(['git', 'rev-parse', '--short', 'HEAD'])

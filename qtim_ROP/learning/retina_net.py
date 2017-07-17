@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os import chdir, getcwd
-from os.path import dirname, splitext, abspath
+from os.path import dirname, splitext, abspath, basename
 from itertools import cycle
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
@@ -56,6 +56,7 @@ class RetiNet(object):
             print "Logging to '{}'".format(join(self.experiment_dir, 'training.log'))
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
+            logging.info("git: " + get_git_revision_hash())
             self._configure_network(build=True)
             # plot(self.model, join(self.experiment_dir, 'final_model.png'))
 
