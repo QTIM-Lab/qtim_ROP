@@ -338,7 +338,7 @@ def create_googlenet(no_classes=3, no_features=None):
         loss3_classifier = loss3_tmp
         loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
 
-    googlenet = Model(input=input, output=[loss1_classifier_act, loss2_classifier_act, loss3_classifier_act])
+    googlenet = Model(input=input, output=[loss3_classifier_act])#, loss2_classifier_act, loss3_classifier_act])
 
     return googlenet
 
