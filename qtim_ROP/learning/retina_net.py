@@ -2,7 +2,7 @@
 
 from os import chdir, getcwd
 from os.path import dirname, splitext, abspath, basename
-from itertools import cycle
+import numpy as np
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model
@@ -17,7 +17,7 @@ from ..utils.common import *
 from ..utils.image import create_generator
 from ..utils.models import SGDLearningRateTracker
 from ..utils.plotting import *
-from ..visualisation.tsne import tsne
+from custom_loss import soft_acc
 from ..evaluation.metrics import calculate_metrics
 
 
@@ -56,7 +56,7 @@ class RetiNet(object):
             print "Logging to '{}'".format(join(self.experiment_dir, 'training.log'))
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
-            logging.info("git: " + get_git_revision_hash())
+            # logging.info("git: " + get_git_revision_hash())
             self._configure_network(build=True)
             # plot(self.model, join(self.experiment_dir, 'final_model.png'))
 
@@ -125,7 +125,9 @@ class RetiNet(object):
             loss = self.config.get('loss', 'categorical_cross_entropy')  # default to cross-entropy
             name, params = opt_options['type'], opt_options['params']
             optimizer = OPTIMIZERS[name](**params)
-            self.model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
+
+            metrics = [soft_acc] if loss == 'mse' else ['accuracy']
+            self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     def train(self):
 

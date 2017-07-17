@@ -1,6 +1,7 @@
 import theano
 import theano.tensor as T
 import numpy as np
+import keras.backend as K
 
 
 def quad_kappa_loss(y, t, y_pow=1, eps=1e-15):
@@ -24,6 +25,10 @@ def quad_kappa_loss(y, t, y_pow=1, eps=1e-15):
                   num_scored_items.astype(theano.config.floatX))
 
     return - (1 - nom / denom)
+
+
+def soft_acc(y_true, y_pred):
+    return K.mean(K.equal(K.round(y_true), K.round(y_pred)))
 
 if __name__ == '__main__':
 
