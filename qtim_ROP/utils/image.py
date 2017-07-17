@@ -60,7 +60,7 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
     return img_names, img_arr, y_true
 
 
-def create_generator(data_path, input_shape, batch_size=32, training=True):
+def create_generator(data_path, input_shape, class_order, batch_size=32, training=True):
 
     datagen = ImageDataGenerator()
 
@@ -68,20 +68,22 @@ def create_generator(data_path, input_shape, batch_size=32, training=True):
 
         dg = datagen.flow_from_directory(
             data_path,
+            classes=class_order,
             target_size=input_shape[1:],
             batch_size=batch_size,
             class_mode='categorical',
             shuffle=training)
-        return dg, dg.classes, dg.class_indices
+        return dg, dg.classes, dg.class_indices, None
 
     else:  # otherwise, assume HDF5 file
 
         f = h5py.File(data_path, 'r')
-        class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
-        classes = [class_indices[k] for k in f['labels']]
+        # class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
+        # classes = [class_indices[k] for k in f['labels']]
+        classes = [class_order.index(c) for c in f['labels']]
         labels = to_categorical(classes)
 
-        return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, class_indices
+        return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, f['data'].shape[0]
 
 
 def hdf5_images_and_labels(data_path):

@@ -121,9 +121,10 @@ class RetiNet(object):
         # Configure optimizer
         if build:
             opt_options = self.config['optimizer']
+            loss = self.config.get('loss', 'categorical_cross_entropy')  # default to cross-entropy
             name, params = opt_options['type'], opt_options['params']
             optimizer = OPTIMIZERS[name](**params)
-            self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            self.model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
     def train(self):
 
@@ -131,13 +132,15 @@ class RetiNet(object):
         epochs = self.config.get('epochs', 50)  # default to 50 if not specified
         input_shape = self.model.input_shape[1:]
         train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
+        class_order = ['No', 'Pre-Plus', 'Plus']
 
         # Create generators
-        train_gen, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
+        train_gen, _, no_train_samples, = create_generator(self.train_data, input_shape, class_order,
+                                                           training=True, batch_size=train_batch)
 
         if self.val_data:
-            val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
-            no_val_samples = val_gen.X.shape[0]
+            val_gen, _, no_val_samples = create_generator(self.val_data, input_shape, class_order,
+                                                          training=False, batch_size=val_batch)
         else:
             val_gen = None
             no_val_samples = None
@@ -150,7 +153,7 @@ class RetiNet(object):
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=train_gen.X.shape[0],
+            samples_per_epoch=no_train_samples,
             nb_epoch=epochs,
             validation_data=val_gen,
             nb_val_samples=no_val_samples, callbacks=[checkpoint_tb, lr_tb])
@@ -197,10 +200,11 @@ class RetiNet(object):
     def evaluate(self, data_path, n_samples=None):
 
         logging.info("Evaluating model for on {}".format(data_path))
-        datagen, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
-                                                          batch_size=1, training=False)
+        class_order = ['No', 'Pre-Plus', 'Plus']
+        datagen, y_true, gen_samples = create_generator(data_path, self.model.input_shape[1:], class_order,
+                                                        batch_size=1, training=False)
         if not n_samples:
-            n_samples = datagen.x.shape[0]
+            n_samples = gen_samples
 
         predictions = self.model.predict_generator(datagen, n_samples)
         data_dict = {'data': datagen, 'classes': class_indices, 'y_true': to_categorical(y_true[:n_samples]), 'y_pred': predictions}
