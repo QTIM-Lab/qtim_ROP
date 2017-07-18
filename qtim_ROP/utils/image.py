@@ -60,7 +60,7 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
     return img_names, img_arr, y_true
 
 
-def create_generator(data_path, input_shape, class_order, batch_size=32, training=True):
+def create_generator(data_path, input_shape, class_order, regression=False, batch_size=32, training=True):
 
     datagen = ImageDataGenerator()
 
@@ -81,9 +81,13 @@ def create_generator(data_path, input_shape, class_order, batch_size=32, trainin
         # class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
         # classes = [class_indices[k] for k in f['labels']]
         classes = [class_order.index(c) for c in f['labels']]
-        labels = to_categorical(classes)
 
-        return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, f['data'].shape[0]
+        if regression:
+            y = np.asarray([float(c) for c in classes])
+        else:
+            y = to_categorical(classes)
+
+        return datagen.flow(f['data'], y=y, batch_size=batch_size, shuffle=training), classes, f['data'].shape[0]
 
 
 def hdf5_images_and_labels(data_path):

@@ -126,7 +126,8 @@ class RetiNet(object):
             name, params = opt_options['type'], opt_options['params']
             optimizer = OPTIMIZERS[name](**params)
 
-            metrics = [soft_acc] if loss == 'mse' else ['accuracy']
+            self.regression = loss == 'mse'
+            metrics = [soft_acc] if self.regression else ['accuracy']
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     def train(self):
@@ -139,11 +140,13 @@ class RetiNet(object):
 
         # Create generators
         train_gen, _, no_train_samples, = create_generator(self.train_data, input_shape, class_order,
-                                                           training=True, batch_size=train_batch)
+                                                           training=True, batch_size=train_batch,
+                                                           regression=self.regression)
 
         if self.val_data:
             val_gen, _, no_val_samples = create_generator(self.val_data, input_shape, class_order,
-                                                          training=False, batch_size=val_batch)
+                                                          training=False, batch_size=val_batch,
+                                                          regression=self.regression)
         else:
             val_gen = None
             no_val_samples = None
