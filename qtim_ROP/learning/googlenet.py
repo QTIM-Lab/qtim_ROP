@@ -120,24 +120,24 @@ def create_googlenet(no_classes=3, no_features=None):
     inception_4a_output = merge([inception_4a_1x1, inception_4a_3x3, inception_4a_5x5, inception_4a_pool_proj],
                                 mode='concat', concat_axis=1, name='inception_4a/output')
 
-    loss1_ave_pool = AveragePooling2D(pool_size=(5, 5), strides=(3, 3), name='loss1/ave_pool')(inception_4a_output)
-
-    loss1_conv = Convolution2D(128, 1, 1, border_mode='same', activation='relu', name='loss1/conv',
-                               W_regularizer=l2(0.0002))(loss1_ave_pool)
-
-    loss1_flat = Flatten()(loss1_conv)
-
-    loss1_fc = Dense(1024, activation='relu', name='loss1/fc', W_regularizer=l2(0.0002))(loss1_flat)
-
-    loss1_drop_fc = Dropout(0.7)(loss1_fc)
-
-    loss1_tmp = Dense(no_classes, name='loss1/classifier_plus', W_regularizer=l2(0.0002))(loss1_drop_fc)
-
-    if no_classes == 1:
-        loss1_classifier_act = loss1_tmp
-    else:
-        loss1_classifier = loss1_tmp
-        loss1_classifier_act = Activation('softmax')(loss1_classifier)
+    # loss1_ave_pool = AveragePooling2D(pool_size=(5, 5), strides=(3, 3), name='loss1/ave_pool')(inception_4a_output)
+    #
+    # loss1_conv = Convolution2D(128, 1, 1, border_mode='same', activation='relu', name='loss1/conv',
+    #                            W_regularizer=l2(0.0002))(loss1_ave_pool)
+    #
+    # loss1_flat = Flatten()(loss1_conv)
+    #
+    # loss1_fc = Dense(1024, activation='relu', name='loss1/fc', W_regularizer=l2(0.0002))(loss1_flat)
+    #
+    # loss1_drop_fc = Dropout(0.7)(loss1_fc)
+    #
+    # loss1_tmp = Dense(no_classes, name='loss1/classifier_plus', W_regularizer=l2(0.0002))(loss1_drop_fc)
+    #
+    # if no_classes == 1:
+    #     loss1_classifier_act = loss1_tmp
+    # else:
+    #     loss1_classifier = loss1_tmp
+    #     loss1_classifier_act = Activation('softmax')(loss1_classifier)
 
     inception_4b_1x1 = Convolution2D(160, 1, 1, border_mode='same', activation='relu', name='inception_4b/1x1',
                                      W_regularizer=l2(0.0002))(inception_4a_output)
@@ -217,24 +217,24 @@ def create_googlenet(no_classes=3, no_features=None):
     inception_4d_output = merge([inception_4d_1x1, inception_4d_3x3, inception_4d_5x5, inception_4d_pool_proj],
                                 mode='concat', concat_axis=1, name='inception_4d/output')
 
-    loss2_ave_pool = AveragePooling2D(pool_size=(5, 5), strides=(3, 3), name='loss2/ave_pool')(inception_4d_output)
-
-    loss2_conv = Convolution2D(128, 1, 1, border_mode='same', activation='relu', name='loss2/conv',
-                               W_regularizer=l2(0.0002))(loss2_ave_pool)
-
-    loss2_flat = Flatten()(loss2_conv)
-
-    loss2_fc = Dense(1024, activation='relu', name='loss2/fc', W_regularizer=l2(0.0002))(loss2_flat)
-
-    loss2_drop_fc = Dropout(0.7)(loss2_fc)
-
-    loss2_tmp = Dense(no_classes, name='loss2/classifier_plus', W_regularizer=l2(0.0002))(loss2_drop_fc)
-
-    if no_classes == 1:
-        loss2_classifier_act = loss2_tmp
-    else:
-        loss2_classifier = loss2_tmp
-        loss2_classifier_act = Activation('softmax')(loss2_classifier)
+    # loss2_ave_pool = AveragePooling2D(pool_size=(5, 5), strides=(3, 3), name='loss2/ave_pool')(inception_4d_output)
+    #
+    # loss2_conv = Convolution2D(128, 1, 1, border_mode='same', activation='relu', name='loss2/conv',
+    #                            W_regularizer=l2(0.0002))(loss2_ave_pool)
+    #
+    # loss2_flat = Flatten()(loss2_conv)
+    #
+    # loss2_fc = Dense(1024, activation='relu', name='loss2/fc', W_regularizer=l2(0.0002))(loss2_flat)
+    #
+    # loss2_drop_fc = Dropout(0.7)(loss2_fc)
+    #
+    # loss2_tmp = Dense(no_classes, name='loss2/classifier_plus', W_regularizer=l2(0.0002))(loss2_drop_fc)
+    #
+    # if no_classes == 1:
+    #     loss2_classifier_act = loss2_tmp
+    # else:
+    #     loss2_classifier = loss2_tmp
+    #     loss2_classifier_act = Activation('softmax')(loss2_classifier)
 
     inception_4e_1x1 = Convolution2D(256, 1, 1, border_mode='same', activation='relu', name='inception_4e/1x1',
                                      W_regularizer=l2(0.0002))(inception_4d_output)
@@ -333,12 +333,12 @@ def create_googlenet(no_classes=3, no_features=None):
 
     loss3_tmp = Dense(no_classes, name='loss3/classifier_plus', W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
     if no_classes == 1:
-        loss3_classifier_act = loss3_tmp
+        loss3_classifier_act = Activation('linear', name='severity')(loss3_tmp)
     else:
         loss3_classifier = loss3_tmp
         loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
 
-    googlenet = Model(input=input, output=[loss3_classifier_act])#, loss2_classifier_act, loss3_classifier_act])
+    googlenet = Model(input=input, output=[loss3_classifier_act])  #, loss2_classifier_act, loss3_classifier_act])
 
     return googlenet
 
