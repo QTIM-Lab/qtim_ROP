@@ -184,7 +184,8 @@ class RetiNet(object):
         lr = np.load(self.lr_file)
 
         # Plot histories
-        plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
+        plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext),
+                      metric='acc' if self.regression else 'soft_acc')
         plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
         plot_LR(lr, join(self.experiment_dir, 'lr_plot' + self.ext))
 

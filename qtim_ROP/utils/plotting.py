@@ -10,11 +10,11 @@ from qtim_ROP.utils.common import series_to_plot_dict
 CLASSES = ['No', 'Pre-Plus', 'Plus']
 
 
-def plot_accuracy(history, out_file=None):
+def plot_accuracy(history, out_file=None, metric='acc'):
 
     plt.figure()
-    plt.plot(history['acc'])
-    plt.plot(history['val_acc'])
+    plt.plot(history[metric])
+    plt.plot(history['val_' + metric])
     plt.title('Model accuracy')
     plt.ylabel('Accuracy (%)')
     plt.xlabel('Epoch')
