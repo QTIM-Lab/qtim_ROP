@@ -1,11 +1,12 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
 from os.path import join, isfile
 import cv2
 import numpy as np
 from qtim_ROP.learning.retina_net import RetiNet
 from qtim_ROP.utils.common import dict_reverse, make_sub_dir
 from qtim_ROP.utils.image import imgs_by_class_to_th_array
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
