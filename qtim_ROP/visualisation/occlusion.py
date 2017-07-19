@@ -3,8 +3,9 @@ import seaborn as sns
 from os.path import join, isfile
 import cv2
 import numpy as np
-from ..learning.retina_net import RetiNet
-from ..utils.common import find_images_by_class, make_sub_dir
+from qtim_ROP.learning.retina_net import RetiNet
+from qtim_ROP.utils.common import dict_reverse, make_sub_dir
+from qtim_ROP.utils.image import imgs_by_class_to_th_array
 
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
@@ -13,24 +14,12 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
     # Load model
     model = RetiNet(model_config).model
-    imgs_by_class = find_images_by_class(test_data)
+    img_names, img_arr, y_true = imgs_by_class_to_th_array(test_data, dict_reverse(CLASSES))
+    no_imgs = len(img_names) if no_imgs is None else no_imgs
 
-    for class_, img_list in imgs_by_class.items():
+    for class_ in CLASSES.values():
 
         class_dir = make_sub_dir(out_dir, class_)
-
-        no_imgs = len(img_list) if no_imgs is None else int(no_imgs)
-        img_arr = []
-
-        for img_path in img_list[:no_imgs]:
-
-            # Load and prepare image
-            img = cv2.imread(img_path)
-            img = img.transpose((2, 0, 1))
-            img_arr.append(img)
-
-        # Create single array of inputs
-        img_arr = np.stack(img_arr, axis=0)
 
         # Get raw predictions
         raw_probabilities = model.predict_on_batch(img_arr)
@@ -62,7 +51,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
                     # Get predictions for current occluded region
                     occ_probabilities = model.predict_on_batch(occ_img)
-                    print occ_probabilities
+                    # print occ_probabilities
 
                     # Assign heatmap value as probability of class, as predicted without occlusion
                     for i, (occ_prob, raw_pred) in enumerate(zip(occ_probabilities, raw_predictions)):
@@ -95,7 +84,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-m', '--model-config', dest='model_config', help='Model config (YAML) file', required=True)
     parser.add_argument('-t', '--test-data', dest='test_data', help='Test data', required=True)
-    parser.add_argument('-w', '--window-size', dest='window_size', help='Size of occluded patch', default=24)
+    parser.add_argument('-w', '--window-size', dest='window_size', help='Size of occluded patch', type=int, default=24)
     parser.add_argument('-n', '--no-imgs', dest='no_imgs', help='Number of images to test with', default=None)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help='Output directory', required=True)
 
