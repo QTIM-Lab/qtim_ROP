@@ -18,57 +18,53 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
     img_names, img_arr, y_true = imgs_by_class_to_th_array(test_data, dict_reverse(CLASSES))
     no_imgs = len(img_names) if no_imgs is None else no_imgs
 
-    for class_ in CLASSES.values():
+    # Get raw predictions
+    raw_probabilities = model.predict_on_batch(img_arr)
+    raw_predictions = [np.argmax(y_pred) for y_pred in raw_probabilities]
 
-        class_dir = make_sub_dir(out_dir, class_)
+    # Occlude overlapping windows in the image
+    x_dim = img_arr.shape[2]
+    y_dim = img_arr.shape[3]
+    hw = window_size / 2
 
-        # Get raw predictions
-        raw_probabilities = model.predict_on_batch(img_arr)
-        raw_predictions = [np.argmax(y_pred) for y_pred in raw_probabilities]
+    hmaps_out = join(out_dir, 'heatmaps.npy')
+    # debug_dir = make_sub_dir(class_dir, 'debug')
 
-        # Occlude overlapping windows in the image
-        x_dim = img_arr.shape[2]
-        y_dim = img_arr.shape[3]
-        hw = window_size / 2
+    if not isfile(hmaps_out):
 
-        hmaps_out = join(class_dir, 'heatmaps.npy')
-        # debug_dir = make_sub_dir(class_dir, 'debug')
+        heatmaps = np.zeros(shape=(no_imgs, x_dim, y_dim))
 
-        if not isfile(hmaps_out):
+        for x in range(0, x_dim, hw):
+            for y in range(0, y_dim, hw):
 
-            heatmaps = np.zeros(shape=(no_imgs, x_dim, y_dim))
+                occ_img = np.copy(img_arr)  # create copy
 
-            for x in range(0, x_dim, hw):
-                for y in range(0, y_dim, hw):
+                x_min, x_max = np.max([0, x-hw]), np.min([x+hw, x_dim])
+                y_min, y_max = np.max([0, y-hw]), np.min([y+hw, y_dim])
 
-                    occ_img = np.copy(img_arr)  # create copy
+                occ_img[:, :, x_min:x_max, y_min:y_max] = 0
 
-                    x_min, x_max = np.max([0, x-hw]), np.min([x+hw, x_dim])
-                    y_min, y_max = np.max([0, y-hw]), np.min([y+hw, y_dim])
+                # cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)), np.transpose(occ_img[0], (1, 2, 0)))
 
-                    occ_img[:, :, x_min:x_max, y_min:y_max] = 0
+                # Get predictions for current occluded region
+                occ_probabilities = model.predict_on_batch(occ_img)
+                # print occ_probabilities
 
-                    # cv2.imwrite(join(debug_dir, '{}_{}.png'.format(x, y)), np.transpose(occ_img[0], (1, 2, 0)))
+                # Assign heatmap value as probability of class, as predicted without occlusion
+                for i, (occ_prob, raw_pred) in enumerate(zip(occ_probabilities, raw_predictions)):
+                    heatmaps[i, x_min:x_max, y_min:y_max] = occ_prob[raw_pred] * 100
 
-                    # Get predictions for current occluded region
-                    occ_probabilities = model.predict_on_batch(occ_img)
-                    # print occ_probabilities
+        np.save(hmaps_out, heatmaps)
 
-                    # Assign heatmap value as probability of class, as predicted without occlusion
-                    for i, (occ_prob, raw_pred) in enumerate(zip(occ_probabilities, raw_predictions)):
-                        heatmaps[i, x_min:x_max, y_min:y_max] = occ_prob[raw_pred] * 100
+    else:
+        heatmaps = np.load(hmaps_out)
 
-            np.save(hmaps_out, heatmaps)
-
-        else:
-            heatmaps = np.load(hmaps_out)
-
-        plot_heatmaps(img_arr, heatmaps, class_dir)
+    plot_heatmaps(img_arr, img_names, heatmaps, out_dir)
 
 
-def plot_heatmaps(img_arr, heatmaps, out_dir):
+def plot_heatmaps(img_arr, img_names, heatmaps, out_dir):
 
-    for j, (img, h_map) in enumerate(zip(img_arr, heatmaps)):
+    for j, (img, img_name, h_map) in enumerate(zip(img_arr, img_names, heatmaps)):
 
         fig, ax = plt.subplots()
         img = np.transpose(img, (1, 2, 0))
@@ -76,7 +72,7 @@ def plot_heatmaps(img_arr, heatmaps, out_dir):
         plt.imshow(h_map, cmap=plt.get_cmap('magma'), alpha=0.7, interpolation='bilinear')
         plt.colorbar()
         plt.axis('off')
-        plt.savefig(join(out_dir, '{}.png'.format(j)), bbox_inches='tight')
+        plt.savefig(join(out_dir, img_name), bbox_inches='tight', dpi=300)
 
 if __name__ == '__main__':
 
