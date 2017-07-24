@@ -8,7 +8,7 @@ from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
-from keras.utils.np_utils import to_categorical
+from sklearn.metrics import confusion_matrix
 from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
@@ -213,10 +213,18 @@ class RetiNet(object):
         if not n_samples:
             n_samples = gen_samples
 
-        predictions = self.model.predict_generator(datagen, n_samples)
-        data_dict = {'data': datagen, 'classes': class_indices, 'y_true': to_categorical(y_true[:n_samples]), 'y_pred': predictions}
+        y_pred = self.model.predict_generator(datagen, n_samples)
 
-        cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
+        if self.regression:
+            y_pred = np.round(y_pred)
+        else:
+            y_pred = np.argmax(y_pred, axis=1)
+
+        plot_confusion(confusion_matrix(y_true, y_pred), class_order, join(self.eval_dir, 'confusion.png'))
+
+        # data_dict = {'data': datagen, 'classes': class_indices, 'y_true': to_categorical(y_true[:n_samples]), 'y_pred': predictions}
+        #
+        # cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
         # pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
         # true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
         #
