@@ -50,11 +50,11 @@ def plot_confusion(confusion, classes, out_file):
         df_cm = df_cm.reindex_axis(CLASSES, axis=0)
         df_cm = df_cm.reindex_axis(CLASSES, axis=1)
 
-    sns.heatmap(df_cm, cmap='Blues', annot=True, fmt='g')
+    sns.heatmap(df_cm, cmap='Blues', annot=True, fmt='g', annot_kws={"size": 16})
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position('top')
-    sns.plt.xlabel('Predicted class')
-    sns.plt.ylabel('Actual class')
+    sns.plt.xlabel('Automated diagnosis')
+    sns.plt.ylabel('Reference standard diagnosis')
     sns.plt.savefig(out_file)
 
 

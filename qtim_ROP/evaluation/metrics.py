@@ -91,9 +91,9 @@ def plot_ROC_splits(y_true_all, y_pred_all, (class_name, class_index)):
         roc_auc = auc(fpr, tpr)
         all_aucs.append(roc_auc)
 
-        plt.plot(fpr, tpr, label='CV #{}, AUC = {:.3f}'.format(split_no + 1, roc_auc), linestyle=next(line_styles))
+        plt.plot(fpr, tpr, label='Split #{}, AUC = {:.3f}'.format(split_no + 1, roc_auc), linestyle=next(line_styles))
 
-    plt.title('Receiver operating characteristic for "{}" class'.format(class_name))
+    plt.title('Cross-validated ROC curves for "{}"'.format(class_name))
     plt.legend(loc='lower right')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([-0.025, 1.025])

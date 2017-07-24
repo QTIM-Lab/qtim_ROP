@@ -8,7 +8,7 @@ from qtim_ROP.utils.metadata import image_to_metadata
 from qtim_ROP.learning.retina_net import RetiNet, RetinaRF
 from qtim_ROP.utils.common import get_subdirs, make_sub_dir
 
-CLASSES = {'No': 0, 'Plus': 1}  #, 'Pre-Plus': 2}
+CLASSES = {'no plus disease': 0, 'plus disease': 1}  #, 'Pre-Plus': 2}
 
 
 def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):

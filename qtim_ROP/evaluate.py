@@ -1,6 +1,7 @@
 from os.path import isdir, isfile, join, splitext, basename
 from qtim_ROP.learning.retina_net import RetiNet
-from qtim_ROP.utils.common import dict_reverse
+from qtim_ROP.utils.common import dict_reverse, find_images_by_class
+from qtim_ROP.utils.image import imgs_by_class_to_th_array
 from qtim_ROP.evaluation.metrics import plot_confusion, plot_ROC_by_class
 from qtim_ROP.deep_rop import generate_report
 from sklearn.metrics import confusion_matrix
@@ -15,8 +16,8 @@ LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 def evaluate(model_config, data, out_dir):
 
     # Load data
-    img_arr, labels, file_names = load_data(data)
-    y_true = np.asarray([dict_reverse(LABELS)[x] for x in labels])
+    file_names, img_arr, y_true = load_data(data)
+    # y_true = np.asarray([dict_reverse(LABELS)[x] for x in labels])
 
     y_pred_out = join(out_dir, 'y_pred.npy')
     if not isfile(y_pred_out):
@@ -30,6 +31,7 @@ def evaluate(model_config, data, out_dir):
         y_pred = np.load(y_pred_out)
 
     # Generate report
+    labels = [LABELS[i] for i in y_true]
     generate_report(file_names, y_pred, join(out_dir, splitext(basename(model_config))[0]) + '.csv', y_true=labels)
 
     # Confusion matrix
@@ -53,9 +55,9 @@ def load_data(data):
 
     if isfile(data):
         f = h5py.File(data)
-        return f['data'], list(f['labels']), f['original_files']
+        return f['original_files'], f['data'], list(f['labels'])
     elif isdir(data):
-        return None
+        return imgs_by_class_to_th_array(data, dict_reverse(LABELS))
     else:
         return None
 
