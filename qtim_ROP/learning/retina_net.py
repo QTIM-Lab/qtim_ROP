@@ -225,7 +225,7 @@ class RetiNet(object):
         plot_confusion(confusion_matrix(y_true, y_pred), class_order, join(self.eval_dir, 'confusion.png'))
 
         # data_dict = {'data': datagen, 'classes': class_indices, 'y_true': to_categorical(y_true[:n_samples]), 'y_pred': predictions}
-        #
+
         # cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
         # pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
         # true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
@@ -233,7 +233,7 @@ class RetiNet(object):
         # pred_df.to_csv(join(self.eval_dir, 'predictions.csv'))
         # true_df.to_csv(join(self.eval_dir, 'ground_truth.csv'))
 
-        return data_dict
+        # return data_dict
 
     def set_intermediate(self, layer_name):
 
