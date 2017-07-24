@@ -119,14 +119,16 @@ class RetiNet(object):
                 print "Loading weights '{}'".format(weights)
                 self.model.load_weights(weights, by_name=True)
 
+        # Get loss function, determines whether model is for classification or regression
+        loss = self.config.get('loss', 'categorical_cross_entropy')  # default to cross-entropy
+        self.regression = loss == 'mse'
+
         # Configure optimizer
         if build:
             opt_options = self.config['optimizer']
-            loss = self.config.get('loss', 'categorical_cross_entropy')  # default to cross-entropy
             name, params = opt_options['type'], opt_options['params']
             optimizer = OPTIMIZERS[name](**params)
 
-            self.regression = loss == 'mse'
             metrics = [soft_acc] if self.regression else ['accuracy']
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
