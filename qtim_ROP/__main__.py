@@ -87,9 +87,9 @@ class DeepROPCommands(object):
         parser = ArgumentParser()
         parser.add_argument('-i', '--image-dir', help='Folder of images to classify', dest='image_dir', required=True)
         parser.add_argument('-o', '--out-dir', help='Folder to output results', dest='out_dir', required=True)
-        parser.add_argument('-s', '--skip-segmentation', help='Skip the segmentation', dest='skip_seg', default=False)
         parser.add_argument('-b', '--batch-size', help='Number of images to process at once', dest='batch_size',
                             type=int, default=10)
+        parser.add_argument('--skip-seg', help='Skip the segmentation', action='store_true', dest='skip_seg', default=False)
         args = parser.parse_args(sys.argv[2:])
 
         qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict, batch_size=args.batch_size)
