@@ -10,7 +10,6 @@ Once installed, the steps for installing qtim_ROP are as follows:
 ```bash
 git clone https://github.com/QTIM-Lab/qtim_ROP.git
 cd qtim_ROP
-git checkout packaging
 git submodule update --init --recursive
 pip install .
 ```
