@@ -92,7 +92,8 @@ class DeepROPCommands(object):
         parser.add_argument('--skip-seg', help='Skip the segmentation', action='store_true', dest='skip_seg', default=False)
         args = parser.parse_args(sys.argv[2:])
 
-        qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict, batch_size=args.batch_size)
+        qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict,
+                                   skip_segmentation=args.skip_seg, batch_size=args.batch_size)
 
 
 def initialize(unet=None, classifier=None):
