@@ -56,8 +56,11 @@ class DeepROPCommands(object):
                   "\nCurrent classifier model: {classifier_directory}".format(**self.conf_dict)
             exit(1)
 
-        self.conf_dict['unet_directory'] = abspath(args.unet)
-        self.conf_dict['classifier_directory'] = abspath(args.classifier)
+        if args.unet:
+            self.conf_dict['unet_directory'] = abspath(args.unet)
+        if args.classifier:
+            self.conf_dict['classifier_directory'] = abspath(args.classifier)
+            
         yaml.dump(self.conf_dict, open(self.conf_file, 'w'), default_flow_style=False)
         print "Configuration updated!"
 
