@@ -279,14 +279,16 @@ class RetinaRF(object):
         return features
 
 
-def locate_config(search_dir):
+def locate_config(search_dir, rf=False):
+
+    config_file, rf_pkl = None, None
 
     try:
         config_file = glob(join(search_dir, '*.yaml'))[0]
-        rf_pkl = glob(join(search_dir, '*.pkl'))[0]
+        if rf:
+            rf_pkl = glob(join(search_dir, '*.pkl'))[0]
     except IndexError:
         print "Missing CNN (.yaml) or RF (.pkl) file - unable to load"
-        raise
 
     return config_file, rf_pkl
 
