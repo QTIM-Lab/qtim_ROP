@@ -192,7 +192,7 @@ class RetiNet(object):
 
     def predict(self, img_arr):
 
-        return self.model.predict_on_batch(img_arr)
+        return self.model.predict(img_arr, batch_size=100)
 
     def evaluate(self, data_path, n_samples=None):
 
