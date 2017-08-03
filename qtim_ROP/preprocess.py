@@ -19,7 +19,7 @@ import pandas as pd
 from qtim_ROP.utils.common import find_images
 
 
-def preprocess(data_csv, img_source, labels='plus', exclude_lq=True, exclude_ls=True):
+def preprocess(data_csv, img_source, labels='plus', exclude_lq=True, exclude_ls=True, exclude_subjects=None):
 
     # Load the data into a DataFrame
     df = pd.DataFrame.from_csv(data_csv)

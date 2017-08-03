@@ -24,7 +24,6 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
         makedirs(out_dir)
 
     ext = '.bmp'
-    seg_dir = make_sub_dir(out_dir, 'segmentation')
     prep_dir = make_sub_dir(out_dir, 'preprocessed')
     csv_out = join(out_dir, "DeepROP_{}.csv".format(time.strftime("%Y%m%d-%H%M%S")))
 
@@ -44,6 +43,9 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
         print "Assuming input images are already segmented"
         already_segmented = image_files  # the images provided are already segmented
     else:
+
+        seg_dir = make_sub_dir(out_dir, 'segmentation')
+
         try:   # use a U-Net to segment the input images
             unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext)
             newly_segmented, already_segmented, failures = unet.segment_batch(image_files, batch_size=batch_size)
