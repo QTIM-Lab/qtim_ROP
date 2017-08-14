@@ -12,46 +12,27 @@ from utils.image import find_images
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
+def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, batch_size=100):
 
-def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10):
-
-    if any(v is None for v in conf_dict.values()):
-        print "Please run 'deeprop configure' to specify the models for segmentation and classification"
-        exit(1)
-
-    # Create directories
-    if not isdir(out_dir):
-        makedirs(out_dir)
-
-    ext = '.bmp'
-    prep_dir = make_sub_dir(out_dir, 'preprocessed')
-    csv_out = join(out_dir, "DeepROP_{}.csv".format(time.strftime("%Y%m%d-%H%M%S")))
-
-    # Identify all images
-    if isdir(input_imgs):
-        image_files = find_images(input_imgs)
-    elif isfile(input_imgs):
-        image_files = [input_imgs]
-    else:
-        image_files = []
-        print "Please specify a valid image file or a folder of images."
-        exit(1)
-
+    # Segmentation
     newly_segmented, already_segmented = [], []
+    prep_dir = make_sub_dir(out_dir, 'preprocessed')
+    seg_dir = make_sub_dir(out_dir, 'segmentation')
+    ext = '.bmp'
 
     if skip_segmentation:
         print "Assuming input images are already segmented"
         already_segmented = image_files  # the images provided are already segmented
     else:
 
-        seg_dir = make_sub_dir(out_dir, 'segmentation')
-
         try:   # use a U-Net to segment the input images
             unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext)
             newly_segmented, already_segmented, failures = unet.segment_batch(image_files, batch_size=batch_size)
-        except IOError:
+        except IOError as ioe:
             print "Unable to locate segmentation model - use 'deeprop configure' to update model location"
-
+            print ioe
+            raise
+            
     # Resizing images for inference
     classifier_dir = conf_dict['classifier_directory']
     prep_conf = yaml.load(open(abspath(join(dirname(__file__), 'config', 'preprocessing.yaml'))))['pipeline']
@@ -68,9 +49,37 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
     # Reshape array - samples, channels, height, width
     preprocessed_arr = np.asarray(preprocessed_arr).transpose((0, 3, 1, 2))
     print preprocessed_arr.shape
+    return preprocessed_arr, img_names
+
+
+def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10):
+
+    if any(v is None for v in conf_dict.values()):
+        print "Please run 'deeprop configure' to specify the models for segmentation and classification"
+        exit(1)
+
+    # Create directories
+    if not isdir(out_dir):
+        makedirs(out_dir)
+
+    csv_out = join(out_dir, "DeepROP_{}.csv".format(time.strftime("%Y%m%d-%H%M%S")))
+
+    # Identify all images
+    if isdir(input_imgs):
+        image_files = find_images(input_imgs)
+    elif isfile(input_imgs):
+        image_files = [input_imgs]
+    else:
+        image_files = []
+        print "Please specify a valid image file or a folder of images."
+        exit(1)
+
+    preprocessed_arr,img_names = preprocess_images(image_files, out_dir, conf_dict,
+        skip_segmentation=skip_segmentation, batch_size=batch_size)
 
     # CNN initialization
     print "Initializing classifier"
+    classifier_dir = conf_dict['classifier_directory']
     model_config, rf_pkl = locate_config(classifier_dir)
     cnn = RetiNet(model_config)
 
