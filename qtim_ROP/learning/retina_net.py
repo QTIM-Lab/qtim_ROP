@@ -38,8 +38,16 @@ class RetiNet(object):
 
         cwd = getcwd()
         chdir(self.conf_dir)
-        self.train_data = abspath(self.config['training_data'])
-        self.val_data = abspath(self.config['validation_data'])
+
+        if self.conf_file.get('training_data') is not None:
+            self.train_data = abspath(self.config['training_data'])
+        else:
+            self.train_data = None
+
+        if self.conf_file.get('validation_data') is not None:
+            self.val_data = abspath(self.config['validation_data'])
+        else:
+            self.val_data = None
 
         try:
             self.config['mode']
@@ -50,6 +58,10 @@ class RetiNet(object):
         if self.config['mode'] == 'train':
 
             # Set up logging
+            if not self.train_data:
+                print "No training data specified! Exiting..."
+                exit()
+
             self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
 
@@ -159,7 +171,6 @@ class RetiNet(object):
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
         np.save(join(self.experiment_dir, 'learning_rate.npy'), lr_tb.lr)
         self.model.save_weights(join(self.experiment_dir, 'final_weights.h5'))
-        self.plot_history()
 
         with open(join(self.experiment_dir, 'model_arch.json'), 'w') as arch:
             arch.writelines(self.model.to_json())
@@ -168,6 +179,8 @@ class RetiNet(object):
         conf_eval = self.update_config('final')
         with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'wb') as ce:
             yaml.dump(conf_eval, ce, default_flow_style=False)
+
+        self.plot_history()
 
     def plot_history(self):
 

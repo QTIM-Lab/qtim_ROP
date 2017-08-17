@@ -14,11 +14,16 @@ def plot_accuracy(history, out_file=None):
 
     plt.figure()
     plt.plot(history['acc'])
-    plt.plot(history['val_acc'])
+
+    legend = ['Training']
+    if history.get('val_acc'):
+        plt.plot(history['val_acc'])
+        legend.append('Validation')
+
     plt.title('Model accuracy')
     plt.ylabel('Accuracy (%)')
     plt.xlabel('Epoch')
-    plt.legend(['Training', 'Validation'], loc='upper left')
+    plt.legend(legend, loc='upper left')
     plt.savefig(out_file)
 
 
@@ -26,11 +31,16 @@ def plot_loss(history, out_file=None):
 
     plt.figure()
     plt.plot(history['loss'])
-    plt.plot(history['val_loss'])
+
+    legend = ['Training']
+    if history.get('val_loss'):
+        plt.plot(history['val_loss'])
+        legend.append('Validation')
+
     plt.title('Model loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
-    plt.legend(['Training', 'Validation'], loc='upper left')
+    plt.legend(legend, loc='upper left')
     plt.savefig(out_file)
 
 
