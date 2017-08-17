@@ -39,12 +39,12 @@ class RetiNet(object):
         cwd = getcwd()
         chdir(self.conf_dir)
 
-        if self.conf_file.get('training_data') is not None:
+        if self.config.get('training_data') is not None:
             self.train_data = abspath(self.config['training_data'])
         else:
             self.train_data = None
 
-        if self.conf_file.get('validation_data') is not None:
+        if self.config.get('validation_data') is not None:
             self.val_data = abspath(self.config['validation_data'])
         else:
             self.val_data = None
@@ -151,6 +151,7 @@ class RetiNet(object):
             val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
             no_val_samples = val_gen.X.shape[0]
         else:
+            print "No validation data provided."
             val_gen = None
             no_val_samples = None
 
