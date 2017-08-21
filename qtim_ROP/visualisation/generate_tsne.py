@@ -1,13 +1,17 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
+sns.set_style('ticks')
+import pandas as pd
+import h5py
 from os.path import join, isfile
 import numpy as np
-from tsne import tsne
+from qtim_ROP.visualisation.tsne import tsne
+from qtim_ROP.learning.retina_net import RetiNet
 
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def generate_tsne(features, labels, out_dir):
+def generate_tsne(features, labels, out_dir, pal=None):
 
     X = np.load(features)
     y = np.load(labels)
@@ -20,14 +24,16 @@ def generate_tsne(features, labels, out_dir):
         np.save(tsne_out, T)
 
     # Plot the training and testing points differently
-    pal = sns.color_palette('colorblind')[:3]
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for c in (0, 2, 1):
-        ax.scatter(T[y == c, 0], T[y == c, 1], 30, label=CLASSES[c], alpha=0.7, color=pal[c])
-
+    if not pal:
+        pal = sns.color_palette('colorblind')[:3]
+        for c in (0, 2, 1):
+            ax.scatter(T[y == c, 0], T[y == c, 1], 30, label=CLASSES[c], alpha=0.7, color=pal[c])
+    else:
+        for c in (0, 2, 1):
+            ax.scatter(T[y == c, 0], T[y == c, 1], 30, label=CLASSES[c], alpha=0.7, color=pal[y == c])
     ax.legend()
     plt.savefig(join(out_dir, 'tsne_plot.png'))
 
