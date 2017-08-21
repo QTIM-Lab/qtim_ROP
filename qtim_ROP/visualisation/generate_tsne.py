@@ -27,7 +27,7 @@ def generate_tsne(features, labels, out_dir, pal=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    if not pal:
+    if pal is None:
         pal = sns.color_palette('colorblind')[:3]
         for c in (0, 2, 1):
             ax.scatter(T[y == c, 0], T[y == c, 1], 30, label=CLASSES[c], alpha=0.7, color=pal[c])
