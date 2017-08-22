@@ -12,7 +12,7 @@ from utils.image import find_images
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
-def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, batch_size=100):
+def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, batch_size=100, fast=False):
 
     # Segmentation
     newly_segmented, already_segmented = [], []
@@ -26,7 +26,8 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     else:
 
         try:   # use a U-Net to segment the input images
-            unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext)
+            stride = (32, 32) if fast else (8, 8)  # quick and dirty segmentation
+            unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext, stride=stride)
             newly_segmented, already_segmented, failures = unet.segment_batch(image_files, batch_size=batch_size)
         except IOError as ioe:
             print "Unable to locate segmentation model - use 'deeprop configure' to update model location"

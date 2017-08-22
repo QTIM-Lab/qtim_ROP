@@ -2,13 +2,15 @@ from celery import Celery
 from flask import Flask, flash, request, redirect, url_for, render_template, session, send_from_directory
 from flask.json import jsonify
 from werkzeug.utils import secure_filename
-import random
-import time
 import os
+import numpy as np
+from qtim_ROP.__main__ import initialize
+from qtim_ROP.deep_rop import preprocess_images, LABELS
+from qtim_ROP.learning.retina_net import RetiNet, locate_config
 
 def make_celery(app):
-    celery = Celery('tasks') #, backend=app.config['CELERY_RESULT_BACKEND'],
-                    #broker=app.config['CELERY_BROKER_URL'])
+
+    celery = Celery('tasks')
     celery.conf.update(app.config)
     TaskBase = celery.Task
     class ContextTask(TaskBase):
@@ -17,6 +19,7 @@ def make_celery(app):
             with app.app_context():
                 return TaskBase.__call__(self, *args, **kwargs)
     celery.Task = ContextTask
+
     return celery
 
 def valid_image(filename):
@@ -28,13 +31,24 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'bmp'])
 app.config.update(
     CELERY_BROKER_URL='amqp://localhost:6379',
     CELERY_RESULT_BACKEND='amqp://localhost:6379',
-    UPLOAD_FOLDER='uploads/raw'
+    UPLOAD_FOLDER='uploads/raw',
+    OUTPUT_FOLDER='uploads/output'
 )
 
 celery = make_celery(app)
 
+# Initialize model
+conf_dict, conf_file = initialize()
+classifier_dir = conf_dict['classifier_directory']
+model_config, rf_pkl = locate_config(classifier_dir)
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    return render_template('index.html')
+
+
+@app.route("/upload", methods=["POST"])
+def upload():
 
     # Create instance of long task
     if 'file' not in request.files:
@@ -49,52 +63,54 @@ def index():
 
     if file and valid_image(file.filename):
         filename = secure_filename(file.filename)
-        print filename
         out_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(out_path)
-        
-        task = run_inference.apply_async([filename])
-        return jsonify({}), 202, {'Location': url_for('taskstatus',
+        return render_template("uploaded.html", image_name=filename)
+
+
+@app.route('/upload/<filename>')
+def send_original(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+def send_segmentation(filename):
+    return send_from_directory(os.path.join(app.config['OUTPUT_FOLDER'], 'segmentation'),
+                               os.path.splitext(os.path.basename(filename))[0] + '.bmp')
+
+@app.route('/longtask', methods=['POST'])
+def longtask():
+
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], request.form['filename'])
+    task = long_task.apply_async([file_path])
+    return jsonify({}), 202, {'Location': url_for('taskstatus',
                                                   task_id=task.id)}
 
-
-# @app.route('/classify_image/<filename>', methods=['GET', 'POST'])
-# def classify_image(filename):
-
-#     # Create instance of long task
-#     image_path = request.args.get('filename')
-#     print image_path
-    
-
 @celery.task(bind=True)
-def run_inference(self, image_path):
+def long_task(self, filename):
 
-    print "Long task running..."
-    """Background task that runs a long function with progress reports."""
-    verb = ['Starting up', 'Booting', 'Repairing', 'Loading', 'Checking']
-    adjective = ['master', 'radiant', 'silent', 'harmonic', 'fast']
-    noun = ['solar array', 'particle reshaper', 'cosmic ray', 'orbiter', 'bit']
-    message = ''
-    total = random.randint(10, 50)
-    for i in range(total):
-        print i
-        if not message or random.random() < 0.25:
-            message = '{0} {1} {2}...'.format(random.choice(verb),
-                                              random.choice(adjective),
-                                              random.choice(noun))
-        self.update_state(state='PROGRESS',
-                          meta={'current': i, 'total': total,
-                                'status': message})
-        time.sleep(.5)
-    return {'current': 100, 'total': 100, 'status': 'Task completed!',
-            'result': 42}
+
+    self.update_state(state='PROGRESS', meta={'current': 0, 'total': 3, 'status': "Initializing..."})
+    classifier = RetiNet(model_config)
+
+    self.update_state(state='PROGRESS', meta={'current': 1, 'total': 3, 'status': "Preprocessing image..."})
+    prep_img, prep_name = preprocess_images([filename], app.config['OUTPUT_FOLDER'],
+                                            conf_dict, skip_segmentation=False, batch_size=100, fast=True)
+
+    self.update_state(state='PROGRESS', meta={'current': 2, 'total': 3, 'status': "Doing classification..."})
+
+    y_preda = classifier.predict(prep_img)[0]
+    arg_max = np.argmax(y_preda)
+    prob = y_preda[arg_max]
+    diagnosis = LABELS[arg_max]
+
+    return {'current': 3, 'total': 3, 'status': 'Complete!',
+            'result': '{} ({:.2f}%)'.format(diagnosis, prob * 100.)}
 
 @app.route('/status/<task_id>')
 def taskstatus(task_id):
 
-    task = run_inference.AsyncResult(task_id)
+    task = long_task.AsyncResult(task_id)
     if task.state == 'PENDING':
-
+        # job did not start yet
         response = {
             'state': task.state,
             'current': 0,
