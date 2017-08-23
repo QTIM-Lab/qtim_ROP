@@ -323,9 +323,14 @@ def create_googlenet(no_classes=3, no_features=None):
 
     pool5_drop_7x7_s1 = Dropout(0.4)(loss3_features)
 
-    loss3_classifier = Dense(no_classes, name='loss3/classifier', W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
-
-    loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
+    if no_classes > 2:
+        print "softmax activation"
+        loss3_classifier = Dense(no_classes, name='loss3/classifier', W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
+        loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
+    else:
+        print "sigmoid activation"
+        loss3_classifier = Dense(1, name='loss3/classifier', W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
+        loss3_classifier_act = Activation('sigmoid', name='prob')(loss3_classifier)
 
     googlenet = Model(input=input, output=[loss3_classifier_act])
 

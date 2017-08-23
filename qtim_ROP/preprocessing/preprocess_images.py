@@ -27,15 +27,15 @@ DEFAULT_CLASSES = ['No', 'Pre-Plus', 'Plus']
 
 class Pipeline(object):
 
-    def __init__(self, config):
+    def __init__(self, config, exclusions=None):
 
         self._parse_config(config)
+        self.exclusions = exclusions
 
         # Calculate class distribution and train/val split
-        self.class_distribution = {c: len(listdir(join(self.input_dir, c))) for c in DEFAULT_CLASSES}
-
-        largest_class = max(self.class_distribution, key=lambda k: self.class_distribution[k])
-        class_size = self.class_distribution[largest_class]
+        # self.class_distribution = {c: len(listdir(join(self.input_dir, c))) for c in DEFAULT_CLASSES}
+        # largest_class = max(self.class_distribution, key=lambda k: self.class_distribution[k])
+        # class_size = self.class_distribution[largest_class]
 
         # Make directories for intermediate steps
         self.augment_dir = make_sub_dir(self.out_dir, 'augmented', tree=self.input_dir)
@@ -67,7 +67,7 @@ class Pipeline(object):
             self.augmenter = None
 
         # Number of processes
-        self.processes = int(cpu_count() * .7)
+        self.processes = int(cpu_count())
 
     def _parse_config(self, config):
 
@@ -105,7 +105,7 @@ class Pipeline(object):
     def run(self):
 
         # Get paths to all images
-        im_files = find_images(join(self.input_dir, '*'))
+        im_files = find_images(join(self.input_dir))
         assert (len(im_files) > 0)
 
         if 'augmentation' in self.pipeline.keys():
@@ -124,7 +124,6 @@ class Pipeline(object):
             self.random_sample(train_imgs, val_imgs, classes=DEFAULT_CLASSES)
         except AssertionError:
             print "No images found in one more classes - unable to split training and validation"
-            print self.class_distribution
             exit()
 
     def train_val_split(self, classes):

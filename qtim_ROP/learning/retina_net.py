@@ -2,8 +2,7 @@
 
 from os import chdir, getcwd
 from os.path import dirname, splitext, abspath
-from itertools import cycle
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import Callback, ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model
 from keras.models import model_from_json
@@ -12,13 +11,12 @@ from keras.utils.np_utils import to_categorical
 from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
-
 from ..utils.common import *
 from ..utils.image import create_generator
 from ..utils.models import SGDLearningRateTracker
 from ..utils.plotting import *
 from ..visualisation.tsne import tsne
-from ..evaluation.metrics import calculate_metrics
+# from ..evaluation.metrics import calculate_metrics
 
 
 OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop, 'adadelta': Adadelta, 'adam': Adam}
@@ -122,9 +120,14 @@ class RetiNet(object):
                 custom_objects = {}
                 mod_str = 'custom'
 
+            from googlenet import create_googlenet
             logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
             arch = network.get('arch', None)
-            self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
+
+            if arch is None:
+                self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024))
+            else:
+                self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
 
             if weights:
                 print "Loading weights '{}'".format(weights)
@@ -133,9 +136,9 @@ class RetiNet(object):
         # Configure optimizer
         if build:
             opt_options = self.config['optimizer']
-            name, params = opt_options['type'], opt_options['params']
+            name, loss, params = opt_options['type'], opt_options['loss'], opt_options['params']
             optimizer = OPTIMIZERS[name](**params)
-            self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            self.model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
     def train(self):
 
@@ -159,7 +162,7 @@ class RetiNet(object):
 
         if self.val_data is not None:
             val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
-            no_val_samples = val_gen.X.shape[0]
+            no_val_samples = val_gen.x.shape[0]
         else:
             print "No validation data provided."
             val_gen = None
@@ -173,7 +176,7 @@ class RetiNet(object):
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=train_gen.X.shape[0],
+            samples_per_epoch=train_gen.x.shape[0],
             nb_epoch=epochs,
             validation_data=val_gen,
             nb_val_samples=no_val_samples, callbacks=[checkpoint_tb, lr_tb])
@@ -307,6 +310,40 @@ class RetinaRF(object):
         features = self.cnn.evaluate(img_data)
         return features
 
+# class ROCCallback(Callback):
+# 
+#     def __init__(self, training_data, validation_data):
+#         super(Roc).__init__
+#         self.x = training_data[0]
+#         self.y = training_data[1]
+#         self.x_val = validation_data[0]
+#         self.y_val = validation_data[1]
+# 
+#     def on_train_begin(self, logs={}):
+#         return
+# 
+#     def on_train_end(self, logs={}):
+#         return
+# 
+#     def on_epoch_begin(self, epoch, logs={}):
+#         return
+# 
+#     def on_epoch_end(self, epoch, logs={}):
+#         y_pred = self.model.predict(self.x)
+#         roc = roc_auc_score(self.y, y_pred)
+# 
+#         y_pred_val = self.model.predict(self.x_val)
+#         roc_val = roc_auc_score(self.y_val, y_pred_val)
+# 
+#         print(
+#         '\rroc-auc: %s - roc-auc_val: %s' % (str(round(roc, 4)), str(round(roc_val, 4))), end=100 * ' ' + '\n')
+#         return
+# 
+#     def on_batch_begin(self, batch, logs={}):
+#         return
+# 
+#     def on_batch_end(self, batch, logs={}):
+#         return
 
 def locate_config(search_dir, rf=False):
 

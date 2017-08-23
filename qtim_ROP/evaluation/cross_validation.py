@@ -3,12 +3,12 @@ from os.path import basename, join, isfile, dirname
 import matplotlib.pyplot as plt
 import numpy as np
 from glob import glob
-from qtim_ROP.evaluation.metrics import plot_ROC_splits
-from qtim_ROP.utils.metadata import image_to_metadata
-from qtim_ROP.learning.retina_net import RetiNet, RetinaRF
-from qtim_ROP.utils.common import get_subdirs, make_sub_dir
+from ..evaluation.metrics import plot_ROC_splits
+from ..utils.metadata import image_to_metadata
+from ..learning.retina_net import RetiNet, RetinaRF
+from ..utils.common import get_subdirs, make_sub_dir
 
-CLASSES = {'no plus disease': 0, 'plus disease': 1}  #, 'Pre-Plus': 2}
+CLASSES = {'Normal (vs. pre-plus or plus)': 0, 'Plus (vs. pre-plus or normal)': 1}  #, 'Pre-Plus': 2}
 
 
 def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):

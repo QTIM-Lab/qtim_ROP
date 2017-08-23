@@ -1,4 +1,3 @@
-import argparse
 import sys
 import qtim_ROP
 from utils.common import find_images
@@ -7,6 +6,7 @@ from os import makedirs
 from os.path import isdir, isfile, join, abspath
 import yaml
 from pkg_resources import get_distribution, DistributionNotFound
+from argparse import ArgumentParser
 
 try:
     __version__ = get_distribution('qtim_ROP').version
@@ -19,7 +19,7 @@ class DeepROPCommands(object):
 
         self.conf_dict, self.conf_file = initialize()
 
-        parser = argparse.ArgumentParser(
+        parser = ArgumentParser(
             description='A set of commands for segmenting and classifying retinal images',
             usage='''deeprop <command> [<args>]
 
@@ -40,7 +40,7 @@ class DeepROPCommands(object):
 
     def configure(self):
 
-        parser = argparse.ArgumentParser(
+        parser = ArgumentParser(
             description='Update models for vessel segmentation and/or classification')
 
         parser.add_argument('-s', '--segmentation', help='Folder containing trained U-Net model and weights',
@@ -71,7 +71,7 @@ class DeepROPCommands(object):
 
     def segment_vessels(self):
 
-        parser = argparse.ArgumentParser(
+        parser = ArgumentParser(
             description='Perform vessel segmentation of one or more retinal images using a U-Net')
 
         parser.add_argument('-i', '--images', help='Directory of image files to segment', dest='images', required=True)
@@ -90,7 +90,6 @@ class DeepROPCommands(object):
 
     def classify_plus(self):
 
-        from argparse import ArgumentParser
 
         parser = ArgumentParser()
         parser.add_argument('-i', '--image-dir', help='Folder of images to classify', dest='image_dir', required=True)
@@ -102,6 +101,16 @@ class DeepROPCommands(object):
 
         qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict,
                                    skip_segmentation=args.skip_seg, batch_size=args.batch_size)
+
+    def preprocess_images(self):
+
+        parser = ArgumentParser()
+        parser.add_argument('-c', '--config', dest='config', default=None)
+        parser.add_argument('-o', '--out-dir', dest='out_dir', default=None)
+        args = parser.parse_args(sys.argv[2:])
+
+        pipeline = qtim_ROP.preprocessing.preprocess_cross_val.Pipeline(args.config, out_dir=args.out_dir)
+        pipeline.run()
 
 
 def initialize(unet=None, classifier=None):

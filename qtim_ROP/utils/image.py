@@ -79,7 +79,11 @@ def create_generator(data_path, input_shape, batch_size=32, training=True):
         f = h5py.File(data_path, 'r')
         class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
         classes = [class_indices[k] for k in f['labels']]
-        labels = to_categorical(classes)
+
+        if len(class_indices) == 2:
+            labels = classes  # binary
+        else:
+            labels = to_categorical(classes)  # categorical (one-hot encoded)
 
         return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, class_indices
 
