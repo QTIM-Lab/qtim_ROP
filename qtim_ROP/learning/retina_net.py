@@ -149,9 +149,6 @@ class RetiNet(object):
             self.conclude_training()
             return
 
-        print "That didn't work"
-        return
-
         # Train
         epochs = self.config.get('epochs', 50)  # default to 50 if not specified
         input_shape = self.model.input_shape[1:]
