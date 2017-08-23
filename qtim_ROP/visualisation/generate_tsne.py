@@ -11,7 +11,7 @@ from qtim_ROP.learning.retina_net import RetiNet
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def generate_tsne(features, labels, out_dir, pal=None):
+def generate_tsne(features, labels, out_file, pal=None):
 
     X = np.load(features)
     y = np.load(labels)
@@ -35,7 +35,7 @@ def generate_tsne(features, labels, out_dir, pal=None):
         for c in (0, 2, 1):
             ax.scatter(T[y == c, 0], T[y == c, 1], 30, label=CLASSES[c], alpha=0.7, color=pal[y == c])
     ax.legend()
-    plt.savefig(join(out_dir, 'tsne_plot.png'))
+    plt.savefig(join(out_file))
 
 
 if __name__ == '__main__':

@@ -3,35 +3,41 @@
 from functools import partial
 from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
-from os import listdir
-from os.path import isdir, basename, abspath, dirname, splitext
-from shutil import copy
+from os.path import isdir, basename, abspath, dirname, splitext, join
 import h5py
 
 import addict
 import pandas as pd
 import yaml
-from ..utils.common import make_sub_dir, find_images_by_class, find_images
 from random import shuffle, seed
-from scipy.misc import imresize
+from PIL import Image
 
+import cv2
+from scipy.misc import imresize
+from os.path import join
+import numpy as np
+from PIL import Image
+
+from ..utils.common import make_sub_dir, find_images_by_class, find_images
 from ..utils.metadata import image_to_metadata
 from .methods import *
-from ..segmentation.segment_unet import segment
-from ..segmentation.mask_retina import *
+
 
 # Set the random seed
 seed(101)
 
-METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG, 'segment_vessels': segment,
-           'unet_norm': unet_preproc,'morphology': binary_morph}
+METHODS = {'HN': normalize_channels, 'kaggle_BG': kaggle_BG,  # 'segment_vessels': segment,
+           'unet_norm': unet_preproc, 'morphology': binary_morph}
 DEFAULT_CLASSES = ['No', 'Pre-Plus', 'Plus']
 
 
 class Pipeline(object):
 
-    def __init__(self, config):
+    def __init__(self, config, n_folds=5, out_dir=None, exclusions=None):
 
+        self.out_dir = out_dir
+        self.n_folds = int(n_folds)
+        self.exclusions = exclusions
         self._parse_config(config)
 
         # Define preprocessor
@@ -50,13 +56,16 @@ class Pipeline(object):
         try:
             with open(config, 'rb') as c:
 
+                # Load config file and parse
                 conf_dict = yaml.load(c)
                 self.input_dir = abspath(join(dirname(config), conf_dict['input_dir']))
-                self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
+
+                if not self.out_dir:
+                    self.out_dir = make_sub_dir(dirname(config), splitext(basename(config))[0])
 
                 csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
-                self.labels = pd.DataFrame.from_csv(csv_file)
-                self.reader = conf_dict['reader']
+                self.label_data = pd.DataFrame.from_csv(csv_file)
+                self.label = conf_dict['reader']
 
                 if not isdir(self.input_dir):
                     print "Input {} is not a directory!".format(self.input_dir)
@@ -87,20 +96,49 @@ class Pipeline(object):
         imgs_split = [splitext(basename(x))[0].split('_') + [x] for x in im_files]
         imgs_split.sort(key=lambda x: x[1])  # sort by ID
 
-        # Create DataFrame, indexed by ID
-        df = pd.DataFrame(imgs_split, columns=['patient_id', 'id', 'session', 'view',
+        # Create DataFrame of all available images
+        img_data = pd.DataFrame(imgs_split, columns=['patient_id', 'id', 'session', 'view',
                                                'eye', 'class', 'full_path']).set_index('id')
+        img_data.index = img_data.index.map(int)  # convert from string to integer
+
+        # Add labels
+        img_data = img_data.join(self.label_data)
+
+        # Consolidate stage labels, or remove late stage entries
+        if self.label == 'ROP_stage':
+
+            # Binary classification: 2 or better vs. 3 or worse
+            img_data.loc[img_data['ROP_stage'] <= 2, 'ROP_stage'] = 0
+            img_data.loc[img_data['ROP_stage'] > 2, 'ROP_stage'] = 1
+
+            # df['ROP_stage'][df['ROP_stage'] <= 2] = 0
+            # df['ROP_stage'][df['ROP_stage'] > 2] = 1
+            assert (np.max(self.label_data['ROP_stage']) == 1)
+        else:
+            # Remove stage 4 and 5 ROP cases
+            img_data = img_data[img_data.ROP_stage < 4]
+            img_data = img_data[img_data.quality]
 
         # Add a column with the names of the original images
-        orig_names = [self.labels.iloc[int(i)]['imageName'] for i in df.index.values]
-        df['original'] = orig_names
+        # orig_names = [self.label_data.iloc[i]['imageName'] for i in img_data.index.values if i in self.label_data.index]
+        # img_data['original'] = orig_names
 
-        assert(all(int(x['original'].split('_')[1]) == int(index) for index, x in df.iterrows()))
+        # Check that the filename IDs match the data frame IDs
+        assert(all(int(basename(x['full_path']).split('_')[1]) == int(index) for index, x in img_data.iterrows()))
 
-        # Group by class/patient, and split into five
+        if self.n_folds == 1:
+
+            exclude_patients = pd.Series.from_csv(self.exclusions).values
+            img_data = img_data[~img_data['patient_id'].isin(exclude_patients)]
+            img_data.to_csv(join(self.out_dir, 'training.csv'))
+            self.generate_dataset(self.out_dir, mode='training')
+            quit()
+
+        # Group by class/patient, and split into folds
         all_splits = {}  # to keep track of all splits of the data
 
-        for class_, c_group in df.groupby('class'):  # TODO allow specific reader labels, rather than RSD labels
+        # Split by class (reader)
+        for class_, c_group in img_data.groupby(self.label):
 
             p_groups = c_group.groupby('patient_id')  # group by patient
 
@@ -108,15 +146,15 @@ class Pipeline(object):
             all_patients = [pg for p_id, pg in p_groups]
             shuffle(all_patients)
 
-            # Define split size to achieve 5 splits
-            split_size = int(len(all_patients) * .2)
+            # Define split size to achieve n splits
+            split_size = int(len(all_patients) * (1. / self.n_folds))
             all_splits[class_] = [pd.concat(all_patients[x:x + split_size]).sort_index() for x in
                                   range(0, len(all_patients) - split_size + 1, split_size)]
 
         # Split into training and testing
         train_test_splits = []
 
-        split_range = set(range(0, 5))  # we want five training/testing sets
+        split_range = set(range(0, self.n_folds))  # we want five training/testing sets
         for test_index in split_range:
 
             train_split = []  # to store training
@@ -133,7 +171,7 @@ class Pipeline(object):
             train_test_splits.append({'train': pd.concat(train_split), 'test': pd.concat(test_split)})
 
         # For each split
-        for i in range(0, 5):  # for each split
+        for i in split_range:  # for each split
 
             print "\n~~ Split {} ~~".format(i)
 
@@ -166,48 +204,48 @@ class Pipeline(object):
             tr0 = train_split.shape[0]
             te0 = test_split.shape[0]
 
-            # Calculate the total images in each set (it won't be exactly 80:20, but hopefully close)
+            # Calculate the total images in each set (it won't be exact but hopefully close)
             print "Train images %: {:.2f}".format(float(tr0) / (tr0 + te0) * 100)
             print "Test images %: {:.2f}\n".format(float(te0) / (tr0 + te0) * 100)
 
             # Check that the class distribution is maintained in each split
             print 'Class distribution - training:'
-            print {class_: len(x) / float(tr0) for class_, x in train_split.groupby('class')}
+            print {class_: len(x) / float(tr0) for class_, x in train_split.groupby(self.label)}
             print 'Class distribution - testing:'
-            print {class_: len(x) / float(te0) for class_, x in test_split.groupby('class')}
+            print {class_: len(x) / float(te0) for class_, x in test_split.groupby(self.label)}
 
             split_dir = make_sub_dir(self.out_dir, 'split_{}'.format(i))
-            train_dir = make_sub_dir(split_dir, 'training')
-            test_dir = make_sub_dir(split_dir, 'testing')
-
             train_split.to_csv(join(split_dir, 'training.csv'))
             test_split.to_csv(join(split_dir, 'testing.csv'))
 
-            for class_name in DEFAULT_CLASSES:  # need to make these in advance
-                make_sub_dir(train_dir, class_name)
-                make_sub_dir(test_dir, class_name)
+            self.generate_dataset(split_dir, mode='training')
+            self.generate_dataset(split_dir, mode='testing')
 
-            # Pre-process, augment and randomly sample the training set
-            print "Preprocessing training data..."
+    def generate_dataset(self, split_dir, mode='training'):
 
-            if len(find_images(join(train_dir, '*'))) == 0:
-                pool = Pool(self.processes)
-                subprocess = partial(preprocess, args={'params': self, 'augment': True, 'out_dir': train_dir})
-                train_imgs = list(train_split['full_path'])
-                _ = pool.map(subprocess, train_imgs)
+        if mode not in ['training', 'testing']:
+            raise ValueError("Mode must be 'training' or 'testing'")
 
-            self.generate_h5(find_images_by_class(train_dir), join(split_dir, 'train.h5'), train_split, random_sample=True)
+        do_augment = mode == 'training'  # we only want to augment the training data
+        split_df = pd.DataFrame.from_csv(join(split_dir, '{}.csv'.format(mode)))  # load splits
+        data_dir = make_sub_dir(split_dir, mode)  # output directory for images
 
-            # Pre-process (but don't augment or randomly sample) the test set
-            print "Preprocessing testing data..."
-            if len(find_images(join(test_dir, '*'))) == 0:
+        # Make directories for each class of images in advance
+        classes = [str(l) for l in split_df[self.label].unique()]
+        for class_name in classes:
+            make_sub_dir(data_dir, str(class_name))
 
-                pool = Pool(self.processes)
-                subprocess = partial(preprocess, args={'params': self, 'augment': False, 'out_dir': test_dir})
-                test_imgs = list(test_split['full_path'])
-                _ = pool.map(subprocess, test_imgs)
+        # Pre-process, augment and randomly sample the training set
+        print "Preprocessing {} data...".format(mode)
 
-            self.generate_h5(find_images_by_class(test_dir), join(split_dir, 'test.h5'), test_split, random_sample=False)
+        if len(find_images(join(data_dir, '*'))) == 0:
+            pool = Pool(self.processes)
+            subprocess = partial(do_preprocess, args={'params': self, 'augment': do_augment, 'out_dir': data_dir})
+            img_list = list(split_df['full_path'])
+            _ = pool.map(subprocess, img_list)
+
+        self.generate_h5(find_images_by_class(data_dir, classes=classes), join(split_dir, '{}.h5'.format(mode)), split_df,
+                         random_sample=True, classes=classes)
 
     def generate_h5(self, imgs, out_file, df, random_sample=True, classes=DEFAULT_CLASSES):
 
@@ -229,8 +267,8 @@ class Pipeline(object):
             for img_path in imgs[class_]:
 
                 try:
-                    id = basename(img_path).split('_')[1]
-                    original_image = df.loc[id]['original']
+                    id_ = int(basename(img_path).split('_')[1])
+                    original_image = df.loc[id_]['imageName']
                 except KeyError:
                     raise
 
@@ -277,7 +315,7 @@ class Pipeline(object):
     #     return subsampled
 
 
-def preprocess(im, args):
+def do_preprocess(im, args):
 
     # print "Pre-processing '{}'".format(im)
     params, out_dir, augment = args['params'], args['out_dir'], args['augment']
@@ -287,15 +325,15 @@ def preprocess(im, args):
     im_ID = int(meta['imID'])
 
     # Get class and quality info
-    row = params.labels.iloc[im_ID]
-    reader = params.reader
+    row = params.label_data.iloc[im_ID]
+    reader = params.label
     class_ = row[reader]
-    stage = row['ROP_stage']
-    quality = row['quality']
+    # stage = row['ROP_stage']
+    # quality = row['quality']
 
     # Skip images with invalid class, advanced ROP or insufficient quality
-    if class_ not in DEFAULT_CLASSES or not quality or stage > 3:
-        return False
+    # if class_ not in DEFAULT_CLASSES or not quality or stage > 3:
+    #     return False
 
     # Resize, preprocess and augment
     try:
@@ -320,7 +358,7 @@ def preprocess(im, args):
         preprocessed_im = preprocessed_im[params.crop_height:-params.crop_height, params.crop_width:-params.crop_width]
 
     # Augment/save
-    class_dir = join(out_dir, class_)
+    class_dir = join(out_dir, str(class_))
 
     if augment:
 
@@ -346,15 +384,3 @@ def preprocess(im, args):
         Image.fromarray(preprocessed_im).save(join(class_dir, meta['prefix'] + '.png'))
 
     return im
-
-if __name__ == '__main__':
-
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser()
-    parser.add_argument('-c', '--config', dest='config', required=True)
-
-    args = parser.parse_args()
-
-    p = Pipeline(args.config)
-    p.run()

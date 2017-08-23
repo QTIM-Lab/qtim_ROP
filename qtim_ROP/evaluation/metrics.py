@@ -3,13 +3,14 @@ import numpy as np
 import pandas as pd
 from os.path import join
 from ..utils.common import dict_reverse, make_sub_dir
+from ..utils.plotting import plot_confusion
 from sklearn.metrics import confusion_matrix, classification_report, average_precision_score, accuracy_score
 from keras.utils.np_utils import to_categorical
-from ..utils.plotting import plot_confusion
 from PIL import Image
 from itertools import cycle
 from sklearn.metrics import roc_curve, precision_recall_curve, auc
-from scipy import interp
+import seaborn as sns
+sns.set_style('ticks')
 
 FONT = {'family': 'sans-serif',
         'color':  'white',
@@ -93,7 +94,7 @@ def plot_ROC_splits(y_true_all, y_pred_all, (class_name, class_index)):
 
         plt.plot(fpr, tpr, label='Split #{}, AUC = {:.3f}'.format(split_no + 1, roc_auc), linestyle=next(line_styles))
 
-    plt.title('Cross-validated ROC curves for "{}"'.format(class_name))
+    plt.title('Cross-validated ROC curves for {}'.format(class_name))
     plt.legend(loc='lower right')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([-0.025, 1.025])
