@@ -39,12 +39,12 @@ class RetiNet(object):
         cwd = getcwd()
         chdir(self.conf_dir)
 
-        if self.config.get('training_data') is not None:
+        if self.config['training_data'] is not None:
             self.train_data = abspath(self.config['training_data'])
         else:
             self.train_data = None
 
-        if self.config.get('validation_data') is not None:
+        if self.config['validation_data'] is not None:
             self.val_data = abspath(self.config['validation_data'])
         else:
             self.val_data = None
@@ -139,6 +139,16 @@ class RetiNet(object):
 
     def train(self):
 
+        final_result = join(self.experiment_dir, 'final_weights.h5')
+        if isfile(final_result):
+
+            print "Training already concluded"
+            self.conclude_training()
+            return
+
+        print "That didn't work"
+        return
+
         # Train
         epochs = self.config.get('epochs', 50)  # default to 50 if not specified
         input_shape = self.model.input_shape[1:]
@@ -147,7 +157,7 @@ class RetiNet(object):
         # Create generators
         train_gen, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
 
-        if self.val_data:
+        if self.val_data is not None:
             val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
             no_val_samples = val_gen.X.shape[0]
         else:
@@ -176,6 +186,11 @@ class RetiNet(object):
         with open(join(self.experiment_dir, 'model_arch.json'), 'w') as arch:
             arch.writelines(self.model.to_json())
 
+        # Write updated YAML file and plot history
+        self.conclude_training()
+
+    def conclude_training(self):
+
         # Create modified copy of config file
         conf_eval = self.update_config('final')
         with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'wb') as ce:
@@ -200,8 +215,8 @@ class RetiNet(object):
         conf_eval['network']['arch'] = 'model_arch.json'
         conf_eval['network']['weights'] = '{}_weights.h5'.format(weights)
 
-        conf_eval['training_data'] = abspath(self.config['training_data'])
-        conf_eval['validation_data'] = abspath(self.config['validation_data'])
+        conf_eval['training_data'] = self.train_data
+        conf_eval['validation_data'] = self.val_data
         return conf_eval
 
     def predict(self, img_arr):
