@@ -12,7 +12,8 @@ from utils.image import find_images
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
-def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, batch_size=100, fast=False):
+
+def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, batch_size=100, stride=(32, 32)):
 
     # Segmentation
     newly_segmented, already_segmented = [], []
@@ -26,7 +27,6 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     else:
 
         try:   # use a U-Net to segment the input images
-            stride = (32, 32) if fast else (8, 8)  # quick and dirty segmentation
             unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext, stride=stride)
             newly_segmented, already_segmented, failures = unet.segment_batch(image_files, batch_size=batch_size)
         except IOError as ioe:
@@ -53,7 +53,7 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     return preprocessed_arr, img_names
 
 
-def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10):
+def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10, stride=(32, 32)):
 
     if any(v is None for v in conf_dict.values()):
         print "Please run 'deeprop configure' to specify the models for segmentation and classification"
@@ -75,8 +75,10 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
         print "Please specify a valid image file or a folder of images."
         exit(1)
 
-    preprocessed_arr,img_names = preprocess_images(image_files, out_dir, conf_dict,
-        skip_segmentation=skip_segmentation, batch_size=batch_size)
+    preprocessed_arr, img_names = preprocess_images(image_files, out_dir, conf_dict,
+                                                    skip_segmentation=skip_segmentation,
+                                                    batch_size=batch_size,
+                                                    stride=stride)
 
     # CNN initialization
     print "Initializing classifier"
