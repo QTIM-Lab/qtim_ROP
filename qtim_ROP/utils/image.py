@@ -27,7 +27,12 @@ def imgs_to_th_array(img_dir, resize=(480, 640)):
         # Load and prepare image
         img = cv2.imread(img_path)
         if resize and img.shape != resize:
-            img_arr = imresize(img_arr, (480, 640), interp='bicubic')
+            try:
+                img = imresize(img, resize, interp='bicubic')
+            except ValueError as e:
+                print '{} skipped due to error'.format(img_path)
+                print e
+                continue
 
         img_names.append(basename(img_path))
         img = img.transpose((2, 0, 1))  # channels first

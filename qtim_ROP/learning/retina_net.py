@@ -229,7 +229,7 @@ class RetiNet(object):
         datagen, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
                                                           batch_size=1, training=False)
         if not n_samples:
-            n_samples = datagen.x.shape[0]
+            n_samples = datagen.X.shape[0] #X.shape[0]
 
         predictions = self.model.predict_generator(datagen, n_samples)
         data_dict = {'data': datagen, 'classes': class_indices, 'y_true': to_categorical(y_true[:n_samples]), 'y_pred': predictions}
