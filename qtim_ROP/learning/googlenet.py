@@ -317,7 +317,7 @@ def create_googlenet(no_classes=3, no_features=None):
 
     # Insert intermediate feature layer
     if type(no_features) is int and no_features != 1024:
-        loss3_features = Dense(no_features, name='loss3/features', W_regularizer=l2(0.0002))(loss3_flat)
+        loss3_features = Dense(no_features, name='loss3/features_{}'.format(no_features), W_regularizer=l2(0.0002))(loss3_flat)
     else:
         loss3_features = loss3_flat
 
@@ -325,12 +325,12 @@ def create_googlenet(no_classes=3, no_features=None):
 
     if no_classes > 2:
         print "softmax activation"
-        loss3_classifier = Dense(no_classes, name='loss3/classifier', W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
-        loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
+        loss3_classifier = Dense(no_classes, name='loss3/classifier_{}'.format(no_classes), W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
+        loss3_classifier_act = Activation('softmax', name='prob_{}'.format(no_classes))(loss3_classifier)
     else:
         print "sigmoid activation"
-        loss3_classifier = Dense(1, name='loss3/classifier', W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
-        loss3_classifier_act = Activation('sigmoid', name='prob')(loss3_classifier)
+        loss3_classifier = Dense(1, name='loss3/classifier_{}'.format(no_classes), W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
+        loss3_classifier_act = Activation('sigmoid', name='prob_{}'.format(no_classes))(loss3_classifier)
 
     googlenet = Model(input=input, output=[loss3_classifier_act])
 
