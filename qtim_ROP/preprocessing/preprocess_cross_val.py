@@ -113,11 +113,13 @@ class Pipeline(object):
 
             # df['ROP_stage'][df['ROP_stage'] <= 2] = 0
             # df['ROP_stage'][df['ROP_stage'] > 2] = 1
-            assert (np.max(self.label_data['ROP_stage']) == 1)
+            assert (np.max(img_data['ROP_stage']) == 1)
         else:
             # Remove stage 4 and 5 ROP cases
             img_data = img_data[img_data.ROP_stage < 4]
             img_data = img_data[img_data.quality]
+
+        self.label_data = img_data
 
         # Add a column with the names of the original images
         # orig_names = [self.label_data.iloc[i]['imageName'] for i in img_data.index.values if i in self.label_data.index]
@@ -325,7 +327,7 @@ def do_preprocess(im, args):
     im_ID = int(meta['imID'])
 
     # Get class and quality info
-    row = params.label_data.iloc[im_ID]
+    row = params.label_data.loc[im_ID]
     reader = params.label
     class_ = row[reader]
     # stage = row['ROP_stage']
