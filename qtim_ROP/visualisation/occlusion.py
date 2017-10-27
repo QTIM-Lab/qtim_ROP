@@ -1,4 +1,4 @@
-from os.path import join, isfile
+from os.path import join, isfile, splitext
 import cv2
 import numpy as np
 from qtim_ROP.learning.retina_net import RetiNet
@@ -6,6 +6,8 @@ from qtim_ROP.utils.common import dict_reverse, make_sub_dir
 from qtim_ROP.utils.image import imgs_by_class_to_th_array
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
+from matplotlib.colors import ListedColormap
 
 
 CLASSES = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
@@ -28,7 +30,18 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
     hw = window_size / 2
 
     hmaps_out = join(out_dir, 'heatmaps.npy')
-    # debug_dir = make_sub_dir(class_dir, 'debug')
+
+    csv_data = []
+    titles = []
+    for i in range(0, len(img_names)):
+
+        rsd = CLASSES[y_true[i]]
+        pred = CLASSES[raw_predictions[i]]
+        prob = raw_probabilities[i, raw_predictions[i]]
+
+        titles.append('RSD: {}, Prediction: {} ({:.2f})'.format(rsd, pred, prob))
+        csv_data.append({'Name': img_names[i], 'RSD': rsd, 'Prediction': pred, 'Probability': prob})
+        pd.DataFrame(csv_data).set_index('Name').to_csv(join(out_dir, 'occlusion_data.csv'))
 
     if not isfile(hmaps_out):
 
@@ -51,28 +64,38 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
                 # print occ_probabilities
 
                 # Assign heatmap value as probability of class, as predicted without occlusion
-                for i, (occ_prob, raw_pred) in enumerate(zip(occ_probabilities, raw_predictions)):
-                    heatmaps[i, x_min:x_max, y_min:y_max] = occ_prob[raw_pred] * 100
+                for i, (occ_prob, raw_pred, raw_prob) in enumerate(zip(occ_probabilities, raw_predictions, raw_probabilities)):
+                    heatmaps[i, x_min:x_max, y_min:y_max] = raw_prob[raw_pred] - occ_prob[raw_pred]
 
         np.save(hmaps_out, heatmaps)
 
     else:
         heatmaps = np.load(hmaps_out)
 
-    plot_heatmaps(img_arr, img_names, heatmaps, out_dir)
+    plot_heatmaps(img_arr, img_names, titles, heatmaps, y_true, out_dir)
 
 
-def plot_heatmaps(img_arr, img_names, heatmaps, out_dir):
+def plot_heatmaps(img_arr, img_names, titles, heatmaps, labels, out_dir):
 
-    for j, (img, img_name, h_map) in enumerate(zip(img_arr, img_names, heatmaps)):
+    # construct cmap
+    pal = sns.diverging_palette(240, 10, n=30, center="dark")
+    my_cmap = ListedColormap(sns.color_palette(pal).as_hex())
+
+    min_val, max_val = np.min(heatmaps), np.max(heatmaps)
+
+    for j, (img, img_name, h_map, title, y) in enumerate(zip(img_arr, img_names, heatmaps, titles, labels)):
 
         fig, ax = plt.subplots()
         img = np.transpose(img, (1, 2, 0))
-        plt.imshow(img, cmap='gray')
-        plt.imshow(h_map, cmap=plt.get_cmap('magma'), alpha=0.7, interpolation='bilinear')
+        plt.clf()
+        plt.imshow(img, cmap='Greys', interpolation='bicubic')
+        plt.imshow(h_map, cmap=my_cmap, alpha=0.7, interpolation='nearest') #, vmin=-.05, vmax=.05)
         plt.colorbar()
         plt.axis('off')
-        plt.savefig(join(out_dir, img_name), bbox_inches='tight', dpi=300)
+        plt.title(title)
+        class_name = CLASSES[y]
+        class_dir = make_sub_dir(out_dir, class_name)
+        plt.savefig(join(class_dir, img_name), bbox_inches='tight', dpi=300)
 
 if __name__ == '__main__':
 
