@@ -53,7 +53,7 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     return preprocessed_arr, img_names
 
 
-def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10, stride=(32, 32)):
+def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=100, stride=(32, 32)):
 
     if any(v is None for v in conf_dict.values()):
         print "Please run 'deeprop configure' to specify the models for segmentation and classification"

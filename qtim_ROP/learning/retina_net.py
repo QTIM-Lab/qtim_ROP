@@ -120,14 +120,18 @@ class RetiNet(object):
                 custom_objects = {}
                 mod_str = 'custom'
 
-            from googlenet import create_googlenet
+            from .googlenet import create_googlenet
             logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
             arch = network.get('arch', None)
 
             if arch is None:
                 self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024))
             else:
-                self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
+                try:
+                    self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
+                except ValueError:  # keras compatibility issue
+                    self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024),
+                        network.get('regression'))
 
             if weights:
                 print "Loading weights '{}'".format(weights)

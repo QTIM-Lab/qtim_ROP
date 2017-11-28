@@ -7,7 +7,7 @@ from os.path import join
 
 
 # https://gist.github.com/joelouismarino/a2ede9ab3928f999575423b9887abd14
-def create_googlenet(no_classes=3, no_features=None):
+def create_googlenet(no_classes=3, no_features=None, regression=True):
     # creates GoogLeNet a.k.a. Inception v1 (Szegedy, 2015)
 
     input = Input(shape=(3, 224, 224))
@@ -324,13 +324,12 @@ def create_googlenet(no_classes=3, no_features=None):
     pool5_drop_7x7_s1 = Dropout(0.4)(loss3_features)
 
     if no_classes > 2:
-        print "softmax activation"
         loss3_classifier = Dense(no_classes, name='loss3/classifier_{}'.format(no_classes), W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
         loss3_classifier_act = Activation('softmax', name='prob_{}'.format(no_classes))(loss3_classifier)
     else:
-        print "sigmoid activation"
+        act = 'linear' if regression else 'sigmoid'
         loss3_classifier = Dense(1, name='loss3/classifier_{}'.format(no_classes), W_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
-        loss3_classifier_act = Activation('sigmoid', name='prob_{}'.format(no_classes))(loss3_classifier)
+        loss3_classifier_act = Activation(act, name='prob_{}'.format(no_classes))(loss3_classifier)
 
     googlenet = Model(input=input, output=[loss3_classifier_act])
 

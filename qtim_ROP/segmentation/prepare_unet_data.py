@@ -116,7 +116,12 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
 
     for i, im_path in enumerate(img_list):
 
-        img = np.asarray(Image.open(im_path))
+        try:
+            img = np.asarray(Image.open(im_path))
+        except IOError:
+            print "Error loading image '{}' - skipping".format(im_path)
+            skipped.append(im_path)
+            continue
 
         if not img.shape:
             print "'{}' has invalid image shape - skipping".format(im_path)

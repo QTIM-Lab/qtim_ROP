@@ -47,8 +47,8 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
         heatmaps = np.zeros(shape=(no_imgs, x_dim, y_dim))
 
-        for x in range(0, x_dim, hw):
-            for y in range(0, y_dim, hw):
+        for x in range(0, x_dim):
+            for y in range(0, y_dim):
 
                 occ_img = np.copy(img_arr)  # create copy
 
@@ -65,7 +65,7 @@ def occlusion_heatmaps(model_config, test_data, out_dir, no_imgs=None, window_si
 
                 # Assign heatmap value as probability of class, as predicted without occlusion
                 for i, (occ_prob, raw_pred, raw_prob) in enumerate(zip(occ_probabilities, raw_predictions, raw_probabilities)):
-                    heatmaps[i, x_min:x_max, y_min:y_max] = raw_prob[raw_pred] - occ_prob[raw_pred]
+                    heatmaps[i, x, y] = raw_prob[raw_pred] - occ_prob[raw_pred]
 
         np.save(hmaps_out, heatmaps)
 
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model-config', dest='model_config', help='Model config (YAML) file', required=True)
     parser.add_argument('-t', '--test-data', dest='test_data', help='Test data', required=True)
     parser.add_argument('-w', '--window-size', dest='window_size', help='Size of occluded patch', type=int, default=24)
-    parser.add_argument('-n', '--no-imgs', dest='no_imgs', help='Number of images to test with', default=None)
+    parser.add_argument('-n', '--no-imgs', dest='no_imgs', help='Number of images to test with', default=None, type=int)
     parser.add_argument('-o', '--out-dir', dest='out_dir', help='Output directory', required=True)
 
     args = parser.parse_args()

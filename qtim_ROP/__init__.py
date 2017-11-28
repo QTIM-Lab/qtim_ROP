@@ -1,5 +1,5 @@
 import os  # set the keras backend
-os.environ['KERAS_BACKEND'] = 'theano'
+os.environ['KERAS_BACKEND'] = 'tensorflow'
 import keras
 keras.backend.set_image_dim_ordering('th')
 
