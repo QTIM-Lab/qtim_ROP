@@ -12,7 +12,7 @@ from qtim_ROP.learning.retina_net import RetiNet, locate_config
 
 def make_celery(app):
 
-    celery = Celery('tasks')
+    celery = Celery('app')
     celery.conf.update(app.config)
     TaskBase = celery.Task
     class ContextTask(TaskBase):
@@ -76,26 +76,25 @@ def send_original(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
-@app.route('/upload/<seg_name>')
-def send_segmentation(seg_name):
-    print seg_name
+@app.route('/upload/<task_id>/<seg_name>')
+def send_segmentation(task_id, seg_name):
     return send_from_directory(app.config['SEG_FOLDER'], seg_name)
 
 
-@app.route('/longtask', methods=['POST'])
-def longtask():
+@app.route('/inference', methods=['POST'])
+def inference():
 
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], request.form['filename'])
-    task = long_task.apply_async([file_path])
+    task = do_inference.apply_async([file_path])
     return jsonify({}), 202, {'Location': url_for('taskstatus',
                                                   task_id=task.id)}
 
 @celery.task(bind=True)
-def long_task(self, filename):
+def do_inference(self, filename):
 
     # Initializes the classifer
     self.update_state(state='PROGRESS', meta={'current': 0, 'total': 3, 'status': "Initializing..."})
-    time.sleep(2)
+    time.sleep(.5)
     classifier = RetiNet(model_config)
 
     # Does the preprocessing
@@ -104,7 +103,7 @@ def long_task(self, filename):
                                             conf_dict, skip_segmentation=False, batch_size=100, fast=True)
     self.update_state(state='PROGRESS', meta={'current': 2, 'total': 3, 'status': "Doing classification..."})
 
-    # Prediction
+    # Performs the inference
     y_preda = classifier.predict(prep_img)[0]
     arg_max = np.argmax(y_preda)
     prob = y_preda[arg_max]
@@ -116,7 +115,7 @@ def long_task(self, filename):
 @app.route('/status/<task_id>')
 def taskstatus(task_id):
 
-    task = long_task.AsyncResult(task_id)
+    task = do_inference.AsyncResult(task_id)
     if task.state == 'PENDING':
         # job did not start yet
         response = {
@@ -134,7 +133,10 @@ def taskstatus(task_id):
         }
         if 'result' in task.info:
             response['result'] = task.info['result']
-            response['seg_name'] = task.info['seg_name']
+
+            seg_img = str(task.info['seg_name'][0]) + '.bmp'
+            response['seg_url'] = url_for('send_segmentation', task_id=task_id, seg_name=seg_img)
+
     else:
         # something went wrong in the background job
         response = {

@@ -34,7 +34,7 @@
             // send ajax POST request to start background job
             $.ajax({
                 type: 'POST',
-                url: '/longtask',
+                url: '/inference',
                 data: {filename: '{{image_name}}'},
                 success: function(data, status, request) {
                     status_url = request.getResponseHeader('Location');
@@ -58,10 +58,10 @@
                         // show result
                         $(status_div.childNodes[3]).text('Result: ' + data['result']);
 
-                        //seg_url = data['seg_url'];
-                        //console.log(seg_url)
-                        //seg_img = $('<img src="' + seg_url + ' " height="250">');
-                        //$('#images').append(seg_img);
+                        seg_url = data['seg_url'];
+                        console.log(seg_url)
+                        seg_img = $('<img src="' + seg_url + ' " height="250">');
+                        $('#images').append(seg_img);
 
                         $('#progress').append('<a href="/">Upload another file</a>');
 
