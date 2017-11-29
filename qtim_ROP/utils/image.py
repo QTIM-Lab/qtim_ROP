@@ -86,14 +86,16 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
         classes = [class_indices[k] for k in f['labels']]
 
         if tf:
-            f['data'] = np.transpose(f['data'], (0, 2, 3, 1))
+            data = np.transpose(f['data'], (0, 2, 3, 1))
+        else:
+            data = f['data']
 
         if len(class_indices) == 2:
             labels = classes  # binary
         else:
             labels = to_categorical(classes)  # categorical (one-hot encoded)
 
-        return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training),\
+        return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training),\
                f['data'].shape[0], classes, class_indices
 
 
