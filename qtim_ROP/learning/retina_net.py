@@ -98,7 +98,7 @@ class RetiNet(object):
             from keras.applications.resnet50 import ResNet50
             logging.info("Instantiating ResNet model" + fine_tuning)
 
-            input_layer = Input(shape=(3, 224, 224))
+            input_layer = Input(shape=(224, 224, 3))
             base_model = ResNet50(weights=weights, include_top=False, input_tensor=input_layer)
 
             x = base_model.output
