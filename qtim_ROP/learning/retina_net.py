@@ -103,9 +103,10 @@ class RetiNet(object):
 
             x = base_model.output
             x = Flatten()(x)
-            x = Dense(1024, activation='relu')(x)
+            x = Dense(network.get('no_features'), activation='relu')(x)
             x = Dropout(0.5)(x)
-            predictions = Dense(3, activation='softmax')(x)
+            act = 'linear' if network.get('regression') is True else 'softmax'
+            predictions = Dense(network.get('no_classes'), activation=act)(x)
 
             self.model = Model(input=base_model.input, output=predictions)
             # for layer in base_model.layers:
@@ -159,15 +160,14 @@ class RetiNet(object):
         train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
 
         # Create generators
-        train_gen, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
+        train_gen, train_n, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
 
         if self.val_data is not None:
-            val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
-            no_val_samples = val_gen.X.shape[0]
+            val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
         else:
             print "No validation data provided."
             val_gen = None
-            no_val_samples = None
+            val_n = None
 
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
@@ -177,10 +177,11 @@ class RetiNet(object):
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=train_gen.X.shape[0],
-            nb_epoch=epochs,
+            steps_per_epoch=train_n / float(train_batch),
+            epochs=epochs,
             validation_data=val_gen,
-            nb_val_samples=no_val_samples, callbacks=[checkpoint_tb, lr_tb])
+            validation_steps=val_n / float(val_batch),
+            callbacks=[checkpoint_tb, lr_tb])
 
         # Save model arch, weights and history
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))

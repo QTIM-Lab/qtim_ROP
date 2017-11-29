@@ -90,7 +90,8 @@ def create_generator(data_path, input_shape, batch_size=32, training=True):
         else:
             labels = to_categorical(classes)  # categorical (one-hot encoded)
 
-        return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training), classes, class_indices
+        return datagen.flow(f['data'], y=labels, batch_size=batch_size, shuffle=training),\
+               f['data'].shape[0], classes, class_indices
 
 
 def hdf5_images_and_labels(data_path):
