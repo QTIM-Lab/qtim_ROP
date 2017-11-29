@@ -108,7 +108,7 @@ class RetiNet(object):
             act = 'linear' if network.get('regression') is True else 'softmax'
             predictions = Dense(network.get('no_classes'), activation=act)(x)
 
-            self.model = Model(inputs=base_model.input, outputs=predictions.output)
+            self.model = Model(inputs=base_model.input, outputs=predictions)
             # for layer in base_model.layers:
             #     layer.trainable = fine_tuning
 
