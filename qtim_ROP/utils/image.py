@@ -65,7 +65,7 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
     return img_names, img_arr, y_true
 
 
-def create_generator(data_path, input_shape, batch_size=32, training=True, tf=True):
+def create_generator(data_path, input_shape, batch_size=32, training=True, tf=True, regression=False):
 
     datagen = ImageDataGenerator()
 
@@ -82,7 +82,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
     else:  # otherwise, assume HDF5 file
 
         f = h5py.File(data_path, 'r')
-        class_indices = {k: v for v, k in enumerate(np.unique(f['labels']))}
+        class_indices = {0: 'No', 'Pre-Plus': 1, 'Plus': 2}
         classes = [class_indices[k] for k in f['labels']]
 
         if tf:
@@ -90,8 +90,8 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
         else:
             data = f['data']
 
-        if len(class_indices) == 2:
-            labels = classes  # binary
+        if regression:
+            labels = classes
         else:
             labels = to_categorical(classes)  # categorical (one-hot encoded)
 
