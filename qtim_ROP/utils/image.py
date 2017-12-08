@@ -82,7 +82,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
     else:  # otherwise, assume HDF5 file
 
         f = h5py.File(data_path, 'r')
-        class_indices = {0: 'No', 'Pre-Plus': 1, 'Plus': 2}
+        class_indices = {'No': 0, 'Pre-Plus': 1, 'Plus': 2}
         classes = [class_indices[k] for k in f['labels']]
 
         if tf:
