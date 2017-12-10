@@ -97,4 +97,6 @@ config/conf.yaml
 download_retina_data.py
 statistics.py
 *.sh
+
 qtim_ROP/webapp/uploads
+qtim_ROP/webapp/static

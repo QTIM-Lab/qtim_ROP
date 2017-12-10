@@ -7,7 +7,7 @@ import time
 import numpy as np
 
 from qtim_ROP.__main__ import initialize
-from qtim_ROP.deep_rop import preprocess_images, LABELS
+from qtim_ROP.deep_rop import preprocess_images
 from qtim_ROP.learning.retina_net import RetiNet, locate_config
 
 def make_celery(app):
@@ -38,6 +38,7 @@ app.config.update(
     SEG_FOLDER='uploads/output/segmentation'
 )
 
+LABELS = {0: 'Normal', 1: 'Plus', 2: 'Pre-Plus'}
 celery = make_celery(app)
 
 # Initialize model
@@ -59,6 +60,7 @@ def upload():
         return render_template('index.html')
 
     file = request.files['file']
+    print file
 
     if file.filename == '':
         flash('No file selected!')
@@ -68,7 +70,7 @@ def upload():
         filename = secure_filename(file.filename)
         out_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(out_path)
-        return render_template("uploaded.html", image_name=filename, seg_name=None)
+        return render_template("index.html", image_name=filename, seg_name=None)
 
 
 @app.route('/upload/<filename>')
@@ -84,7 +86,6 @@ def send_segmentation(seg_name):
 
 @app.route('/longtask', methods=['POST'])
 def longtask():
-
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], request.form['filename'])
     task = long_task.apply_async([file_path])
     return jsonify({}), 202, {'Location': url_for('taskstatus',
@@ -94,15 +95,15 @@ def longtask():
 def long_task(self, filename):
 
     # Initializes the classifer
-    self.update_state(state='PROGRESS', meta={'current': 0, 'total': 3, 'status': "Initializing..."})
+    self.update_state(state='PROGRESS', meta={'current': 1, 'total': 4, 'status': "Initializing..."})
     time.sleep(2)
     classifier = RetiNet(model_config)
 
     # Does the preprocessing
-    self.update_state(state='PROGRESS', meta={'current': 1, 'total': 3, 'status': "Preprocessing image..."})
+    self.update_state(state='PROGRESS', meta={'current': 2, 'total': 4, 'status': "Preprocessing image..."})
     prep_img, prep_name = preprocess_images([filename], app.config['OUTPUT_FOLDER'],
-                                            conf_dict, skip_segmentation=False, batch_size=100, fast=True)
-    self.update_state(state='PROGRESS', meta={'current': 2, 'total': 3, 'status': "Doing classification..."})
+                                            conf_dict, skip_segmentation=False, batch_size=1)
+    self.update_state(state='PROGRESS', meta={'current': 3, 'total': 4, 'status': "Doing classification..."})
 
     # Prediction
     y_preda = classifier.predict(prep_img)[0]
@@ -110,8 +111,13 @@ def long_task(self, filename):
     prob = y_preda[arg_max]
     diagnosis = LABELS[arg_max]
 
-    return {'current': 3, 'total': 3, 'status': 'Complete!', 'seg_name': prep_name,
+    self.update_state(state='PROGRESS', meta={'current': 4, 'total': 4, 'status': "Complete!", 'seg_url': prep_name})
+
+    return_dict = {'current': 4, 'total': 4, 'status': 'Complete!', 'seg_url': prep_name,
             'result': '{} ({:.2f}%)'.format(diagnosis, prob * 100.)}
+
+    self.update_state(state='PROGRESS', meta=return_dict)
+    return return_dict
 
 @app.route('/status/<task_id>')
 def taskstatus(task_id):
@@ -134,7 +140,7 @@ def taskstatus(task_id):
         }
         if 'result' in task.info:
             response['result'] = task.info['result']
-            response['seg_name'] = task.info['seg_name']
+            response['seg_name'] = task.info['seg_name'][0]
     else:
         # something went wrong in the background job
         response = {

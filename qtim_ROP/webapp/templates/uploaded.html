@@ -17,6 +17,8 @@
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/nanobar/0.2.1/nanobar.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="inference.js"></script>
+
     <script>
         function start_long_task() {
 
@@ -45,6 +47,7 @@
                 }
             });
         }
+
         function update_progress(status_url, nanobar, status_div) {
             // send GET request to status URL
             $.getJSON(status_url, function(data) {
@@ -53,13 +56,14 @@
                 nanobar.go(percent);
                 $(status_div.childNodes[1]).text(percent + '%');
                 $(status_div.childNodes[2]).text(data['status']);
+
                 if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
                     if ('result' in data) {
                         // show result
                         $(status_div.childNodes[3]).text('Result: ' + data['result']);
 
                         //seg_url = data['seg_url'];
-                        //console.log(seg_url)
+                        alert(seg_url);
                         //seg_img = $('<img src="' + seg_url + ' " height="250">');
                         //$('#images').append(seg_img);
 
