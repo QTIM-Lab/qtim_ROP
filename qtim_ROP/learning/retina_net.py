@@ -78,7 +78,7 @@ class RetiNet(object):
 
         self.history_file = join(self.experiment_dir, "history.csv")
         self.lr_file = join(self.experiment_dir, 'learning_rate.npy')
-	self.regression = self.config['network']['regression']
+        self.regression = self.config['network']['regression']
         chdir(cwd)  # revert to original working directory
 
     def _configure_network(self, build=True):
@@ -91,7 +91,15 @@ class RetiNet(object):
 
             from keras.applications.vgg16 import VGG16
             logging.info("Instantiating VGG model" + fine_tuning)
-            self.model = VGG16(weights=weights, input_shape=(3, 227, 227), include_top=True)
+            base_model = VGG16(weights=weights, input_shape=(224, 224, 3), include_top=False)
+
+            x = base_model.output
+            x = Flatten()(x)
+            x = Dense(network.get('no_features'), activation='relu')(x)
+            x = Dropout(0.5)(x)
+            act = 'linear' if network.get('regression') is True else 'softmax'
+            predictions = Dense(network.get('no_classes'), activation=act)(x)
+            self.model = Model(inputs=base_model.input, outputs=predictions)
 
         elif 'resnet' in type_:
 
