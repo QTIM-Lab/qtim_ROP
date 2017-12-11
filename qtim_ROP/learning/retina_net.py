@@ -8,7 +8,7 @@ from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.utils.np_utils import to_categorical
-from googlenet_custom_layers import PoolHelper, LRN
+# from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from ..utils.common import *
@@ -78,7 +78,7 @@ class RetiNet(object):
 
         self.history_file = join(self.experiment_dir, "history.csv")
         self.lr_file = join(self.experiment_dir, 'learning_rate.npy')
-
+	self.regression = self.config['network']['regression']
         chdir(cwd)  # revert to original working directory
 
     def _configure_network(self, build=True):
@@ -113,30 +113,30 @@ class RetiNet(object):
             #     layer.trainable = fine_tuning
 
         else:
+            raise Exception('Invalid model type!')
+            # if 'googlenet' in type_:
+            #     custom_objects = {"PoolHelper": PoolHelper, "LRN": LRN}
+            #     mod_str = 'GoogLeNet'
+            # else:
+            #     custom_objects = {}
+            #     mod_str = 'custom'
 
-            if 'googlenet' in type_:
-                custom_objects = {"PoolHelper": PoolHelper, "LRN": LRN}
-                mod_str = 'GoogLeNet'
-            else:
-                custom_objects = {}
-                mod_str = 'custom'
+            # from .googlenet import create_googlenet
+            # logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
+            # arch = network.get('arch', None)
 
-            from .googlenet import create_googlenet
-            logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
-            arch = network.get('arch', None)
+            # if arch is None:
+            #     self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024))
+            # else:
+            #     try:
+            #         self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
+            #     except ValueError:  # keras compatibility issue
+            #         self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024),
+            #             network.get('regression'))
 
-            if arch is None:
-                self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024))
-            else:
-                try:
-                    self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
-                except ValueError:  # keras compatibility issue
-                    self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024),
-                        network.get('regression'))
-
-            if weights:
-                print "Loading weights '{}'".format(weights)
-                self.model.load_weights(weights, by_name=True)
+            # if weights:
+            #     print "Loading weights '{}'".format(weights)
+            #     self.model.load_weights(weights, by_name=True)
 
         # Configure optimizer
         if build:
@@ -155,15 +155,16 @@ class RetiNet(object):
             return
 
         # Train
+    	logging.info("Training started")
         epochs = self.config.get('epochs', 50)  # default to 50 if not specified
         input_shape = self.model.input_shape[1:]
         train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
 
         # Create generators
-        train_gen, train_n, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
+        train_gen, train_n, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch, regression=self.regression)
 
         if self.val_data is not None:
-            val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
+            val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch, regression=self.regression)
         else:
             print "No validation data provided."
             val_gen = None
