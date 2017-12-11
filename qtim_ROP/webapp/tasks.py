@@ -38,7 +38,6 @@ app.config.update(
     SEG_FOLDER='uploads/output/segmentation'
 )
 
-LABELS = {0: 'Normal', 1: 'Plus', 2: 'Pre-Plus'}
 celery = make_celery(app)
 
 # Initialize model
@@ -70,19 +69,12 @@ def upload():
         filename = secure_filename(file.filename)
         out_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(out_path)
-        return render_template("index.html", image_name=filename, seg_name=None)
+        return render_template("index.html", image_name=filename)
 
 
 @app.route('/upload/<filename>')
 def send_original(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-
-@app.route('/upload/<seg_name>')
-def send_segmentation(seg_name):
-    print seg_name
-    return send_from_directory(app.config['SEG_FOLDER'], seg_name)
-
 
 @app.route('/longtask', methods=['POST'])
 def longtask():
@@ -103,17 +95,17 @@ def long_task(self, filename):
     self.update_state(state='PROGRESS', meta={'current': 2, 'total': 4, 'status': "Preprocessing image..."})
     prep_img, prep_name = preprocess_images([filename], app.config['OUTPUT_FOLDER'],
                                             conf_dict, skip_segmentation=False, batch_size=1)
-    self.update_state(state='PROGRESS', meta={'current': 3, 'total': 4, 'status': "Doing classification..."})
+    self.update_state(state='PROGRESS', meta={'current': 3, 'total': 4, 'status': "Classifying..."})
 
     # Prediction
     y_preda = classifier.predict(prep_img)[0]
     arg_max = np.argmax(y_preda)
     prob = y_preda[arg_max]
+
+    LABELS = {0: 'Normal', 1: 'Plus', 2: 'Pre-Plus'}
     diagnosis = LABELS[arg_max]
 
-    self.update_state(state='PROGRESS', meta={'current': 4, 'total': 4, 'status': "Complete!", 'seg_url': prep_name})
-
-    return_dict = {'current': 4, 'total': 4, 'status': 'Complete!', 'seg_url': prep_name,
+    return_dict = {'current': 4, 'total': 4, 'status': 'Complete!', 'seg_name': prep_name,
             'result': '{} ({:.2f}%)'.format(diagnosis, prob * 100.)}
 
     self.update_state(state='PROGRESS', meta=return_dict)

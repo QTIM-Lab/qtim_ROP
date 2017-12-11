@@ -20,6 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
     <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/nanobar/0.2.1/nanobar.min.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 </head>
 
@@ -54,31 +55,40 @@
 
     <div id="wrapper">
 
-        <div class="bg"></div>
-        <div class="jumbotron jumbotron-fluid">
-            <div class="container">
-                <h1 class="display-2"><strong>DeepROP</strong></h1>
-                <h2>An automated platform for diagnosis of plus disease <br />in retinopathy of prematurity (ROP).</h2>
-                <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more »</a></p>
+        <div id="jumbo">
+            <div class="bg"></div>
+            <div class="jumbotron jumbotron-fluid">
+                <div class="container">
+                    <h1 class="display-2"><strong>DeepROP</strong></h1>
+                    <h2>A platform for automated diagnosis of plus disease <br />in retinopathy of prematurity (ROP).</h2>
+                    <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more »</a></p>
+                </div>
             </div>
         </div>
 
         <div class="page-scroll">
 
             <div class="container progress_wrapper">
-                <div id="status"></div>
-                <div id="progress"></div>
+                <div id='progress-div' class="col-md-12">
+                    <div id="status"></div>
+                    <div id="progress"></div>
+                    <img id="original_image" src="{{url_for('send_original', filename=image_name)}}" height="300">
+                    <div id="upload_again">
+                        <a class="btn btn-primary btn-lg" href="{{ url_for('index') }}" role="button">Try another</a>
+                        <a class="btn btn-primary btn-lg" href="#" role="button">Download segmentation</a>
+                    </div>
+                </div>
             </div>
 
-            <div class="container result_wrapper">
-                <div id="result"></div>
-            </div>
+            <!--<div class="container result_wrapper">-->
+                <!--<div id="result">-->
+                <!--</div>-->
+            <!--</div>-->
 
             <div class="container select_image">
                 <div class="row">
 
                     <div class="col-md-6">
-
                         <form action="{{ url_for('upload') }}" method=post enctype=multipart/form-data>
                             <div class="form-group">
                                 <h3>Upload a retinal photograph</h3>
@@ -164,150 +174,75 @@
 
 <script>
 
+    function start_long_task() {
+
+        $("#jumbo").animate({ height: 0, opacity: 0 }, 'slow');
+        $('.select_image').hide();
+
+        // add task status elements
+        div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div>');
+        $('#progress').append(div);
+
+        status_div = $('#status');
+
+        // create a progress bar
+        var nanobar = new Nanobar({
+            bg: '#44f',
+            target: div[0].childNodes[0]
+        });
+
+        // send ajax POST request to start background job
+        $.ajax({
+            type: 'POST',
+            url: '/longtask',
+            data: {filename: '{{image_name}}'},
+            success: function(data, status, request) {
+                status_url = request.getResponseHeader('Location');
+                update_progress(status_url, nanobar, div[0], status_div);
+            },
+            error: function() {
+                alert('Unexpected error');
+            }
+        });
+    }
+
+    function update_progress(status_url, nanobar, progress_div, status_div) {
+        // send GET request to status URL
+        $.getJSON(status_url, function(data) {
+            // update UI
+            percent = parseInt(data['current'] * 100 / data['total']);
+            nanobar.go(percent);
+            $(progress_div.childNodes[1]).text(percent + '%');
+            status_div.text(data['status']);
+
+            if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
+                if ('result' in data) {
+                    // show result
+                    status_div.text(data['result']);
+                    $('#progress').hide();
+                    $('#original_image').fadeIn();
+                    $('#upload_again').fadeIn(500);
+
+                } else {
+                    // something unexpected happened
+                    status_div.text('Result: ' + data['state']);
+                }
+            }
+            else {
+                // rerun in 2 seconds
+                setTimeout(function() {
+                    update_progress(status_url, nanobar, progress_div, status_div);
+                }, 2000);
+            }
+        });
+    }
+
     $(function() {
-
-        var jumboHeight = $('.jumbotron').outerHeight();
-        function parallax(){
-            var scrolled = $(window).scrollTop();
-            $('.bg').css('height', (jumboHeight-scrolled) + 'px');
+        if ( document.location.href.indexOf('/upload') > -1 ) {
+            $('.progress_wrapper').show();
+            start_long_task();
         }
-
-        $('.img').scroll(function(e){
-            parallax();
-        });
-
-        $(window).scroll(function(e){
-            parallax();
-        });
-
-        function bs_input_file() {
-            $(".input-file").before(
-                function() {
-                    if ( ! $(this).prev().hasClass('input-ghost') ) {
-                        var element = $("<input type='file' class='input-ghost' style='visibility:hidden; height:0'>");
-                        element.attr("name",$(this).attr("name"));
-                        element.change(function(){
-                            element.next(element).find('input').val((element.val()).split('\\').pop());
-                        });
-                        $(this).find("button.btn-choose").click(function(){
-                            element.click();
-                        });
-                        $(this).find("button.btn-reset").click(function(){
-                            element.val(null);
-                            $(this).parents(".input-file").find('input').val('');
-                            $(':input[type="submit"]').prop('disabled', true);
-                        });
-                        $(this).find('input').css("cursor","pointer");
-                        $(this).find('input').mousedown(function() {
-                            $(this).parents('.input-file').prev().click();
-                            return false;
-                        });
-                        return element;
-                    }
-                }
-            );
-        }
-
-        $(function() {
-            bs_input_file();
-        });
-
-        $(document).on('change', ':file', function() {
-            var input = $(this),
-                numFiles = input.get(0).files ? input.get(0).files.length : 1,
-                label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
-            input.trigger('fileselect', [numFiles, label]);
-
-            if (numFiles > 0) {
-                $(':input[type="submit"]').prop('disabled', false);
-            } else {
-                $(':input[type="submit"]').prop('disabled', true);
-            }
-        });
-
-        $(document).ready( function() {
-            $(':file').on('fileselect', function(event, numFiles, label) {
-                var input = $(this).parents('.input-group').find(':text'),
-                    log = numFiles > 1 ? numFiles + ' files selected' : label;
-            });
-        });
-
-        function start_long_task() {
-
-            $('#start-bg-job').prop('disabled', true);
-            // add task status elements
-            div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div>');
-            $('#progress').append(div);
-
-            status_div = $('#status');
-
-            // create a progress bar
-            var nanobar = new Nanobar({
-                bg: '#44f',
-                target: div[0].childNodes[0]
-            });
-
-            // send ajax POST request to start background job
-            $.ajax({
-                type: 'POST',
-                url: '/longtask',
-                data: {filename: '{{image_name}}'},
-                success: function(data, status, request) {
-                    status_url = request.getResponseHeader('Location');
-                    update_progress(status_url, nanobar, div[0], status_div);
-                },
-                error: function() {
-                    alert('Unexpected error');
-                }
-            });
-        }
-
-        function update_progress(status_url, nanobar, progress_div, status_div) {
-            // send GET request to status URL
-            $.getJSON(status_url, function(data) {
-                // update UI
-                percent = parseInt(data['current'] * 100 / data['total']);
-                nanobar.go(percent);
-                $(progress_div.childNodes[1]).text(percent + '%');
-                status_div.text(data['status']);
-
-                if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
-                    if ('result' in data) {
-                        // show result
-                        status_div.text(data['result']);
-
-                        //seg_url = data['seg_name'] + '.png';
-                        //console.log(seg_url)
-                        //seg_img = $('<img src="' + seg_url + ' " height="250">');
-                        //$('#result').append(seg_img);
-
-                        $('#progress').append('<a href="/">Upload another file</a>');
-
-                    }
-                    else {
-                        // something unexpected happened
-                        status_div.text('Result: ' + data['state']);
-                    }
-                }
-                else {
-                    // rerun in 2 seconds
-                    setTimeout(function() {
-                        update_progress(status_url, nanobar, progress_div, status_div);
-                    }, 2000);
-                }
-            });
-        }
-
-        $(function() {
-            if ( document.location.href.indexOf('/upload') > -1 ) {
-                $('.progress_wrapper').show();
-                $('.select_image').fadeOut(500);
-                start_long_task();
-            }
-        });
-
     });
-
 </script>
 
 </body>
