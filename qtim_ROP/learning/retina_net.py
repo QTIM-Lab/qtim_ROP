@@ -155,7 +155,7 @@ class RetiNet(object):
             return
 
         # Train
-    	logging.info("Training started")
+        logging.info("Training started")
         epochs = self.config.get('epochs', 50)  # default to 50 if not specified
         input_shape = self.model.input_shape[1:]
         train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
@@ -232,10 +232,10 @@ class RetiNet(object):
     def evaluate(self, data_path, n_samples=None):
 
         logging.info("Evaluating model for on {}".format(data_path))
-        datagen, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
-                                                          batch_size=1, training=False)
+        datagen, no_samples, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
+                                                                      batch_size=1, training=False)
         if not n_samples:
-            n_samples = datagen.X.shape[0] #X.shape[0]
+            n_samples = no_samples
 
         predictions = self.model.predict_generator(datagen, n_samples)
         data_dict = {'data': datagen, 'classes': class_indices, 'y_true': to_categorical(y_true[:n_samples]), 'y_pred': predictions}
@@ -264,7 +264,7 @@ class RetinaRF(object):
         self.feature_layer = feature_layer
         self.rf = None if rf_pkl is None else joblib.load(rf_pkl)
 
-    def train(self, training_data, trees=100,rf_out=None):
+    def train(self, training_data, trees=100, rf_out=None):
 
         # Use CNN to extract features
         self.cnn.set_intermediate(self.feature_layer)
