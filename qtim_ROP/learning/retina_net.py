@@ -99,7 +99,7 @@ class RetiNet(object):
             logging.info("Instantiating ResNet model" + fine_tuning)
 
             input_layer = Input(shape=(224, 224, 3))
-            base_model = ResNet50(weights=weights, include_top=False, input_tensor=input_layer)
+            base_model = ResNet50(weights=None, include_top=False, input_tensor=input_layer)
 
             x = base_model.output
             x = Flatten()(x)
