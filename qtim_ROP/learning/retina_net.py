@@ -111,7 +111,7 @@ class RetiNet(object):
                                      include_top=False)
 
             x = base_model.output
-            x = GlobalAveragePooling2D((3, 3), strides=(1, 1), padding='same')(x)
+            x = GlobalAveragePooling2D()(x)
             x = Flatten()(x)
             x = Dense(1024, activation='relu')(x)
             x = Dropout(0.5)(x)
