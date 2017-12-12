@@ -3,11 +3,12 @@
 from os import chdir, getcwd
 from os.path import dirname, splitext, abspath
 from keras.callbacks import Callback, ModelCheckpoint
-from keras.layers import Dense, Flatten, Input, Dropout
+from keras.layers import Dense, Flatten, Input, Dropout, AveragePooling2D
 from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.utils.np_utils import to_categorical
+from keras.utils.vis_utils import plot_model
 # from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
@@ -108,7 +109,7 @@ class RetiNet(object):
             base_model = InceptionV3(weights='imagenet', input_shape=(224, 224, 3), include_top=False)
 
             x = base_model.output
-            x = Flatten()(x)
+            x = AveragePooling2D((3, 3), strides=(1, 1), padding='same')(x)
             x = Dense(network.get('no_features'), activation='relu')(x)
             x = Dropout(0.5)(x)
             act = 'linear' if network.get('regression') is True else 'softmax'
@@ -121,7 +122,7 @@ class RetiNet(object):
             logging.info("Instantiating ResNet model" + fine_tuning)
 
             input_layer = Input(shape=(224, 224, 3))
-            base_model = ResNet50(weights=None, include_top=False, input_tensor=input_layer)
+            base_model = ResNet50(weights="imagenet", include_top=False, input_tensor=input_layer)
 
             x = base_model.output
             x = Flatten()(x)
