@@ -107,7 +107,7 @@ class RetiNet(object):
             from keras.applications.inception_v3 import InceptionV3
             logging.info("Instantiating Inception v3 model" + fine_tuning)
             input_tensor = Input(shape=(224, 224, 3))
-            base_model = InceptionV3(weights='imagenet', input_tensor=input_tensor,
+            base_model = InceptionV3(weights='imagenet', input_shape=(224, 224, 3),
                                      include_top=False)
 
             x = base_model.output
@@ -118,7 +118,7 @@ class RetiNet(object):
             x = Dropout(0.5)(x)
             act = 'linear' if network.get('regression') is True else 'softmax'
             predictions = Dense(network.get('no_classes'), activation=act)(x)
-            self.model = Model(inputs=input_tensor, outputs=predictions)
+            self.model = Model(inputs=base_model.input, outputs=predictions)
             plot_model(self.model, to_file='model.png', show_shapes=True)
 
         elif 'resnet' in type_:
