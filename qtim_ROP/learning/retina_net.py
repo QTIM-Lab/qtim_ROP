@@ -3,7 +3,7 @@
 from os import chdir, getcwd
 from os.path import dirname, splitext, abspath
 from keras.callbacks import Callback, ModelCheckpoint
-from keras.layers import Dense, Flatten, Input, Dropout, AveragePooling2D
+from keras.layers import Dense, Flatten, Input, Dropout, GlobalAveragePooling2D
 from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
@@ -111,8 +111,10 @@ class RetiNet(object):
                                      include_top=False)
 
             x = base_model.output
-            x = AveragePooling2D((3, 3), strides=(1, 1), padding='same')(x)
+            x = GlobalAveragePooling2D((3, 3), strides=(1, 1), padding='same')(x)
             x = Flatten()(x)
+            x = Dense(1024, activation='relu')(x)
+            x = Dropout(0.5)(x)
             x = Dense(network.get('no_features'), activation='relu')(x)
             x = Dropout(0.5)(x)
             act = 'linear' if network.get('regression') is True else 'softmax'
