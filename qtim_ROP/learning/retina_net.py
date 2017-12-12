@@ -118,7 +118,7 @@ class RetiNet(object):
             x = Dropout(0.5)(x)
             act = 'linear' if network.get('regression') is True else 'softmax'
             predictions = Dense(network.get('no_classes'), activation=act)(x)
-            self.model = Model(inputs=base_model.input, outputs=predictions)
+            self.model = Model(inputs=input_tensor, outputs=predictions)
             plot_model(self.model, to_file='model.png', show_shapes=True)
 
         elif 'resnet' in type_:
