@@ -91,7 +91,21 @@ class RetiNet(object):
 
             from keras.applications.vgg16 import VGG16
             logging.info("Instantiating VGG model" + fine_tuning)
-            base_model = VGG16(weights=weights, input_shape=(224, 224, 3), include_top=False)
+            base_model = VGG16(weights='imagenet', input_shape=(224, 224, 3), include_top=False)
+
+            x = base_model.output
+            x = Flatten()(x)
+            x = Dense(network.get('no_features'), activation='relu')(x)
+            x = Dropout(0.5)(x)
+            act = 'linear' if network.get('regression') is True else 'softmax'
+            predictions = Dense(network.get('no_classes'), activation=act)(x)
+            self.model = Model(inputs=base_model.input, outputs=predictions)
+
+        elif 'inception':
+
+            from keras.applications.inception_v3 import InceptionV3
+            logging.info("Instantiating Inception v3 model" + fine_tuning)
+            base_model = InceptionV3(weights='imagenet', input_shape=(224, 224, 3), include_top=False)
 
             x = base_model.output
             x = Flatten()(x)
