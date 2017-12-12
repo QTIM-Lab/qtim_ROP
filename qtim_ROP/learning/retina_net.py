@@ -112,6 +112,7 @@ class RetiNet(object):
 
             x = base_model.output
             x = AveragePooling2D((3, 3), strides=(1, 1), padding='same')(x)
+            x = Flatten()(x)
             x = Dense(network.get('no_features'), activation='relu')(x)
             x = Dropout(0.5)(x)
             act = 'linear' if network.get('regression') is True else 'softmax'
