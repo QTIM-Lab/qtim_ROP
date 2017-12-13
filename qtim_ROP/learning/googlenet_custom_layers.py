@@ -21,14 +21,14 @@ class LRN(Layer):
         # extra_channels = T.alloc(0., b, ch + 2 * half_n, r,c)  # make an empty tensor with zero pads along channel dimension
         # input_sqr = T.set_subtensor(extra_channels[:, half_n:half_n+ch, :, :],input_sqr) # set the center to be the squared input
 
-        extra_channels = K.zeros((b, int(ch) + 2 * half_n, r, c))
+        extra_channels = K.zeros((b, r, c, int(ch) + 2 * half_n))
         input_sqr = K.concatenate(
-            [extra_channels[:, :half_n, :, :], input_sqr, extra_channels[:, half_n + int(ch):, :, :]], axis=1)
+            [extra_channels[:, :, :, :half_n], input_sqr, extra_channels[:, :, :, half_n + int(ch):]], axis=1)
 
         scale = self.k  # offset for the scale
         norm_alpha = self.alpha / self.n  # normalized alpha
         for i in range(self.n):
-            scale += norm_alpha * input_sqr[:, i:i + int(ch), :, :]
+            scale += norm_alpha * input_sqr[:, :, :, i:i + int(ch)]
         scale = scale ** self.beta
         x = x / scale
         return x
@@ -47,7 +47,7 @@ class PoolHelper(Layer):
         super(PoolHelper, self).__init__(**kwargs)
 
     def call(self, x, mask=None):
-        return x[:, :, 1:, 1:]
+        return x[:, 1:, 1:, :]
 
     def get_config(self):
         config = {}
