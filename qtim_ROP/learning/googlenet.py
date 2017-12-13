@@ -2,7 +2,7 @@ from keras.layers import Input, Dense, Convolution2D, MaxPooling2D, AveragePooli
     merge, Activation, BatchNormalization
 from keras.models import Model
 from keras.regularizers import l2
-from googlenet_custom_layers import PoolHelper, LRN
+from googlenet_custom_layers import PoolHelper # LRN
 from os.path import join
 
 

@@ -1,6 +1,6 @@
 
 from keras.layers.core import Layer
-import theano.tensor as T
+# import theano.tensor as T
 
 
 class LRN(Layer):
