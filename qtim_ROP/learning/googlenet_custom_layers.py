@@ -1,5 +1,6 @@
 from keras.layers.core import Layer
 from keras import backend as K
+import tensorflow as tf
 import numpy as np
 
 
@@ -21,7 +22,7 @@ class LRN(Layer):
         # extra_channels = T.alloc(0., b, ch + 2 * half_n, r,c)  # make an empty tensor with zero pads along channel dimension
         # input_sqr = T.set_subtensor(extra_channels[:, half_n:half_n+ch, :, :],input_sqr) # set the center to be the squared input
 
-        extra_channels = K.zeros((b, r, c, int(ch) + 2 * half_n))
+        extra_channels = tf.zeros_like(tf.placeholder(tf.float32, shape=[b, r, c, int(ch + 2 * half_n)]))
         input_sqr = K.concatenate(
             [extra_channels[:, :, :, :half_n], input_sqr, extra_channels[:, :, :, half_n + int(ch):]], axis=1)
 
