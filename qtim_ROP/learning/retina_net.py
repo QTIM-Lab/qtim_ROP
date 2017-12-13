@@ -12,6 +12,7 @@ from keras.utils.vis_utils import plot_model
 # from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
 from ..utils.common import *
 from ..utils.image import create_generator
 from ..utils.models import SGDLearningRateTracker
@@ -112,8 +113,8 @@ class RetiNet(object):
 
             x = base_model.output
             x = GlobalAveragePooling2D()(x)
-            x = Dense(1024, activation='relu')(x)
-            x = Dropout(0.5)(x)
+            # x = Dense(1024, activation='relu')(x)
+            # x = Dropout(0.5)(x)
             x = Dense(network.get('no_features'), activation='relu')(x)
             x = Dropout(0.5)(x)
             act = 'linear' if network.get('regression') is True else 'softmax'
@@ -231,6 +232,9 @@ class RetiNet(object):
             yaml.dump(conf_eval, ce, default_flow_style=False)
 
         self.plot_history()
+        preds = self.evaluate(self.val_data)
+        confusion = confusion_matrix(preds['y_true'], preds['y_pred'])
+        plot_confusion(confusion, preds['class_indices'], join(self.experiment_dir, 'confusion.png'))
 
     def plot_history(self):
 
