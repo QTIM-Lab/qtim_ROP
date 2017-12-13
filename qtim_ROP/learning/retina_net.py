@@ -237,7 +237,7 @@ class RetiNet(object):
 
         confusion = confusion_matrix(np.argmax(preds['y_true'], axis=1),
                                      np.argmax(preds['y_pred'], axis=1))
-        plot_confusion(confusion, preds['class_indices'], join(self.experiment_dir, 'confusion.png'))
+        plot_confusion(confusion, preds['classes'], join(self.experiment_dir, 'confusion.png'))
 
     def plot_history(self):
 
