@@ -63,18 +63,18 @@ def plot_confusion(confusion, classes, out_file):
     sns.heatmap(df_cm, cmap='Blues', annot=True, fmt='g', annot_kws={"size": 16})
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position('top')
-    sns.plt.xlabel('Automated diagnosis')
-    sns.plt.ylabel('Reference standard diagnosis')
-    sns.plt.savefig(out_file)
+    plt.xlabel('Automated diagnosis')
+    plt.ylabel('Reference standard diagnosis')
+    plt.savefig(out_file)
 
 
 def plot_counts(count_series, x, y, order, y_label, title, out_path):
 
     df = series_to_plot_dict(count_series, x, y)
-    fig, ax = sns.plt.subplots()
+    fig, ax = plt.subplots()
     sns.barplot(data=df, x=x, y=y, order=order)
-    sns.plt.ylabel(y_label)
-    sns.plt.title(title)
-    sns.plt.savefig(out_path)
+    plt.ylabel(y_label)
+    plt.title(title)
+    plt.savefig(out_path)
 
 
