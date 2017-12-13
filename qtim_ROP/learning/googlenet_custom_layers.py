@@ -12,7 +12,7 @@ class LRN(Layer):
         super(LRN, self).__init__(**kwargs)
 
     def call(self, x, mask=None):
-        b, ch, r, c = x.shape
+        b, r, c, ch = x.shape
         half_n = self.n // 2  # half the local region
         # orig keras code
         # input_sqr = T.sqr(x)  # square the input
