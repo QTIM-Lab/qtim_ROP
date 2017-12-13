@@ -170,10 +170,12 @@ class RetiNet(object):
         train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
 
         # Create generators
-        train_gen, train_n, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch, regression=self.regression)
+        train_gen, train_n, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch,
+                                                    regression=self.regression, tf=False)
 
         if self.val_data is not None:
-            val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch, regression=self.regression)
+            val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch,
+                                                    regression=self.regression, tf=False)
         else:
             print "No validation data provided."
             val_gen = None
@@ -249,7 +251,7 @@ class RetiNet(object):
 
         logging.info("Evaluating model for on {}".format(data_path))
         datagen, no_samples, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
-                                                                      batch_size=1, training=False)
+                                                                      batch_size=1, training=False, tf=False)
         if not n_samples:
             n_samples = no_samples
 
