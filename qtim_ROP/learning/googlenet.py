@@ -1,5 +1,5 @@
 from keras.layers import Input, Dense, Convolution2D, MaxPooling2D, AveragePooling2D, ZeroPadding2D, Dropout, Flatten, \
-    merge, Activation
+    merge, Activation, BatchNormalization
 from keras.models import Model
 from keras.regularizers import l2
 from googlenet_custom_layers import PoolHelper, LRN
@@ -22,7 +22,8 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
     pool1_3x3_s2 = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), border_mode='valid', name='pool1/3x3_s2')(
         pool1_helper)
 
-    pool1_norm1 = LRN(name='pool1/norm1')(pool1_3x3_s2)
+    # pool1_norm1 = LRN(name='pool1/norm1')(pool1_3x3_s2)
+    pool1_norm1 = BatchNormalization()(pool1_3x3_s2)
 
     conv2_3x3_reduce = Convolution2D(64, 1, 1, border_mode='same', activation='relu', name='conv2/3x3_reduce',
                                      W_regularizer=l2(0.0002))(pool1_norm1)
@@ -30,7 +31,8 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
     conv2_3x3 = Convolution2D(192, 3, 3, border_mode='same', activation='relu', name='conv2/3x3',
                               W_regularizer=l2(0.0002))(conv2_3x3_reduce)
 
-    conv2_norm2 = LRN(name='conv2/norm2')(conv2_3x3)
+    # conv2_norm2 = LRN(name='conv2/norm2')(conv2_3x3)
+    conv2_norm2 = BatchNormalization()(conv2_3x3)
 
     conv2_zero_pad = ZeroPadding2D(padding=(1, 1))(conv2_norm2)
 
