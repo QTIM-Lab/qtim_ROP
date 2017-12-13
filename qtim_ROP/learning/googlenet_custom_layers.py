@@ -41,7 +41,7 @@ class PoolHelper(Layer):
         super(PoolHelper, self).__init__(**kwargs)
 
     def call(self, x, mask=None):
-        return x[:,:,1:,1:]
+        return x[:,1:,1:,:]
 
     def get_config(self):
         config = {}
