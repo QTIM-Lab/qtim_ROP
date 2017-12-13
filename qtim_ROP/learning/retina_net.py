@@ -107,7 +107,6 @@ class RetiNet(object):
 
             from keras.applications.inception_v3 import InceptionV3
             logging.info("Instantiating Inception v3 model" + fine_tuning)
-            input_tensor = Input(shape=(224, 224, 3))
             base_model = InceptionV3(weights='imagenet', input_shape=(224, 224, 3),
                                      include_top=False)
 
@@ -233,7 +232,11 @@ class RetiNet(object):
 
         self.plot_history()
         preds = self.evaluate(self.val_data)
-        confusion = confusion_matrix(preds['y_true'], preds['y_pred'])
+        print preds['y_true'].shape
+        print
+
+        confusion = confusion_matrix(np.argmax(preds['y_true'], axis=1),
+                                     np.argmax(preds['y_pred'], axis=1))
         plot_confusion(confusion, preds['class_indices'], join(self.experiment_dir, 'confusion.png'))
 
     def plot_history(self):
