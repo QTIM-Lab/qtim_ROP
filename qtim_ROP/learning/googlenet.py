@@ -10,7 +10,7 @@ from os.path import join
 def create_googlenet(no_classes=3, no_features=None, regression=True):
     # creates GoogLeNet a.k.a. Inception v1 (Szegedy, 2015)
 
-    input = Input(shape=(3, 224, 224))
+    input = Input(shape=(224, 224, 3))
 
     conv1_7x7_s2 = Convolution2D(64, 7, 7, subsample=(2, 2), border_mode='same', activation='relu', name='conv1/7x7_s2',
                                  W_regularizer=l2(0.0002))(input)
@@ -87,7 +87,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
                                            name='inception_3b/pool_proj', W_regularizer=l2(0.0002))(inception_3b_pool)
 
     inception_3b_output = merge([inception_3b_1x1, inception_3b_3x3, inception_3b_5x5, inception_3b_pool_proj],
-                                mode='concat', concat_axis=1, name='inception_3b/output')
+                                mode='concat', concat_axis=-1, name='inception_3b/output')
 
     inception_3b_output_zero_pad = ZeroPadding2D(padding=(1, 1))(inception_3b_output)
 
@@ -118,7 +118,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
                                            name='inception_4a/pool_proj', W_regularizer=l2(0.0002))(inception_4a_pool)
 
     inception_4a_output = merge([inception_4a_1x1, inception_4a_3x3, inception_4a_5x5, inception_4a_pool_proj],
-                                mode='concat', concat_axis=1, name='inception_4a/output')
+                                mode='concat', concat_axis=-1, name='inception_4a/output')
 
     loss1_ave_pool = AveragePooling2D(pool_size=(5, 5), strides=(3, 3), name='loss1/ave_pool')(inception_4a_output)
 
@@ -159,7 +159,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
                                            name='inception_4b/pool_proj', W_regularizer=l2(0.0002))(inception_4b_pool)
 
     inception_4b_output = merge([inception_4b_1x1, inception_4b_3x3, inception_4b_5x5, inception_4b_pool_proj],
-                                mode='concat', concat_axis=1, name='inception_4b_output')
+                                mode='concat', concat_axis=-1, name='inception_4b_output')
 
     inception_4c_1x1 = Convolution2D(128, 1, 1, border_mode='same', activation='relu', name='inception_4c/1x1',
                                      W_regularizer=l2(0.0002))(inception_4b_output)
@@ -185,7 +185,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
                                            name='inception_4c/pool_proj', W_regularizer=l2(0.0002))(inception_4c_pool)
 
     inception_4c_output = merge([inception_4c_1x1, inception_4c_3x3, inception_4c_5x5, inception_4c_pool_proj],
-                                mode='concat', concat_axis=1, name='inception_4c/output')
+                                mode='concat', concat_axis=-1, name='inception_4c/output')
 
     inception_4d_1x1 = Convolution2D(112, 1, 1, border_mode='same', activation='relu', name='inception_4d/1x1',
                                      W_regularizer=l2(0.0002))(inception_4c_output)
@@ -211,7 +211,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
                                            name='inception_4d/pool_proj', W_regularizer=l2(0.0002))(inception_4d_pool)
 
     inception_4d_output = merge([inception_4d_1x1, inception_4d_3x3, inception_4d_5x5, inception_4d_pool_proj],
-                                mode='concat', concat_axis=1, name='inception_4d/output')
+                                mode='concat', concat_axis=-1, name='inception_4d/output')
 
     loss2_ave_pool = AveragePooling2D(pool_size=(5, 5), strides=(3, 3), name='loss2/ave_pool')(inception_4d_output)
 
@@ -252,7 +252,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
                                            name='inception_4e/pool_proj', W_regularizer=l2(0.0002))(inception_4e_pool)
 
     inception_4e_output = merge([inception_4e_1x1, inception_4e_3x3, inception_4e_5x5, inception_4e_pool_proj],
-                                mode='concat', concat_axis=1, name='inception_4e/output')
+                                mode='concat', concat_axis=-1, name='inception_4e/output')
 
     inception_4e_output_zero_pad = ZeroPadding2D(padding=(1, 1))(inception_4e_output)
 
@@ -283,7 +283,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
                                            name='inception_5a/pool_proj', W_regularizer=l2(0.0002))(inception_5a_pool)
 
     inception_5a_output = merge([inception_5a_1x1, inception_5a_3x3, inception_5a_5x5, inception_5a_pool_proj],
-                                mode='concat', concat_axis=1, name='inception_5a/output')
+                                mode='concat', concat_axis=-1, name='inception_5a/output')
 
     inception_5b_1x1 = Convolution2D(384, 1, 1, border_mode='same', activation='relu', name='inception_5b/1x1',
                                      W_regularizer=l2(0.0002))(inception_5a_output)
@@ -309,7 +309,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
                                            name='inception_5b/pool_proj', W_regularizer=l2(0.0002))(inception_5b_pool)
 
     inception_5b_output = merge([inception_5b_1x1, inception_5b_3x3, inception_5b_5x5, inception_5b_pool_proj],
-                                mode='concat', concat_axis=1, name='inception_5b/output')
+                                mode='concat', concat_axis=-1, name='inception_5b/output')
 
     pool5_7x7_s1 = AveragePooling2D(pool_size=(7, 7), strides=(1, 1), name='pool5/7x7_s2')(inception_5b_output)
 
