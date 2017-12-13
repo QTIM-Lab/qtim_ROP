@@ -9,7 +9,7 @@ from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.utils.np_utils import to_categorical
 from keras.utils.vis_utils import plot_model
-# from googlenet_custom_layers import PoolHelper, LRN
+from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
@@ -105,21 +105,25 @@ class RetiNet(object):
 
         elif 'inception':
 
-            from keras.applications.inception_v3 import InceptionV3
-            logging.info("Instantiating Inception v3 model" + fine_tuning)
-            base_model = InceptionV3(weights='imagenet', input_shape=(224, 224, 3),
-                                     include_top=False)
+            custom_objects = {"PoolHelper": PoolHelper, "LRN": LRN}
+            mod_str = 'GoogLeNet'
 
-            x = base_model.output
-            x = GlobalAveragePooling2D()(x)
-            # x = Dense(1024, activation='relu')(x)
-            # x = Dropout(0.5)(x)
-            x = Dense(network.get('no_features'), activation='relu')(x)
-            x = Dropout(0.5)(x)
-            act = 'linear' if network.get('regression') is True else 'softmax'
-            predictions = Dense(network.get('no_classes'), activation=act)(x)
-            self.model = Model(inputs=base_model.input, outputs=predictions)
-            plot_model(self.model, to_file='model.png', show_shapes=True)
+            from .googlenet import create_googlenet
+            logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
+            arch = network.get('arch', None)
+
+            if arch is None:
+                self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 128))
+            else:
+                try:
+                    self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
+                except ValueError:  # keras compatibility issue
+                    self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024),
+                        network.get('regression'))
+
+            if weights:
+                print "Loading weights '{}'".format(weights)
+                self.model.load_weights(weights, by_name=True)
 
         elif 'resnet' in type_:
 
@@ -142,29 +146,6 @@ class RetiNet(object):
 
         else:
             raise Exception('Invalid model type!')
-            # if 'googlenet' in type_:
-            #     custom_objects = {"PoolHelper": PoolHelper, "LRN": LRN}
-            #     mod_str = 'GoogLeNet'
-            # else:
-            #     custom_objects = {}
-            #     mod_str = 'custom'
-
-            # from .googlenet import create_googlenet
-            # logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
-            # arch = network.get('arch', None)
-
-            # if arch is None:
-            #     self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024))
-            # else:
-            #     try:
-            #         self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
-            #     except ValueError:  # keras compatibility issue
-            #         self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 1024),
-            #             network.get('regression'))
-
-            # if weights:
-            #     print "Loading weights '{}'".format(weights)
-            #     self.model.load_weights(weights, by_name=True)
 
         # Configure optimizer
         if build:
