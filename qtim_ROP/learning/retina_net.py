@@ -203,7 +203,7 @@ class RetiNet(object):
         # Write updated YAML file and plot history
         self.conclude_training()
 
-    def conclude_training(self):
+    def conclude_training(self, weights='final'):
 
         # Create modified copy of config file
         conf_eval = self.update_config('final')
@@ -214,7 +214,7 @@ class RetiNet(object):
 
         # Evaluate the model on the test/val data
         print "Loading best weights and running inference..."
-        self.model.load_weights(join(self.experiment_dir, 'best_weights.h5'))  # the load the best weights
+        self.model.load_weights(join(self.experiment_dir, '{}_weights.h5'.format(weights))) # final or best
         self.evaluate(self.val_data)
 
     def plot_history(self):
