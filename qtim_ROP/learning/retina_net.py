@@ -224,7 +224,6 @@ class RetiNet(object):
     def plot_history(self):
 
         history = csv_to_dict(self.history_file)
-        lr = np.load(self.lr_file)
 
         # Plot histories
         plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
