@@ -10,6 +10,7 @@ from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.utils.np_utils import to_categorical
 from keras.utils.vis_utils import plot_model
 from googlenet_custom_layers import PoolHelper, LRN
+from custom_loss import r2_keras
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
@@ -150,7 +151,10 @@ class RetiNet(object):
         if build:
             opt_options = self.config['optimizer']
             optimizer, loss, params = opt_options['type'], opt_options['loss'], opt_options['params']
-            self.model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
+            metrics = ['accuracy']
+            if self.regression:
+                metrics.append(r2_keras)
+            self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     def train(self):
 
