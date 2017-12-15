@@ -2,7 +2,7 @@
 
 from os import chdir, getcwd
 from os.path import dirname, splitext, abspath
-from keras.callbacks import Callback, ModelCheckpoint
+from keras.callbacks import Callback, ModelCheckpoint, CSVLogger
 from keras.layers import Dense, Flatten, Input, Dropout, GlobalAveragePooling2D
 from keras.models import Model
 from keras.models import model_from_json
@@ -13,15 +13,14 @@ from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 from ..utils.common import *
 from ..utils.image import create_generator
-from ..utils.models import SGDLearningRateTracker
+# from ..utils.models import SGDLearningRateTracker
 from ..utils.plotting import *
 from ..visualisation.tsne import tsne
-# from ..evaluation.metrics import calculate_metrics
+from ..evaluation.metrics import plot_ROC_by_class
 
-
-OPTIMIZERS = {'sgd': SGD, 'rmsprop': RMSprop, 'adadelta': Adadelta, 'adam': Adam}
 
 
 class RetiNet(object):
@@ -150,15 +149,13 @@ class RetiNet(object):
         # Configure optimizer
         if build:
             opt_options = self.config['optimizer']
-            name, loss, params = opt_options['type'], opt_options['loss'], opt_options['params']
-            optimizer = OPTIMIZERS[name](**params)
+            optimizer, loss, params = opt_options['type'], opt_options['loss'], opt_options['params']
             self.model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
     def train(self):
 
         final_result = join(self.experiment_dir, 'final_weights.h5')
         if isfile(final_result):
-
             print "Training already concluded"
             self.conclude_training()
             return
@@ -184,7 +181,7 @@ class RetiNet(object):
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
         checkpoint_tb = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
-        lr_tb = SGDLearningRateTracker()
+        csv_log = CSVLogger(join(self.experiment_dir, 'history.csv'), separator=',', append=False)
 
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
@@ -193,11 +190,11 @@ class RetiNet(object):
             epochs=epochs,
             validation_data=val_gen,
             validation_steps=val_n / float(val_batch),
-            callbacks=[checkpoint_tb, lr_tb])
+            callbacks=[checkpoint_tb, csv_log])
 
         # Save model arch, weights and history
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
-        np.save(join(self.experiment_dir, 'learning_rate.npy'), lr_tb.lr)
+        # np.save(join(self.experiment_dir, 'learning_rate.npy'), lr_tb.lr)
         self.model.save_weights(join(self.experiment_dir, 'final_weights.h5'))
 
         with open(join(self.experiment_dir, 'model_arch.json'), 'w') as arch:
@@ -214,13 +211,11 @@ class RetiNet(object):
             yaml.dump(conf_eval, ce, default_flow_style=False)
 
         self.plot_history()
-        preds = self.evaluate(self.val_data)
-        print preds['y_true'].shape
-        print
 
-        confusion = confusion_matrix(np.argmax(preds['y_true'], axis=1),
-                                     np.argmax(preds['y_pred'], axis=1))
-        plot_confusion(confusion, preds['classes'], join(self.experiment_dir, 'confusion.png'))
+        # Evaluate the model on the test/val data
+        print "Loading best weights and running inference..."
+        self.model.load_weights(join(self.experiment_dir, 'best_weights.h5'))  # the load the best weights
+        self.evaluate(self.val_data)
 
     def plot_history(self):
 
@@ -230,7 +225,6 @@ class RetiNet(object):
         # Plot histories
         plot_accuracy(history, join(self.experiment_dir, 'accuracy' + self.ext))
         plot_loss(history, join(self.experiment_dir, 'loss' + self.ext))
-        plot_LR(lr, join(self.experiment_dir, 'lr_plot' + self.ext))
 
     def update_config(self, weights='final'):
 
@@ -252,20 +246,30 @@ class RetiNet(object):
         logging.info("Evaluating model for on {}".format(data_path))
         datagen, no_samples, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
                                                                       batch_size=1, training=False, tf=False)
+        print class_indices
+
         if not n_samples:
             n_samples = no_samples
 
-        predictions = self.model.predict_generator(datagen, n_samples)
-        data_dict = {'data': datagen, 'classes': class_indices, 'y_true': to_categorical(y_true[:n_samples]), 'y_pred': predictions}
+        # Get predictions and ground truth
+        y_pred = self.model.predict_generator(datagen, n_samples)
+        y_true = to_categorical(y_true[:n_samples])
 
-        cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
-        # pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
-        # true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
-        #
-        # pred_df.to_csv(join(self.eval_dir, 'predictions.csv'))
-        # true_df.to_csv(join(self.eval_dir, 'ground_truth.csv'))
+        # Confusion matrix
+        confusion = confusion_matrix(np.argmax(y_true, axis=1),
+                                     np.argmax(y_pred, axis=1))
 
-        return data_dict
+        class_indices = dict_reverse(class_indices)  # number: word
+        labels = [class_indices[key] for key in sorted(class_indices.keys())]
+        plt.figure(3)
+        plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.png'))
+        plt.clf()
+
+        # ROC/AUC
+        class_indices.pop(1)  # remove Pre-Plus
+        plt.figure(4)
+        plot_ROC_by_class(y_true, y_pred, class_indices, outfile=join(self.experiment_dir, 'roc_curve.png'))
+        plt.clf()
 
     def set_intermediate(self, layer_name):
 

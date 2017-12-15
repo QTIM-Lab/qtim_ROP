@@ -124,13 +124,13 @@ def plot_PR_splits(y_true_all, y_pred_all, (class_name, class_index)):
     plt.xlabel('False Positive Rate')
 
 
-def plot_ROC_by_class(y_true, y_pred, classes, ls='-'):
+def plot_ROC_by_class(y_true, y_pred, classes, ls='-', outfile=None):
 
     print y_true.shape
     print y_pred.shape
 
     best_thresh = {}
-    for class_name, c in classes.items():  # for each class
+    for c, class_name in classes.items():  # for each class
 
         # Compute ROC curve
         fpr, tpr, thresholds = roc_curve(y_true[:, c], y_pred[:, c])
@@ -146,7 +146,14 @@ def plot_ROC_by_class(y_true, y_pred, classes, ls='-'):
         # Store best threshold for each class
         best_thresh[class_name] = J[j_best]
 
-    return best_thresh
+    plt.legend(loc='lower right')
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([-0.025, 1.025])
+    plt.ylim([-0.025, 1.025])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    if outfile:
+        plt.savefig(outfile, dpi=300)
 
 
 def plot_PR_by_class(y_pred, y_true, classes, out_path):

@@ -56,10 +56,6 @@ def plot_confusion(confusion, classes, out_file):
     fig, ax = plt.subplots()
     df_cm = pd.DataFrame(confusion, index=classes, columns=classes)
 
-    if len(classes) > 2:
-        df_cm = df_cm.reindex_axis(CLASSES, axis=0)
-        df_cm = df_cm.reindex_axis(CLASSES, axis=1)
-
     sns.heatmap(df_cm, cmap='Blues', annot=True, fmt='g', annot_kws={"size": 16})
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position('top')

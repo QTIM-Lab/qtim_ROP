@@ -1,7 +1,7 @@
 
 from keras.layers.core import Layer
 import keras.backend as K
-# import theano.tensor as T
+import tensorflow as tf
 
 
 class LRN(Layer):
@@ -16,6 +16,7 @@ class LRN(Layer):
     def call(self, x, mask=None):
 
         b, ch, r, c = x.shape
+        print x.shape
         half_n = self.n // 2  # half the local region
         # orig keras code
         # input_sqr = T.sqr(x)  # square the input
@@ -24,9 +25,10 @@ class LRN(Layer):
         # extra_channels = T.alloc(0., b, ch + 2 * half_n, r,c)  # make an empty tensor with zero pads along channel dimension
         # input_sqr = T.set_subtensor(extra_channels[:, half_n:half_n+ch, :, :],input_sqr) # set the center to be the squared input
 
-        extra_channels = K.zeros((b, int(ch) + 2 * half_n, r, c))
-        input_sqr = K.concatenate(
-            [extra_channels[:, :half_n, :, :], input_sqr, extra_channels[:, half_n + int(ch):, :, :]], axis=1)
+        # extra_channels = K.zeros((b, int(ch) + 2 * half_n, r, c))
+        paddings = [[0, 0], [half_n, half_n], [0, 0], [0, 0]]
+        input_sqr = tf.pad(input_sqr, paddings)
+        print input_sqr.shape
 
         scale = self.k  # offset for the scale
         norm_alpha = self.alpha / self.n  # normalized alpha
@@ -51,7 +53,7 @@ class PoolHelper(Layer):
         super(PoolHelper, self).__init__(**kwargs)
 
     def call(self, x, mask=None):
-        return x[:,1:,1:,:]
+        return x[:,:,1:,1:]
 
     def get_config(self):
         config = {}

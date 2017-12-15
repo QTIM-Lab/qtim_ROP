@@ -2,7 +2,7 @@ from keras.layers import Input, Dense, Convolution2D, MaxPooling2D, AveragePooli
     merge, Activation, BatchNormalization
 from keras.models import Model
 from keras.regularizers import l2
-from googlenet_custom_layers import PoolHelper # LRN
+from googlenet_custom_layers import PoolHelper, LRN
 from os.path import join
 
 
@@ -10,7 +10,7 @@ from os.path import join
 def create_googlenet(no_classes=3, no_features=None, regression=True):
     # creates GoogLeNet a.k.a. Inception v1 (Szegedy, 2015)
 
-    input = Input(shape=(224, 224, 3))
+    input = Input(shape=(3, 224, 224))
 
     conv1_7x7_s2 = Convolution2D(64, 7, 7, subsample=(2, 2), border_mode='same', activation='relu', name='conv1/7x7_s2',
                                  W_regularizer=l2(0.0002))(input)
@@ -22,8 +22,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
     pool1_3x3_s2 = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), border_mode='valid', name='pool1/3x3_s2')(
         pool1_helper)
 
-    # pool1_norm1 = LRN(name='pool1/norm1')(pool1_3x3_s2)
-    pool1_norm1 = BatchNormalization()(pool1_3x3_s2)
+    pool1_norm1 = LRN(name='pool1/norm1')(pool1_3x3_s2)
 
     conv2_3x3_reduce = Convolution2D(64, 1, 1, border_mode='same', activation='relu', name='conv2/3x3_reduce',
                                      W_regularizer=l2(0.0002))(pool1_norm1)
@@ -31,8 +30,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
     conv2_3x3 = Convolution2D(192, 3, 3, border_mode='same', activation='relu', name='conv2/3x3',
                               W_regularizer=l2(0.0002))(conv2_3x3_reduce)
 
-    # conv2_norm2 = LRN(name='conv2/norm2')(conv2_3x3)
-    conv2_norm2 = BatchNormalization()(conv2_3x3)
+    conv2_norm2 = LRN(name='conv2/norm2')(conv2_3x3)
 
     conv2_zero_pad = ZeroPadding2D(padding=(1, 1))(conv2_norm2)
 
@@ -321,6 +319,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True):
     if type(no_features) is int and no_features != 1024:
         loss3_features = Dense(no_features, name='loss3/features_{}'.format(no_features), W_regularizer=l2(0.0002))(loss3_flat)
     else:
+        print "1024 feature layer"
         loss3_features = loss3_flat
 
     pool5_drop_7x7_s1 = Dropout(0.4)(loss3_features)
