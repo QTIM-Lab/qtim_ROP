@@ -35,6 +35,7 @@ class RetiNet(object):
 
         self.conf_dir = dirname(abspath(self.conf_file))
         self.experiment_name = splitext(basename(self.conf_file))[0]
+        self.regression = self.config['network']['regression']
 
         cwd = getcwd()
         chdir(self.conf_dir)
@@ -80,7 +81,6 @@ class RetiNet(object):
 
         self.history_file = join(self.experiment_dir, "history.csv")
         self.lr_file = join(self.experiment_dir, 'learning_rate.npy')
-        self.regression = self.config['network']['regression']
         chdir(cwd)  # revert to original working directory
 
     def _configure_network(self, build=True):
