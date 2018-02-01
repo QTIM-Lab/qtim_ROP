@@ -27,6 +27,7 @@ class DeepROPCommands(object):
                configure                    Configure DeepROP models to use for segmentation and classification
                segment_vessels              Perform vessel segmentation using a trained U-Net
                classify_plus                Classify plus disease in retinal images
+               extract_features             Extract CNN features from retinal images
             ''')
 
         parser.add_argument('command', help='Command to run')
@@ -90,8 +91,9 @@ class DeepROPCommands(object):
 
     def classify_plus(self):
 
+        parser = ArgumentParser(
+            description="Classify 'plus disease' from retinal images using a deep convolutional neural network")
 
-        parser = ArgumentParser()
         parser.add_argument('-i', '--image-dir', help='Folder of images to classify', dest='image_dir', required=True)
         parser.add_argument('-o', '--out-dir', help='Folder to output results', dest='out_dir', required=True)
         parser.add_argument('-b', '--batch-size', help='Number of images to process at once', dest='batch_size',
@@ -99,8 +101,27 @@ class DeepROPCommands(object):
         parser.add_argument('--skip-seg', help='Skip the segmentation', action='store_true', dest='skip_seg', default=False)
         args = parser.parse_args(sys.argv[2:])
 
-        qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict,
-                                   skip_segmentation=args.skip_seg, batch_size=args.batch_size)
+        qtim_ROP.deep_rop.inference(args.image_dir, args.out_dir, self.conf_dict,
+                                    skip_segmentation=args.skip_seg, batch_size=args.batch_size)
+
+    def extract_features(self):
+
+        parser = ArgumentParser(
+            description="Extract vascular CNN features from retinal images using a deep convolutional neural network")
+
+        parser.add_argument('-i', '--image-dir', help='Folder of images from which to extract features',
+                            dest='image_dir', required=True)
+        parser.add_argument('-o', '--out-dir', help='Folder to output results', dest='out_dir', required=True)
+        parser.add_argument('-t', '--tsne-dims', help='Number of t-SNE latent space dimensions', dest='tsne_dims',\
+                            type=int, default=2)
+        parser.add_argument('-b', '--batch-size', help='Number of images to process at once', dest='batch_size',
+                            type=int, default=10)
+        parser.add_argument('--skip-seg', help='Skip the segmentation', action='store_true', dest='skip_seg',
+                            default=False)
+        args = parser.parse_args(sys.argv[2:])
+
+        qtim_ROP.deep_rop.inference(args.image_dir, args.out_dir, self.conf_dict,
+                                    skip_segmentation=args.skip_seg, batch_size=args.batch_size, features_only=True, tsne_dims=args.tsne_dims)
 
     def preprocess_images(self):
 

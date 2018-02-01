@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import yaml
 import time
+from visualisation.tsne import tsne
 from segmentation.segment_unet import SegmentUnet
 from preprocessing.preprocess import preprocess
 from learning.retina_net import RetiNet, locate_config
@@ -53,7 +54,8 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     return preprocessed_arr, img_names
 
 
-def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10, stride=(32, 32)):
+def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10, stride=(32, 32),
+              features_only=False, tsne_dims=2):
 
     if any(v is None for v in conf_dict.values()):
         print "Please run 'deeprop configure' to specify the models for segmentation and classification"
@@ -63,7 +65,8 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
     if not isdir(out_dir):
         makedirs(out_dir)
 
-    csv_out = join(out_dir, "DeepROP_{}.csv".format(time.strftime("%Y%m%d-%H%M%S")))
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    csv_out = join(out_dir, "DeepROP_{}.csv".format(timestamp))
 
     # Identify all images
     if isdir(input_imgs):
@@ -86,12 +89,35 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
     model_config, rf_pkl = locate_config(classifier_dir)
     cnn = RetiNet(model_config)
 
-    print "Performing inference..."
-    y_preda = cnn.predict(preprocessed_arr)
-    generate_report(img_names, y_preda, csv_out)
+    if features_only:
+        print "Extracting features..."
+        cnn.set_intermediate('flatten_3')  # TODO add this to the YAML file at some point
+        y_preda = cnn.predict(preprocessed_arr)
+        T = tsne(y_preda, no_dims=tsne_dims)
+        features_report(img_names, y_preda, T, out_dir, timestamp)
+    else:
+        print "Performing classification..."
+        y_preda = cnn.predict(preprocessed_arr)
+        classification_report(img_names, y_preda, csv_out)
 
 
-def generate_report(img_names, y_preda, csv_out, y_true=None):
+def features_report(img_names, y_preda, T, out_dir, timestamp, y_true=None):
+
+    features_out = join(out_dir, 'DeepROP_features_{}.csv'.format(timestamp))
+    tsne_out = join(out_dir, 'DeepROP_tsne_{}.csv'.format(timestamp))
+
+    df_features = pd.DataFrame(data=y_preda, index=img_names)
+    df_tsne = pd.DataFrame(data=T, index=img_names)
+
+    print df_features
+    print df_tsne
+
+    print "Results saved to {} and {}".format(features_out, tsne_out)
+    df_features.to_csv(features_out)
+    df_tsne.to_csv(tsne_out)
+
+
+def classification_report(img_names, y_preda, csv_out, y_true=None):
 
     cols = ["P({})".format(LABELS[i]) for i in range(0, 3)]
     df = pd.DataFrame(data=y_preda, columns=cols, index=img_names)

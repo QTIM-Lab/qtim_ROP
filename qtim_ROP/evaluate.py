@@ -3,7 +3,7 @@ from qtim_ROP.learning.retina_net import RetiNet
 from qtim_ROP.utils.common import dict_reverse, find_images_by_class
 from qtim_ROP.utils.image import imgs_by_class_to_th_array
 from qtim_ROP.evaluation.metrics import plot_confusion, plot_ROC_by_class
-from qtim_ROP.deep_rop import generate_report
+from qtim_ROP.deep_rop import classification_report
 from sklearn.metrics import confusion_matrix
 from keras.utils.np_utils import to_categorical
 import numpy as np
@@ -32,7 +32,7 @@ def evaluate(model_config, data, out_dir):
 
     # Generate report
     labels = [LABELS[i] for i in y_true]
-    generate_report(file_names, y_pred, join(out_dir, splitext(basename(model_config))[0]) + '.csv', y_true=labels)
+    classification_report(file_names, y_pred, join(out_dir, splitext(basename(model_config))[0]) + '.csv', y_true=labels)
 
     # Confusion matrix
     arg_max = np.argmax(y_pred, axis=1)
