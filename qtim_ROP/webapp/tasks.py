@@ -34,7 +34,7 @@ def valid_image(filename):
 app = Flask(__name__)
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'bmp'])
 
-with open(sys.argv[1], 'r') as f:
+with open(join(dirname(__file__), 'config.yaml'), 'r') as f:
     conf_dict = yaml.load(f)
 app.config.update(conf_dict)
 
