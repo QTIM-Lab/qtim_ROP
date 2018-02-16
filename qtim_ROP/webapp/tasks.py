@@ -3,8 +3,11 @@ from flask import Flask, flash, request, redirect, url_for, render_template, ses
 from flask.json import jsonify
 from werkzeug.utils import secure_filename
 import os
+from os.path import *
 import time
 import numpy as np
+import sys
+import yaml
 
 from qtim_ROP.__main__ import initialize
 from qtim_ROP.deep_rop import preprocess_images
@@ -30,13 +33,10 @@ def valid_image(filename):
 
 app = Flask(__name__)
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'bmp'])
-app.config.update(
-    CELERY_BROKER_URL='amqp://localhost:6379',
-    CELERY_RESULT_BACKEND='amqp://localhost:6379',
-    UPLOAD_FOLDER='uploads/raw',
-    OUTPUT_FOLDER='uploads/output',
-    SEG_FOLDER='uploads/output/segmentation'
-)
+
+with open(sys.argv[1], 'r') as f:
+    conf_dict = yaml.load(f)
+app.config.update(conf_dict)
 
 celery = make_celery(app)
 
