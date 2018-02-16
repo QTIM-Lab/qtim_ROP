@@ -9,10 +9,6 @@ import numpy as np
 import sys
 import yaml
 
-from qtim_ROP.__main__ import initialize
-from qtim_ROP.deep_rop import preprocess_images
-from qtim_ROP.learning.retina_net import RetiNet, locate_config
-
 def make_celery(app):
 
     celery = Celery('tasks')
@@ -39,11 +35,6 @@ with open(join(dirname(__file__), 'config.yaml'), 'r') as f:
 app.config.update(conf_dict)
 
 celery = make_celery(app)
-
-# Initialize model
-conf_dict, conf_file = initialize()
-classifier_dir = conf_dict['classifier_directory']
-model_config, rf_pkl = locate_config(classifier_dir)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -76,6 +67,7 @@ def upload():
 def send_original(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+
 @app.route('/longtask', methods=['POST'])
 def longtask():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], request.form['filename'])
@@ -88,7 +80,15 @@ def long_task(self, filename):
 
     # Initializes the classifer
     self.update_state(state='PROGRESS', meta={'current': 1, 'total': 4, 'status': "Initializing..."})
-    time.sleep(2)
+
+    from qtim_ROP.__main__ import initialize
+    from qtim_ROP.deep_rop import preprocess_images
+    from qtim_ROP.learning.retina_net import RetiNet, locate_config
+
+    # Initialize model
+    conf_dict, conf_file = initialize()
+    classifier_dir = conf_dict['classifier_directory']
+    model_config, _ = locate_config(classifier_dir)
     classifier = RetiNet(model_config)
 
     # Does the preprocessing
@@ -145,4 +145,4 @@ def taskstatus(task_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
