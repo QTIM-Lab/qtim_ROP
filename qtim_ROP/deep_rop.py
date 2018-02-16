@@ -71,11 +71,12 @@ def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_siz
     # Identify all images
     if isdir(input_imgs):
         image_files = find_images(input_imgs)
-    elif isfile(input_imgs):
-        image_files = [input_imgs]
+    elif isfile(input_imgs) and splitext(input_imgs)[1] == '.csv':
+        df = pd.DataFrame.from_csv(input_imgs)
+        image_files = df[df.columns[0]]
     else:
         image_files = []
-        print "Please specify a valid image file or a folder of images."
+        print "Please specify a valid image file or a CSV file"
         exit(1)
 
     preprocessed_arr, img_names = preprocess_images(image_files, out_dir, conf_dict,
