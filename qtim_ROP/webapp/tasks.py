@@ -81,6 +81,7 @@ def long_task(self, filename):
     # Initializes the classifer
     self.update_state(state='PROGRESS', meta={'current': 1, 'total': 4, 'status': "Initializing..."})
 
+    import keras.backend as K
     from qtim_ROP.__main__ import initialize
     from qtim_ROP.deep_rop import preprocess_images
     from qtim_ROP.learning.retina_net import RetiNet, locate_config
@@ -101,6 +102,8 @@ def long_task(self, filename):
     y_preda = classifier.predict(prep_img)[0]
     arg_max = np.argmax(y_preda)
     prob = y_preda[arg_max]
+
+    # K.clear_session()
 
     LABELS = {0: 'Normal', 1: 'Plus', 2: 'Pre-Plus'}
     diagnosis = LABELS[arg_max]
