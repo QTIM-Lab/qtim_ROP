@@ -6,8 +6,8 @@ import os
 from os.path import *
 import time
 import numpy as np
-import sys
 import yaml
+
 
 def make_celery(app):
 
@@ -57,10 +57,18 @@ def upload():
         return redirect(request.url)
 
     if file and valid_image(file.filename):
+
+        # Make filename secure
         filename = secure_filename(file.filename)
-        out_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        # Rename to timestamp
+        ext = splitext(filename)[1]
+        new_filename = str(time.time()) + ext
+
+        # Save file with new name
+        out_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
         file.save(out_path)
-        return render_template("index.html", image_name=filename)
+        return render_template("index.html", image_name=new_filename)
 
 
 @app.route('/upload/<filename>')
