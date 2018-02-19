@@ -148,4 +148,11 @@ def taskstatus(task_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('--local', action='store_true', dest='local', default=False)
+    args = parser.parse_args()
+
+    host = '127.0.0.1' if args.local else '0.0.0.0'
+    app.run(debug=True, host=host)
