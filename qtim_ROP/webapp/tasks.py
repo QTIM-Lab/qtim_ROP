@@ -84,7 +84,6 @@ def long_task(self, filename):
     from qtim_ROP.__main__ import initialize
     from qtim_ROP.deep_rop import preprocess_images
     from qtim_ROP.learning.retina_net import RetiNet, locate_config
-    import keras.backend as K
 
     # Initialize model
     conf_dict, conf_file = initialize()
@@ -102,9 +101,7 @@ def long_task(self, filename):
     y_preda = classifier.predict(prep_img)[0]
     arg_max = np.argmax(y_preda)
     prob = y_preda[arg_max]
-
     del classifier  # this should release the GPU memory
-    K.clear_session()  # also this
 
     LABELS = {0: 'Normal', 1: 'Plus', 2: 'Pre-Plus'}
     diagnosis = LABELS[arg_max]
