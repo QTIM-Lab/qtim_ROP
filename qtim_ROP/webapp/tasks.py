@@ -64,6 +64,7 @@ def upload():
         # Rename to timestamp
         ext = splitext(filename)[1]
         new_filename = str(time.time()) + ext
+        print "Renamed to {}".format(new_filename)
 
         # Save file with new name
         out_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
@@ -100,13 +101,15 @@ def long_task(self, filename):
     classifier = RetiNet(model_config)
 
     # Does the preprocessing
-    self.update_state(state='PROGRESS', meta={'current': 2, 'total': 4, 'status': "Preprocessing image..."})
+    self.update_state(state='PROGRESS', meta={'current': 2, 'total': 4, 'status': "Preprocessing..."})
     prep_img, prep_name = preprocess_images([filename], app.config['OUTPUT_FOLDER'],
                                             conf_dict, skip_segmentation=False, batch_size=1)
     self.update_state(state='PROGRESS', meta={'current': 3, 'total': 4, 'status': "Classifying..."})
 
     # Prediction
     y_preda = classifier.predict(prep_img)[0]
+    score = y_preda[0] + (y_preda[2] * 2) + (y_preda[1] * 3)
+
     arg_max = np.argmax(y_preda)
     prob = y_preda[arg_max]
     del classifier  # this should release the GPU memory
@@ -115,7 +118,8 @@ def long_task(self, filename):
     diagnosis = LABELS[arg_max]
 
     return_dict = {'current': 4, 'total': 4, 'status': 'Complete!', 'seg_name': prep_name,
-                   'result': '{} ({:.2f}%)'.format(diagnosis, prob * 100.)}
+                   'result': '{} ({:.2f}%)'.format(diagnosis, prob * 100.),
+                   'score': 'Severity score: {:.2f}'.format(score)}
 
     self.update_state(state='PROGRESS', meta=return_dict)
     return return_dict
@@ -141,6 +145,7 @@ def taskstatus(task_id):
         }
         if 'result' in task.info:
             response['result'] = task.info['result']
+            response['score'] = task.info['score']
             response['seg_name'] = task.info['seg_name'][0]
     else:
         # something went wrong in the background job

@@ -1,12 +1,13 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     <meta name="description" content="">
     <meta name="author" content="">
     <link rel="icon" href="/static/favicon.ico">
 
-    <title>deepROP</title>
+    <title>DeepROP</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
@@ -14,8 +15,9 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto|Ubuntu" rel="stylesheet">
     <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/mainpage.css') }}">
 
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/js/tether.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
     <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
@@ -26,7 +28,7 @@
 
 <body>
 
-<nav class="navbar navbar-inverse">
+<nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
@@ -34,7 +36,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="#">deepROP</a>
+            <a class="navbar-brand" href="#">DeepROP</a>
         </div>
         <div class="collapse navbar-collapse" id="myNavbar">
             <ul class="nav navbar-nav">
@@ -52,19 +54,40 @@
     </div>
 </nav>
 
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Disclaimer</h4>
+      </div>
+      <div class="modal-body">
+          <h4 align="center">DeepROP is <strong>not</strong> intended for clinical use.<br/><br/>
+              Please click OK to confirm and continue.</h4>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <main role="main">
 
     <div id="wrapper">
 
         <div id="jumbo">
             <div class="bg"></div>
-            <div class="jumbotron jumbotron-fluid">
+            <div class="jumbotron jumbotron-fluid vertical-center">
                 <div class="container">
-                    <h1 class="display-2"><strong>deepROP</strong></h1>
-                    <h2>An automated teleophthalmology platform for retinopathy of prematurity.</h2>
-                    <h3>Developed by the i-ROP consortium</h3>
+                    <h1 class="display-2"><strong>DeepROP</strong></h1>
+                    <h2>An automated teleophthalmology platform for retinopathy of prematurity</h2>
+                    <h3>Developed by the i-ROP consortium.</h3>
                     <br />
-                    <p><a class="btn btn-primary btn-lg" href="http://i-rop.github.io" role="button">Learn more »</a></p>
+                    <p><a class="btn btn-primary btn-lg" href="#upload_anchor" role="button">Try it »</a></p>
                 </div>
             </div>
         </div>
@@ -74,27 +97,26 @@
             <div class="container progress_wrapper">
                 <div id='progress-div' class="col-md-12">
                     <div id="status"></div>
+                    <div id="severity"></div>
                     <div id="progress"></div>
-                    <img id="original_image" src="{{url_for('send_original', filename=image_name)}}", width="70%"/>
+
+                    <img id="original_image" src="{{url_for('send_original', filename=image_name)}}" width="70%"/>
                     <div id="upload_again">
-                        <a class="btn btn-primary btn-lg" href="{{ url_for('index') }}" role="button">Try another</a>
-                        <a class="btn btn-primary btn-lg" href="#" role="button">Download segmentation</a>
+                        <a class="btn btn-primary btn-lg" href="{{ url_for('index') }}#user_upload" role="button">Try another</a>
+                        <a class="btn btn-secondary btn-lg" href="#" role="button" data-toggle="tooltip"
+                           data-placement="bottom"title="Coming soon!">Download segmentation</a>
                     </div>
                 </div>
             </div>
 
-            <!--<div class="container result_wrapper">-->
-                <!--<div id="result">-->
-                <!--</div>-->
-            <!--</div>-->
-
             <div class="container select_image">
                 <div class="row">
 
-                    <div class="col-md-6">
+                    <a class="anchor" id="upload_anchor"></a>
+                    <div id="user_upload" class="col-md-6 text-center">
                         <form action="{{ url_for('upload') }}" method=post enctype=multipart/form-data>
                             <div class="form-group">
-                                <h3>Upload a retinal photograph</h3>
+                                <h2>Upload an image</h2>
                                 <br />
                                 <div class="input-group input-file" name="file">
                                     <span class="input-group-btn">
@@ -108,7 +130,9 @@
                                 </div>
 
                                 <div class="form-group text-center" >
-                                    <button id='upload' type="submit" class="btn btn-primary btn-lg" disabled>Upload</button>
+                                    <button id='upload' type="submit" class="btn btn-primary btn-lg"
+                                            data-loading-text="<i class='fa fa-spinner fa-spin '></i> Uploading..."
+                                            disabled>Upload</button>
                                 </div>
 
                             </div>
@@ -117,13 +141,13 @@
 
                     </div>
 
-                    <div class="col-md-6">
-                        <h3>Or, choose an existing one</h3>
+                    <div id="retina_examples" class="col-md-6 text-center">
+                        <h2>Or, choose an example</h2><br/>
                         <div class="examples">
                             <ul>
                                 <li>
                                     <a data-toggle="tooltip" data-placement="auto" title="Normal retina">
-                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/n1.bmp"/>
+                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/n1.jpg"/>
                                     </a>
                                 </li>
                                 <li>
@@ -133,37 +157,37 @@
                                 </li>
                                 <li>
                                     <a data-toggle="tooltip" data-placement="auto" title="Normal retina">
-                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/n3.bmp"/>
+                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/n3.jpg"/>
                                     </a>
                                 </li>
                                 <li>
                                     <a data-toggle="tooltip" data-placement="auto" title="Pre-Plus retina">
-                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/pp1.bmp"/>
+                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/pp1.jpg"/>
                                     </a>
                                 </li>
                                 <li>
                                     <a data-toggle="tooltip" data-placement="auto" title="Pre-Plus retina">
-                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/pp2.bmp"/>
+                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/pp2.jpg"/>
                                     </a>
                                 </li>
                                 <li>
                                     <a data-toggle="tooltip" data-placement="auto" title="Pre-Plus retina">
-                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/pp3.bmp"/>
+                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/pp3.jpg"/>
                                     </a>
                                 </li>
                                 <li>
                                     <a data-toggle="tooltip" data-placement="auto" title="Plus retina">
-                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/p1.bmp"/>
+                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/p1.jpg"/>
                                     </a>
                                 </li>
                                 <li>
                                     <a data-toggle="tooltip" data-placement="auto" title="Plus retina">
-                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/p2.bmp"/>
+                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/p2.jpg"/>
                                     </a>
                                 </li>
                                 <li>
                                     <a data-toggle="tooltip" data-placement="auto" title="Plus retina">
-                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/p3.bmp"/>
+                                        <img class="col-lg-2 col-md-2 col-sm-3 col-xs-4" src="/static/examples/thumbs/p3.jpg"/>
                                     </a>
                                 </li>
                             </ul>
@@ -177,6 +201,14 @@
 
 <script>
 
+    $(window).on('load',function() {
+
+        var hash = window.location.hash.substr(1);
+        if (window.location.href.indexOf("upload") == -1 && hash !== "retry"){
+            $('#myModal').modal('show');
+        }
+    });
+
     function start_long_task() {
 
         $("#jumbo").animate({ height: 0, opacity: 0 }, 'slow');
@@ -187,6 +219,7 @@
         $('#progress').append(div);
 
         status_div = $('#status');
+        severity_div = $('#severity');
 
         // create a progress bar
         var nanobar = new Nanobar({
@@ -201,7 +234,7 @@
             data: {filename: '{{image_name}}'},
             success: function(data, status, request) {
                 status_url = request.getResponseHeader('Location');
-                update_progress(status_url, nanobar, div[0], status_div);
+                update_progress(status_url, nanobar, div[0], status_div, severity_div);
             },
             error: function() {
                 alert('Unexpected error');
@@ -209,7 +242,7 @@
         });
     }
 
-    function update_progress(status_url, nanobar, progress_div, status_div) {
+    function update_progress(status_url, nanobar, progress_div, status_div, severity_div) {
         // send GET request to status URL
         $.getJSON(status_url, function(data) {
             // update UI
@@ -222,6 +255,8 @@
                 if ('result' in data) {
                     // show result
                     status_div.text(data['result']);
+                    severity_div.text(data['score']);
+
                     $('#progress').hide();
                     $('#original_image').fadeIn();
                     $('#upload_again').fadeIn(500);
@@ -232,10 +267,10 @@
                 }
             }
             else {
-                // rerun in 2 seconds
+                // rerun in a 1000ms
                 setTimeout(function() {
-                    update_progress(status_url, nanobar, progress_div, status_div);
-                }, 2000);
+                    update_progress(status_url, nanobar, progress_div, status_div, severity_div);
+                }, 1000);
             }
         });
     }

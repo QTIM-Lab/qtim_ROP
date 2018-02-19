@@ -99,4 +99,3 @@ statistics.py
 *.sh
 
 qtim_ROP/webapp/uploads
-qtim_ROP/webapp/static
