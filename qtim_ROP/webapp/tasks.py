@@ -81,10 +81,10 @@ def long_task(self, filename):
     # Initializes the classifer
     self.update_state(state='PROGRESS', meta={'current': 1, 'total': 4, 'status': "Initializing..."})
 
-    import keras.backend as K
     from qtim_ROP.__main__ import initialize
     from qtim_ROP.deep_rop import preprocess_images
     from qtim_ROP.learning.retina_net import RetiNet, locate_config
+    import keras.backend as K
 
     # Initialize model
     conf_dict, conf_file = initialize()
@@ -109,7 +109,7 @@ def long_task(self, filename):
     diagnosis = LABELS[arg_max]
 
     return_dict = {'current': 4, 'total': 4, 'status': 'Complete!', 'seg_name': prep_name,
-            'result': '{} ({:.2f}%)'.format(diagnosis, prob * 100.)}
+                   'result': '{} ({:.2f}%)'.format(diagnosis, prob * 100.)}
 
     self.update_state(state='PROGRESS', meta=return_dict)
     return return_dict
