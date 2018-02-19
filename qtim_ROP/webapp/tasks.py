@@ -103,7 +103,8 @@ def long_task(self, filename):
     arg_max = np.argmax(y_preda)
     prob = y_preda[arg_max]
 
-    # K.clear_session()
+    del classifier  # this should release the GPU memory
+    K.clear_session()  # also this
 
     LABELS = {0: 'Normal', 1: 'Plus', 2: 'Pre-Plus'}
     diagnosis = LABELS[arg_max]
