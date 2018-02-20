@@ -23,7 +23,6 @@ from ..visualisation.tsne import tsne
 from ..evaluation.metrics import plot_ROC_by_class
 
 
-
 class RetiNet(object):
 
     def __init__(self, conf_file):
@@ -33,6 +32,7 @@ class RetiNet(object):
         self.config = parse_yaml(conf_file)
         self.ext = self.config.get('ext', '.png')
 
+        self.model = None
         self.conf_dir = dirname(abspath(self.conf_file))
         self.experiment_name = splitext(basename(self.conf_file))[0]
         self.regression = self.config['network']['regression']
@@ -93,15 +93,13 @@ class RetiNet(object):
 
             from keras.applications.vgg16 import VGG16
             logging.info("Instantiating VGG model" + fine_tuning)
-            base_model = VGG16(weights='imagenet', input_shape=(224, 224, 3), include_top=False)
+            self.customize_keras_model(VGG16, weights, network)
 
-            x = base_model.output
-            x = Flatten()(x)
-            x = Dense(network.get('no_features'), activation='relu')(x)
-            x = Dropout(0.5)(x)
-            act = 'linear' if network.get('regression') is True else 'softmax'
-            predictions = Dense(network.get('no_classes'), activation=act)(x)
-            self.model = Model(inputs=base_model.input, outputs=predictions)
+        elif 'mobile' in type_:
+
+            from keras.applications.mobilenet import MobileNet
+            logging.info("Instantiating Mobilenet model" + fine_tuning)
+            self.customize_keras_model(MobileNet, weights, network)
 
         elif 'inception':
 
@@ -125,25 +123,6 @@ class RetiNet(object):
                 print "Loading weights '{}'".format(weights)
                 self.model.load_weights(weights, by_name=True)
 
-        elif 'resnet' in type_:
-
-            from keras.applications.resnet50 import ResNet50
-            logging.info("Instantiating ResNet model" + fine_tuning)
-
-            input_layer = Input(shape=(224, 224, 3))
-            base_model = ResNet50(weights="imagenet", include_top=False, input_tensor=input_layer)
-
-            x = base_model.output
-            x = Flatten()(x)
-            x = Dense(network.get('no_features'), activation='relu')(x)
-            x = Dropout(0.5)(x)
-            act = 'linear' if network.get('regression') is True else 'softmax'
-            predictions = Dense(network.get('no_classes'), activation=act)(x)
-
-            self.model = Model(inputs=base_model.input, outputs=predictions)
-            # for layer in base_model.layers:
-            #     layer.trainable = fine_tuning
-
         else:
             raise Exception('Invalid model type!')
 
@@ -155,6 +134,17 @@ class RetiNet(object):
             if self.regression:
                 metrics.append(r2_keras)
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+
+    def customize_keras_model(self, keras_model, weights, params):
+
+        base_model = keras_model(input_shape=(224, 224, 3), weights=weights, include_top=False)
+        x = base_model.output
+        x = Flatten()(x)
+        x = Dense(params.get('no_features'), activation='relu')(x)
+        x = Dropout(0.5)(x)
+        act = 'linear' if params.get('regression') is True else 'softmax'
+        predictions = Dense(params.get('no_classes'), activation=act)(x)
+        self.model = Model(inputs=base_model.input, outputs=predictions)
 
     def train(self):
 
