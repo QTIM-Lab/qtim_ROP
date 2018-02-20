@@ -8,7 +8,6 @@ from keras.models import Model
 from keras.models import model_from_json
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.utils.np_utils import to_categorical
-from keras.utils.vis_utils import plot_model
 from googlenet_custom_layers import PoolHelper, LRN
 from custom_loss import r2_keras
 from sklearn.externals import joblib
