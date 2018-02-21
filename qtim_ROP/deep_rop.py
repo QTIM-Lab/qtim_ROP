@@ -71,13 +71,10 @@ def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_siz
     # Identify all images
     if isdir(input_imgs):
         image_files = find_images(input_imgs)  # TODO make this recursive
-        print image_files
         total_images = len(image_files)
 
         if csv_file is not None:
             csv_images = list(pd.DataFrame.from_csv(csv_file).index)
-            print csv_images
-
             image_files = [img for img in image_files if splitext(basename(img))[0] in csv_images]
 
             ignore = total_images - len(image_files)
