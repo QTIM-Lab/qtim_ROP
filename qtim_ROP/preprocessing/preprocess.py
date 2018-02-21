@@ -2,11 +2,15 @@ import cv2
 from scipy.misc import imresize
 import yaml
 from ..utils.common import find_images_by_class, get_subdirs, make_sub_dir
-from os.path import join, basename
+from os.path import join, basename, isfile
 from PIL import Image
 
 
 def preprocess(src_img, dst_img, params):
+
+    if isfile(dst_img):
+        print "Loading {}".format(dst_img)
+        return cv2.imread(dst_img)
 
     print "Preprocessing {}".format(src_img)
     resize, crop = params['resize'], params['crop']
@@ -29,6 +33,7 @@ def preprocess(src_img, dst_img, params):
 
     Image.fromarray(cropped_im).save(dst_img)
     return cropped_im
+
 
 if __name__ == '__main__':
 
