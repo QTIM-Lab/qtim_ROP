@@ -54,8 +54,8 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     return preprocessed_arr, img_names
 
 
-def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10, stride=(32, 32),
-              features_only=False, tsne_dims=2):
+def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10, csv_file=None,
+              stride=(32, 32), features_only=False, tsne_dims=2):
 
     if any(v is None for v in conf_dict.values()):
         print "Please run 'deeprop configure' to specify the models for segmentation and classification"
@@ -70,14 +70,30 @@ def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_siz
 
     # Identify all images
     if isdir(input_imgs):
-        image_files = find_images(input_imgs)
-    elif isfile(input_imgs) and splitext(input_imgs)[1] == '.csv':
-        df = pd.DataFrame.from_csv(input_imgs)
-        image_files = df[df.columns[0]]
+        image_files = find_images(input_imgs)  # TODO make this recursive
+        print image_files
+        total_images = len(image_files)
+
+        if csv_file is not None:
+            csv_images = list(pd.DataFrame.from_csv(csv_file).index)
+            print csv_images
+
+            image_files = [img for img in image_files if splitext(basename(img))[0] in csv_images]
+
+            ignore = total_images - len(image_files)
+            print "{} out of {} will be ignored, based on '{}'.".format(ignore, total_images, csv_file)
+
+        print "{} images will be analysed.".format(len(image_files))
+
+    elif isfile(input_imgs):
+        image_files = [input_imgs]
     else:
         image_files = []
-        print "Please specify a valid image file or a CSV file"
+        print "Please specify a valid image file or folder"
         exit(1)
+
+    if len(image_files) == 0:
+        return
 
     preprocessed_arr, img_names = preprocess_images(image_files, out_dir, conf_dict,
                                                     skip_segmentation=skip_segmentation,
