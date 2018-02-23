@@ -11,6 +11,7 @@ from keras.utils.np_utils import to_categorical
 from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
+import numpy as np
 from ..utils.common import *
 from ..utils.image import create_generator
 from ..utils.models import SGDLearningRateTracker
@@ -355,6 +356,7 @@ def locate_config(search_dir, rf=False):
 
     return config_file, rf_pkl
 
+
 if __name__ == '__main__':
 
     from argparse import ArgumentParser
@@ -372,4 +374,4 @@ if __name__ == '__main__':
     else:
         # Evaluate on validation data and calculate metrics
         data_dict = r.evaluate(args.data)
-        calculate_metrics(data_dict, out_dir=r.eval_dir)
+        # calculate_metrics(data_dict, out_dir=r.eval_dir)
