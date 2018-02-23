@@ -9,7 +9,7 @@ from segmentation.segment_unet import SegmentUnet
 from preprocessing.preprocess import preprocess
 from learning.retina_net import RetiNet, locate_config
 from utils.common import make_sub_dir
-from utils.image import find_images
+from utils.common import find_images, find_images_recursive
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
@@ -54,8 +54,8 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     return preprocessed_arr, img_names
 
 
-def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=10, csv_file=None,
-              stride=(32, 32), features_only=False, tsne_dims=2):
+def inference(input_dir, out_dir, conf_dict, skip_segmentation=False, batch_size=10, csv_file=None,
+              stride=(32, 32), features_only=False, tsne_dims=2, recursive=True):
 
     if any(v is None for v in conf_dict.values()):
         print "Please run 'deeprop configure' to specify the models for segmentation and classification"
@@ -69,8 +69,13 @@ def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_siz
     csv_out = join(out_dir, "DeepROP_{}.csv".format(timestamp))
 
     # Identify all images
-    if isdir(input_imgs):
-        image_files = find_images(input_imgs)  # TODO make this recursive
+    if isdir(input_dir):
+
+        if recursive:
+            image_files = find_images_recursive(input_dir)
+        else:
+            image_files = find_images(input_dir)
+
         total_images = len(image_files)
 
         if csv_file is not None:
@@ -82,8 +87,8 @@ def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_siz
 
         print "{} images will be analysed.".format(len(image_files))
 
-    elif isfile(input_imgs):
-        image_files = [input_imgs]
+    elif isfile(input_dir):
+        image_files = [input_dir]
     else:
         image_files = []
         print "Please specify a valid image file or folder"
@@ -98,9 +103,9 @@ def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_siz
                                                     stride=stride)
 
     # CNN initialization
-    print "Initializing classifier"
     classifier_dir = conf_dict['classifier_directory']
     model_config, rf_pkl = locate_config(classifier_dir)
+    print "Initializing classifier: {}".format(model_config)
     cnn = RetiNet(model_config)
 
     if features_only:
@@ -112,7 +117,7 @@ def inference(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_siz
     else:
         print "Performing classification..."
         y_preda = cnn.predict(preprocessed_arr)
-        classification_report(img_names, y_preda, csv_out)
+        classification_report(img_names, y_preda, csv_out, full_paths=image_files)
 
 
 def features_report(img_names, y_preda, T, out_dir, timestamp, y_true=None):
@@ -131,12 +136,15 @@ def features_report(img_names, y_preda, T, out_dir, timestamp, y_true=None):
     df_tsne.to_csv(tsne_out)
 
 
-def classification_report(img_names, y_preda, csv_out, y_true=None):
+def classification_report(img_names, y_preda, csv_out, full_paths=None, y_true=None):
 
     cols = ["P({})".format(LABELS[i]) for i in range(0, 3)]
     df = pd.DataFrame(data=y_preda, columns=cols, index=img_names)
     df = df[['P(No)', 'P(Pre-Plus)', 'P(Plus)']]
     df['Prediction'] = [LABELS[a] for a in np.argmax(y_preda, axis=1)]
+
+    if full_paths is not None:
+        df['path'] = full_paths
 
     if y_true is not None:
         df['Ground truth'] = y_true

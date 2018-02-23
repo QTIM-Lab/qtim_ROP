@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os import chdir, getcwd
-from os.path import dirname, splitext, abspath
+from os.path import dirname, basename, abspath
 from keras.callbacks import Callback, ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model

@@ -100,10 +100,11 @@ class DeepROPCommands(object):
                             type=int, default=10)
         parser.add_argument('--csv', help='Limit to images given in first column of CSV file', dest='csv', default=None)
         parser.add_argument('--skip-seg', help='Skip the segmentation', action='store_true', dest='skip_seg', default=False)
+        parser.add_argument('--recursive', help='Search all subdirectories recursively for images', action='store_true', dest='recursive', default=True)
         args = parser.parse_args(sys.argv[2:])
 
-        qtim_ROP.deep_rop.inference(args.image_dir, args.out_dir, self.conf_dict,
-                                    skip_segmentation=args.skip_seg, batch_size=args.batch_size, csv_file=args.csv)
+        qtim_ROP.deep_rop.inference(args.image_dir, args.out_dir, self.conf_dict, skip_segmentation=args.skip_seg,
+                                    batch_size=args.batch_size, csv_file=args.csv, recursive=args.recursive)
 
     def extract_features(self):
 
