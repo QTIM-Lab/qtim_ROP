@@ -65,9 +65,9 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
     return img_names, img_arr, y_true
 
 
-def create_generator(data_path, input_shape, batch_size=32, training=True, tf=True, regression=False):
+def create_generator(data_path, input_shape, batch_size=32, training=True, tf=True, regression=False, **kwargs):
 
-    datagen = ImageDataGenerator()
+    datagen = ImageDataGenerator(**kwargs)  # augmentation options, can come from a dictionary
 
     if isdir(data_path):  # if we have directories of images split by class
 
@@ -82,21 +82,18 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
     else:  # otherwise, assume HDF5 file
 
         f = h5py.File(data_path, 'r')
-        class_indices = {'No': 0, 'Pre-Plus': 1, 'Plus': 2}
-        classes = [class_indices[k] for k in f['labels']]
 
         if tf:
             data = np.transpose(f['data'], (0, 2, 3, 1))
         else:
             data = f['data']
 
-        if regression:
-            labels = classes
+        if regression or np.max(f['labels']) == 1:
+            labels = f['labels']
         else:
-            labels = to_categorical(classes)  # categorical (one-hot encoded)
+            labels = to_categorical(f['labels'])  # categorical (one-hot encoded)
 
-        return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training),\
-               f['data'].shape[0], classes, class_indices
+        return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels
 
 
 def hdf5_images_and_labels(data_path):

@@ -12,7 +12,7 @@ from googlenet_custom_layers import PoolHelper, LRN
 from custom_loss import r2_keras
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, f1_score
 import matplotlib.pyplot as plt
 from ..utils.common import *
 from ..utils.image import create_generator
@@ -48,6 +48,11 @@ class RetiNet(object):
             self.val_data = abspath(self.config['validation_data'])
         else:
             self.val_data = None
+
+        if self.config['test_data'] is not None:
+            self.test_data = abspath(self.config['test_data'])
+        else:
+            self.test_data = None
 
         try:
             self.config['mode']
@@ -160,12 +165,12 @@ class RetiNet(object):
         train_batch, val_batch = self.config.get('train_batch', 32), self.config.get('val_batch', 1)
 
         # Create generators
-        train_gen, train_n, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch,
-                                                    regression=self.regression, tf=False)
+        train_gen, train_n, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch,
+                                                 regression=self.regression, tf=False)
 
         if self.val_data is not None:
-            val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch,
-                                                    regression=self.regression, tf=False)
+            val_gen, val_n, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch,
+                                                 regression=self.regression, tf=False)
         else:
             print "No validation data provided."
             val_gen = None
@@ -194,7 +199,7 @@ class RetiNet(object):
             arch.writelines(self.model.to_json())
 
         # Write updated YAML file and plot history
-        self.conclude_training()
+        return self.conclude_training()
 
     def conclude_training(self, weights='final'):
 
@@ -208,7 +213,7 @@ class RetiNet(object):
         # Evaluate the model on the test/val data
         print "Loading best weights and running inference..."
         self.model.load_weights(join(self.experiment_dir, '{}_weights.h5'.format(weights))) # final or best
-        self.evaluate(self.val_data)
+        return self.evaluate(self.test_data)
 
     def plot_history(self):
 
@@ -236,10 +241,8 @@ class RetiNet(object):
     def evaluate(self, data_path, n_samples=None):
 
         logging.info("Evaluating model for on {}".format(data_path))
-        datagen, no_samples, y_true, class_indices = create_generator(data_path, self.model.input_shape[1:],
-                                                                      batch_size=1, training=False, tf=False)
-        print class_indices
-
+        datagen, no_samples, y_true = create_generator(data_path, self.model.input_shape[1:],
+                                                       batch_size=1, training=False, tf=False)
         if not n_samples:
             n_samples = no_samples
 
@@ -250,18 +253,17 @@ class RetiNet(object):
         # Confusion matrix
         confusion = confusion_matrix(np.argmax(y_true, axis=1),
                                      np.argmax(y_pred, axis=1))
+        return y_pred, confusion, f1_score(y_true, y_pred)
 
-        class_indices = dict_reverse(class_indices)  # number: word
-        labels = [class_indices[key] for key in sorted(class_indices.keys())]
-        plt.figure(3)
-        plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.png'))
-        plt.clf()
-
-        # ROC/AUC
-        class_indices.pop(1)  # remove Pre-Plus
-        plt.figure(4)
-        plot_ROC_by_class(y_true, y_pred, class_indices, outfile=join(self.experiment_dir, 'roc_curve.png'))
-        plt.clf()
+        # plt.figure(3)
+        # plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.png'))
+        # plt.clf()
+        #
+        # # ROC/AUC
+        # class_indices.pop(1)  # remove Pre-Plus
+        # plt.figure(4)
+        # plot_ROC_by_class(y_true, y_pred, class_indices, outfile=join(self.experiment_dir, 'roc_curve.png'))
+        # plt.clf()
 
     def set_intermediate(self, layer_name):
 

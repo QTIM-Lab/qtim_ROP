@@ -7,10 +7,10 @@ from os.path import join
 
 
 # https://gist.github.com/joelouismarino/a2ede9ab3928f999575423b9887abd14
-def create_googlenet(no_classes=3, no_features=None, regression=True):
+def create_googlenet(no_classes=3, no_features=None, regression=True, input_shape=(3, 224, 224)):
     # creates GoogLeNet a.k.a. Inception v1 (Szegedy, 2015)
 
-    input = Input(shape=(3, 224, 224))
+    input = Input(shape=input_shape)
 
     conv1_7x7_s2 = Convolution2D(64, 7, 7, subsample=(2, 2), border_mode='same', activation='relu', name='conv1/7x7_s2',
                                  W_regularizer=l2(0.0002))(input)
