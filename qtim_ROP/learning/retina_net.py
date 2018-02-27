@@ -251,10 +251,14 @@ class RetiNet(object):
         y_pred = self.model.predict_generator(datagen, n_samples)
         y_true = to_categorical(y_true[:n_samples])
 
+        print y_pred
+        print y_true
+
         # Confusion matrix
         confusion = confusion_matrix(np.argmax(y_true, axis=1),
                                      np.argmax(y_pred, axis=1))
-        return y_pred, confusion, f1_score(y_true, y_pred)
+
+        return y_pred, confusion, f1_score(y_true, y_pred > 0.5)
 
         # plt.figure(3)
         # plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.png'))
