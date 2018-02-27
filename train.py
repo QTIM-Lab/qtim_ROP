@@ -10,7 +10,7 @@ print "using gpu {}".format(gpu)
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] =  gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = gpu
 
 from qtim_ROP.learning.retina_net import RetiNet
 net = RetiNet(conf)

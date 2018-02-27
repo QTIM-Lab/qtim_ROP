@@ -81,6 +81,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
 
     else:  # otherwise, assume HDF5 file
 
+        print "Loading data from HDF5 file '{}'".format(data_path)
         f = h5py.File(data_path, 'r')
 
         if tf:
