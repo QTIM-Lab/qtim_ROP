@@ -251,9 +251,6 @@ class RetiNet(object):
         y_pred = self.model.predict_generator(datagen, n_samples)
         y_true = to_categorical(y_true[:n_samples])
 
-        print y_pred
-        print y_true
-
         # Confusion matrix
         confusion = confusion_matrix(np.argmax(y_true, axis=1),
                                      np.argmax(y_pred, axis=1))
