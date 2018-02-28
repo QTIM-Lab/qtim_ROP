@@ -95,6 +95,8 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
         else:
             labels = to_categorical(f['labels'])  # categorical (one-hot encoded)
 
+        print data.shape
+        print labels.shape
         return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels
 
 
