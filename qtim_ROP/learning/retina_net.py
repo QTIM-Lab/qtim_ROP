@@ -142,7 +142,8 @@ class RetiNet(object):
 
     def customize_keras_model(self, keras_model, weights, params):
 
-        base_model = keras_model(input_shape=(224, 224, 3), weights=weights, include_top=False)
+        input_shape = params.get('input_shape', (3, 224, 224))
+        base_model = keras_model(input_shape=input_shape, weights=weights, include_top=False)
         x = base_model.output
         x = Flatten()(x)
         x = Dense(params.get('no_features'), activation='relu')(x)
