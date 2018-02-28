@@ -157,6 +157,10 @@ class RetiNet(object):
 
         # Create generators
         train_gen, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
+        try:
+            no_train_samples = train_gen.x.shape[0]
+        except Exception:
+            no_train_samples = train_gen.X.shape[0]
 
         if self.val_data is not None:
             val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
@@ -177,7 +181,7 @@ class RetiNet(object):
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=train_gen.X.shape[0],
+            samples_per_epoch=no_train_samples,
             nb_epoch=epochs,
             validation_data=val_gen,
             nb_val_samples=no_val_samples, callbacks=[checkpoint_tb, lr_tb])
