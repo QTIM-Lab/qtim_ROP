@@ -67,10 +67,7 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
 
 def create_generator(data_path, input_shape, batch_size=32, training=True, tf=True, regression=False, **kwargs):
 
-    datagen = ImageDataGenerator(width_shift_range=0.1,
-                                 height_shift_range=0.1,
-                                 horizontal_flip=True,
-                                 vertical_flip=True)  # augmentation options, can come from a dictionary
+    datagen = ImageDataGenerator()  # augmentation options, can come from a dictionary
 
     if isdir(data_path):  # if we have directories of images split by class
 

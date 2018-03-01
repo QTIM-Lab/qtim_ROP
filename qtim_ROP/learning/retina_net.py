@@ -168,7 +168,11 @@ class RetiNet(object):
 
         # Create generators
         train_gen, train_n, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch,
-                                                 regression=self.regression, tf=False)
+                                                 regression=self.regression, tf=False,
+                                                 width_shift_range=0.1,
+                                                 height_shift_range=0.1,
+                                                 horizontal_flip=True,
+                                                 vertical_flip=True)
 
         if self.val_data is not None:
             val_gen, val_n, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch,
