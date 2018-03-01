@@ -2,7 +2,7 @@ from os.path import isdir, basename
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.np_utils import to_categorical
-#import SimpleITK as sitk
+from sklearn.utils import class_weight
 import cv2
 import h5py
 from scipy.misc import imresize
@@ -96,7 +96,8 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
 
         print data.shape
         print labels.shape
-        return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels
+        cw = class_weight.compute_class_weight('balanced', np.unique(labels), labels)
+        return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels, cw
 
 
 def hdf5_images_and_labels(data_path):
