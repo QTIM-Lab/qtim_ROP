@@ -9,7 +9,7 @@ import h5py
 import yaml
 
 DEFAULT = ['No', 'Pre-Plus', 'Plus']
-EXTENSIONS = ['*.bmp', '*png', '*.jpg', '*.jpeg', '*.tif', '*tiff', '*.gif']
+EXTENSIONS = ['*.bmp', '*.png', '*.jpg', '*.jpeg', '*.tif', '*tiff', '*.gif']
 if os_name != 'nt':
     EXTENSIONS.extend([ext.upper() for ext in EXTENSIONS])
 
