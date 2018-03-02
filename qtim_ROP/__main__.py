@@ -104,7 +104,8 @@ class DeepROPCommands(object):
         args = parser.parse_args(sys.argv[2:])
 
         qtim_ROP.deep_rop.inference(args.image_dir, args.out_dir, self.conf_dict, skip_segmentation=args.skip_seg,
-                                    batch_size=args.batch_size, csv_file=args.csv, recursive=args.recursive)
+                                    batch_size=args.batch_size, csv_file=args.csv, recursive=args.recursive,
+                                    stride=(12, 16))
 
     def extract_features(self):
 
