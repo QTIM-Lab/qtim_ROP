@@ -138,9 +138,11 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
         mask = create_mask(img, erode=erode)
         masks_arr.append(np.expand_dims(mask, 2))
 
+    if len(imgs_arr) == 0:
+        return None, None, skipped
+
     imgs_arr = np.stack(imgs_arr, axis=0)
     masks_arr = np.stack(masks_arr, axis=0)
-
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
     masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
 

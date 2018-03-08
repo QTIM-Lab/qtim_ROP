@@ -56,6 +56,10 @@ class SegmentUnet(object):
             imgs_original, masks, skipped = imgs_to_unet_array(img_list, erode=self.erode)
             failures.extend(skipped)
 
+            if imgs_original is None or masks is None:
+                print "No valid images found in this batch"
+                continue
+
             # Pre-process the images, and return as patches (TODO: get patch size from the model)
             img_patches, new_height, new_width, padded_masks = self.pre_process(imgs_original, masks)
 
