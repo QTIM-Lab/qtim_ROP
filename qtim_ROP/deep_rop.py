@@ -14,13 +14,11 @@ from utils.common import find_images, find_images_recursive
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
 
-def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, batch_size=100, stride=(32, 32)):
+def run_segmentation(image_files, out_dir, conf_dict, skip_segmentation=False, batch_size=100, stride=(32, 32), ext='.bmp'):
 
     # Segmentation
     newly_segmented, already_segmented = [], []
-    prep_dir = make_sub_dir(out_dir, 'preprocessed')
     seg_dir = make_sub_dir(out_dir, 'segmentation')
-    ext = '.bmp'
 
     if skip_segmentation:
         print "Assuming input images are already segmented"
@@ -36,25 +34,33 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
             raise
             
     # Resizing images for inference
-    classifier_dir = conf_dict['classifier_directory']
+    return newly_segmented + already_segmented
+
+
+def generate_batches(image_list, out_dir, ext='.bmp', batch_size=1000):
+
     prep_conf = yaml.load(open(abspath(join(dirname(__file__), 'config', 'preprocessing.yaml'))))['pipeline']
-    img_names, preprocessed_arr = [], []
+    prep_dir = make_sub_dir(out_dir, 'preprocessed')
+    batches = [image_list[i:i+batch_size] for i in range(0, len(image_list), batch_size)]
 
-    for seg_image in newly_segmented + already_segmented:
+    for batch in batches:
 
-        img_name = splitext(basename(seg_image))[0]
-        img_names.append(img_name)
-        prep_out = join(prep_dir, img_name + ext)
-        prep_img = preprocess(seg_image, prep_out, prep_conf)
-        preprocessed_arr.append(prep_img)
+        img_names, preprocessed_arr = [], []
 
-    # Reshape array - samples, channels, height, width
-    preprocessed_arr = np.asarray(preprocessed_arr).transpose((0, 3, 1, 2))
-    print preprocessed_arr.shape
-    return preprocessed_arr, img_names
+        for seg_image in batch:
+
+            img_name = splitext(basename(seg_image))[0]
+            img_names.append(img_name)
+            prep_out = join(prep_dir, img_name + ext)
+            prep_img = preprocess(seg_image, prep_out, prep_conf)
+            preprocessed_arr.append(prep_img)
+
+        # Reshape array - samples, channels, height, width
+        preprocessed_arr = np.asarray(preprocessed_arr).transpose((0, 3, 1, 2))
+        yield preprocessed_arr, img_names
 
 
-def inference(input_dir, out_dir, conf_dict, skip_segmentation=False, batch_size=10, csv_file=None,
+def inference(input_dir, out_dir, conf_dict, skip_segmentation=False, batch_size=100, csv_file=None,
               stride=(32, 32), features_only=False, tsne_dims=2, recursive=True):
 
     if any(v is None for v in conf_dict.values()):
@@ -97,10 +103,12 @@ def inference(input_dir, out_dir, conf_dict, skip_segmentation=False, batch_size
     if len(image_files) == 0:
         return
 
-    preprocessed_arr, img_names = preprocess_images(image_files, out_dir, conf_dict,
-                                                    skip_segmentation=skip_segmentation,
-                                                    batch_size=batch_size,
-                                                    stride=stride)
+    # Run the segmentation part only
+    segmented_image_list = run_segmentation(image_files, out_dir, conf_dict,
+                                            skip_segmentation=skip_segmentation, batch_size=batch_size, stride=stride)
+
+    # Generate batches of preprocessed images
+    batch_gen = generate_batches(segmented_image_list, out_dir, batch_size=5*batch_size)  # can afford bigger batches here
 
     # CNN initialization
     classifier_dir = conf_dict['classifier_directory']
@@ -108,15 +116,25 @@ def inference(input_dir, out_dir, conf_dict, skip_segmentation=False, batch_size
     print "Initializing classifier: {}".format(model_config)
     cnn = RetiNet(model_config)
 
+    def batch_inference():  #
+        y = None
+        names = []
+        for img_batch, name_batch in batch_gen:
+            y = cnn.predict(img_batch) if y is None else np.concatenate((y, cnn.predict(img_batch)), axis=0)
+            names.extend(name_batch)
+        return y, names
+
     if features_only:
         print "Extracting features..."
         cnn.set_intermediate('flatten_3')  # TODO add this to the YAML file at some point
-        y_preda = cnn.predict(preprocessed_arr)
+        y_preda, img_names = batch_inference()
         T = tsne(y_preda, no_dims=tsne_dims)
         features_report(img_names, y_preda, T, out_dir, timestamp)
     else:
         print "Performing classification..."
-        y_preda = cnn.predict(preprocessed_arr)
+        y_preda, img_names = batch_inference()
+        print y_preda.shape
+        print len(img_names)
         classification_report(img_names, y_preda, csv_out, full_paths=image_files)
 
 

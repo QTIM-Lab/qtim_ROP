@@ -10,8 +10,7 @@ import yaml
 
 DEFAULT = ['No', 'Pre-Plus', 'Plus']
 EXTENSIONS = ['*.bmp', '*.png', '*.jpg', '*.jpeg', '*.tif', '*tiff', '*.gif']
-if os_name != 'nt':
-    EXTENSIONS.extend([ext.upper() for ext in EXTENSIONS])
+EXTENSIONS.extend([ext.upper() for ext in EXTENSIONS])
 
 
 def make_sub_dir(dir_, sub, tree=None):
