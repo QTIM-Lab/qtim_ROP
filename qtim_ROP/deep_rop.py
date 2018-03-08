@@ -34,7 +34,7 @@ def run_segmentation(image_files, out_dir, conf_dict, skip_segmentation=False, b
             raise
             
     # Resizing images for inference
-    return newly_segmented + already_segmented
+    return newly_segmented + already_segmented, failures
 
 
 def generate_batches(image_list, out_dir, ext='.bmp', batch_size=1000):
@@ -103,12 +103,15 @@ def inference(input_dir, out_dir, conf_dict, skip_segmentation=False, batch_size
     if len(image_files) == 0:
         return
 
-    # Run the segmentation part only
-    segmented_image_list = run_segmentation(image_files, out_dir, conf_dict,
-                                            skip_segmentation=skip_segmentation, batch_size=batch_size, stride=stride)
+    # Run the segmentation part only - remove failures from image_list
+    segmented_image_list, failures = run_segmentation(image_files, out_dir, conf_dict,
+                                                      skip_segmentation=skip_segmentation,
+                                                      batch_size=batch_size, stride=stride)
+
+    image_files = [f for f in image_files if f not in failures]
 
     # Generate batches of preprocessed images
-    batch_gen = generate_batches(segmented_image_list, out_dir, batch_size=5*batch_size)  # can afford bigger batches here
+    batch_gen = generate_batches(segmented_image_list, out_dir, batch_size=5*batch_size)
 
     # CNN initialization
     classifier_dir = conf_dict['classifier_directory']
