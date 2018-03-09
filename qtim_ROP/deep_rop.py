@@ -17,7 +17,7 @@ LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 def run_segmentation(image_files, out_dir, conf_dict, skip_segmentation=False, batch_size=100, stride=(32, 32), ext='.bmp'):
 
     # Segmentation
-    newly_segmented, already_segmented = [], []
+    newly_segmented, already_segmented, failures = [], [], []
     seg_dir = make_sub_dir(out_dir, 'segmentation')
 
     if skip_segmentation:
