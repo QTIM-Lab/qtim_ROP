@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os import chdir, getcwd
-from os.path import dirname, splitext, abspath
+from os.path import dirname, basename, abspath
 from keras.callbacks import Callback, ModelCheckpoint
 from keras.layers import Dense, Flatten, Input, Dropout
 from keras.models import Model
@@ -11,6 +11,7 @@ from keras.utils.np_utils import to_categorical
 from googlenet_custom_layers import PoolHelper, LRN
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
+import numpy as np
 from ..utils.common import *
 from ..utils.image import create_generator
 from ..utils.models import SGDLearningRateTracker
@@ -156,10 +157,17 @@ class RetiNet(object):
 
         # Create generators
         train_gen, _, _ = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch)
+        try:
+            no_train_samples = train_gen.x.shape[0]
+        except Exception:
+            no_train_samples = train_gen.X.shape[0]
 
         if self.val_data is not None:
             val_gen, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch)
-            no_val_samples = val_gen.X.shape[0]
+            try:
+                no_val_samples = val_gen.x.shape[0]
+            except Exception:
+                no_val_samples = val_gen.X.shape[0]
         else:
             print "No validation data provided."
             val_gen = None
@@ -173,7 +181,7 @@ class RetiNet(object):
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
             train_gen,
-            samples_per_epoch=train_gen.X.shape[0],
+            samples_per_epoch=no_train_samples,
             nb_epoch=epochs,
             validation_data=val_gen,
             nb_val_samples=no_val_samples, callbacks=[checkpoint_tb, lr_tb])
@@ -355,6 +363,7 @@ def locate_config(search_dir, rf=False):
 
     return config_file, rf_pkl
 
+
 if __name__ == '__main__':
 
     from argparse import ArgumentParser
@@ -372,4 +381,4 @@ if __name__ == '__main__':
     else:
         # Evaluate on validation data and calculate metrics
         data_dict = r.evaluate(args.data)
-        calculate_metrics(data_dict, out_dir=r.eval_dir)
+        # calculate_metrics(data_dict, out_dir=r.eval_dir)

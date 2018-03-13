@@ -116,14 +116,18 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
 
     for i, im_path in enumerate(img_list):
 
-        img = np.asarray(Image.open(im_path))
+        try:
+            img = np.asarray(Image.open(im_path))
+        except IOError:
+            print "{} is not a valid image file - skipping".format(im_path)
+            continue
 
         if not img.shape:
             print "'{}' has invalid image shape - skipping".format(im_path)
             skipped.append(im_path)
             continue
 
-        img = img[:, : ,:3]  # in case there's an alpha channel
+        img = img[:, :, :3]  # in case there's an alpha channel
 
         if img.shape[:-1] != target_shape[:-1]:
             img = imresize(img, (height, width), interp='bicubic')
@@ -134,9 +138,11 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
         mask = create_mask(img, erode=erode)
         masks_arr.append(np.expand_dims(mask, 2))
 
+    if len(imgs_arr) == 0:
+        return None, None, skipped
+
     imgs_arr = np.stack(imgs_arr, axis=0)
     masks_arr = np.stack(masks_arr, axis=0)
-
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
     masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
 

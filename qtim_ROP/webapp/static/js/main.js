@@ -1,6 +1,22 @@
 
 $(function() {
 
+//    // Configure tether tooltips
+//    $(function () {
+//        $('[data-toggle="tooltip"]').tooltip({
+//            container: 'body'
+//        });
+//    })
+
+    // Smooth scrolling to anchor points
+    $(document).on('click', 'a[href^="#"]', function (event) {
+        event.preventDefault();
+        $('html, body').animate({
+            scrollTop: $($.attr(this, 'href')).offset().top
+        }, 500);
+    });
+
+    // Parallax jumbotron effect
     var jumboHeight = $('.jumbotron').outerHeight();
     function parallax(){
         var scrolled = $(window).scrollTop();
@@ -19,6 +35,11 @@ $(function() {
 //        parallax();
 //    });
 
+    $('body').bind('touchmove', function(e) {
+        parallax();
+    });
+
+    // Handling uploads
     function bs_input_file() {
         $(".input-file").before(
             function() {
@@ -49,18 +70,6 @@ $(function() {
 
     $(function() {
         bs_input_file();
-    });
-
-    $(function () {
-      $('[data-toggle="tooltip"]').tooltip()
-    })
-
-    $(document).on('click', 'a[href^="#"]', function (event) {
-        event.preventDefault();
-
-        $('html, body').animate({
-            scrollTop: $($.attr(this, 'href')).offset().top
-        }, 500);
     });
 
     $(document).on('change', ':file', function() {

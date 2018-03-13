@@ -65,7 +65,7 @@ class Pipeline(object):
 
                 csv_file = abspath(join(dirname(config), conf_dict['csv_file']))
                 self.label_data = pd.DataFrame.from_csv(csv_file)
-                self.label = conf_dict['reader']
+                self.label = conf_dict.get('reader')
 
                 if not isdir(self.input_dir):
                     print "Input {} is not a directory!".format(self.input_dir)
@@ -328,14 +328,8 @@ def do_preprocess(im, args):
 
     # Get class and quality info
     row = params.label_data.loc[im_ID]
-    reader = params.label
+    reader = params.label  # TODO make duplicates for all available readers if this is equal to 'all'
     class_ = row[reader]
-    # stage = row['ROP_stage']
-    # quality = row['quality']
-
-    # Skip images with invalid class, advanced ROP or insufficient quality
-    # if class_ not in DEFAULT_CLASSES or not quality or stage > 3:
-    #     return False
 
     # Resize, preprocess and augment
     try:

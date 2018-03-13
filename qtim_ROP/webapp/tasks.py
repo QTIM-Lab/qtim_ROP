@@ -91,7 +91,7 @@ def long_task(self, filename):
     self.update_state(state='PROGRESS', meta={'current': 1, 'total': 4, 'status': "Initializing..."})
 
     from qtim_ROP.__main__ import initialize
-    from qtim_ROP.deep_rop import preprocess_images
+    from qtim_ROP.deep_rop import run_segmentation
     from qtim_ROP.learning.retina_net import RetiNet, locate_config
 
     # Initialize model
@@ -102,8 +102,8 @@ def long_task(self, filename):
 
     # Does the preprocessing
     self.update_state(state='PROGRESS', meta={'current': 2, 'total': 4, 'status': "Preprocessing..."})
-    prep_img, prep_name = preprocess_images([filename], app.config['OUTPUT_FOLDER'],
-                                            conf_dict, skip_segmentation=False, batch_size=1)
+    prep_img, prep_name = run_segmentation([filename], app.config['OUTPUT_FOLDER'],
+                                           conf_dict, skip_segmentation=False, batch_size=1)
     self.update_state(state='PROGRESS', meta={'current': 3, 'total': 4, 'status': "Classifying..."})
 
     # Prediction

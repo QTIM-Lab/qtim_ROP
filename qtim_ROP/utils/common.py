@@ -1,19 +1,16 @@
 from glob import glob
-from os import mkdir, name as os_name
-from os.path import join, isdir, isfile, basename
+from os import mkdir, walk, name as os_name
+from os.path import join, isdir, isfile, splitext
 from shutil import copytree
 import logging
 import sys
-from PIL import Image
-import numpy as np
 import pandas as pd
 import h5py
 import yaml
 
 DEFAULT = ['No', 'Pre-Plus', 'Plus']
-EXTENSIONS = ['*.bmp', '*png', '*.jpg', '*.jpeg', '*.tif', '*tiff', '*.gif']
-if os_name != 'nt':
-    EXTENSIONS.extend([ext.upper() for ext in EXTENSIONS])
+EXTENSIONS = ['*.bmp', '*.png', '*.jpg', '*.jpeg', '*.tif', '*tiff', '*.gif']
+EXTENSIONS.extend([ext.upper() for ext in EXTENSIONS])
 
 
 def make_sub_dir(dir_, sub, tree=None):
@@ -52,6 +49,18 @@ def find_images_by_class(im_path, classes=None):
         images[class_] = find_images(join(im_path, class_))
 
     return images
+
+
+def find_images_recursive(src_dir):
+
+    matches = []
+    for root, dirnames, filenames in walk(src_dir):
+
+        for filename in filenames:
+            if '*' + splitext(filename)[1] in EXTENSIONS:
+                matches.append(join(root, filename))
+    return matches
+
 
 def get_subdirs(root_dir):
 
