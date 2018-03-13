@@ -15,9 +15,9 @@ $(function() {
         }, 8000);
     });
 
-    $(window).scroll(function(e){
-        parallax();
-    });
+//    $(window).scroll(function(e){
+//        parallax();
+//    });
 
     function bs_input_file() {
         $(".input-file").before(
