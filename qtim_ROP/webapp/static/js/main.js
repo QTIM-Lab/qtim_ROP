@@ -31,9 +31,9 @@ $(function() {
         }, 8000);
     });
 
-//    $(window).scroll(function(e){
-//        parallax();
-//    });
+    $(window).scroll(function(e){
+        parallax();
+    });
 
     $('body').bind('touchmove', function(e) {
         parallax();

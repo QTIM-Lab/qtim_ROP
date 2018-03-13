@@ -91,7 +91,7 @@ def long_task(self, filename):
     self.update_state(state='PROGRESS', meta={'current': 1, 'total': 4, 'status': "Initializing..."})
 
     from qtim_ROP.__main__ import initialize
-    from qtim_ROP.deep_rop import run_segmentation
+    from qtim_ROP.deep_rop import run_segmentation, generate_batches
     from qtim_ROP.learning.retina_net import RetiNet, locate_config
 
     # Initialize model
@@ -102,12 +102,17 @@ def long_task(self, filename):
 
     # Does the preprocessing
     self.update_state(state='PROGRESS', meta={'current': 2, 'total': 4, 'status': "Preprocessing..."})
-    prep_img, prep_name = run_segmentation([filename], app.config['OUTPUT_FOLDER'],
-                                           conf_dict, skip_segmentation=False, batch_size=1)
+    segmented, fails = run_segmentation([filename], app.config['OUTPUT_FOLDER'],
+                                        conf_dict, skip_segmentation=False, batch_size=1)
     self.update_state(state='PROGRESS', meta={'current': 3, 'total': 4, 'status': "Classifying..."})
 
     # Prediction
-    y_preda = classifier.predict(prep_img)[0]
+    y_preda, prep_name = None, None
+    for batch, names in generate_batches(segmented, app.config['OUTPUT_FOLDER']):
+        y_preda = classifier.predict(batch)[0]
+        prep_name = names[0]
+        break
+
     score = y_preda[0] + (y_preda[2] * 2) + (y_preda[1] * 3)
 
     arg_max = np.argmax(y_preda)
