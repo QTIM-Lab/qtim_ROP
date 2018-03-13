@@ -171,5 +171,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     host = '127.0.0.1' if args.local else '0.0.0.0'
-    port = 5000 if args.local else 80
+    port = 5000
     app.run(debug=True, host=host, port=port)
