@@ -7,7 +7,7 @@ keras>1.2.0
 bokeh==0.12.6
 scipy==0.18.1
 h5py==2.6.0
-theano==0.9.0
+tensorflow-gpu>=1.5.0
 scikit-image==0.13.0
 opencv-python==3.2.0.7
 Pillow==4.0.0

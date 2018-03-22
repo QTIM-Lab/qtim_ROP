@@ -1,4 +1,4 @@
-from geom import *
+from .geom import *
 from os.path import join, isfile
 from sklearn.mixture import GaussianMixture
 import numpy as np
@@ -7,7 +7,7 @@ from itertools import cycle
 from ..utils.common import make_sub_dir
 
 COLORS = []
-for name, hex in matplotlib.colors.cnames.iteritems():
+for name, hex in matplotlib.colors.cnames.items():
     COLORS.append(name)
 np.random.shuffle(COLORS)
 
@@ -171,7 +171,7 @@ class VesselTree(object):
 
         branch_points = np.asarray(branch)
 
-        chord_range = range(chord_length, branch_points.shape[0] - chord_length, chord_length)
+        chord_range = list(range(chord_length, branch_points.shape[0] - chord_length, chord_length))
         if len(chord_range) == 0:
             yield None, None
 

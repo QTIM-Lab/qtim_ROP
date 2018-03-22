@@ -42,14 +42,16 @@ def find_images(im_path):
     return sorted(files)
 
 
-def find_images_by_class(im_path, classes=None):
+def find_images_by_class(im_path, classes=None, numeric=False):
 
     if classes is None:
         classes = DEFAULT
 
     images = {}
-    for class_ in classes:
-        images[class_] = find_images(join(im_path, class_))
+    for i, class_ in enumerate(classes):
+
+        key = i if numeric else class_
+        images[key] = find_images(join(im_path, class_))
 
     return images
 
@@ -105,10 +107,10 @@ def csv_to_dict(my_csv):
 
 def series_to_plot_dict(series, key, value):
 
-    sorted_list = [{key: k, value: v} for k, v in series.to_dict().items()]
+    sorted_list = [{key: k, value: v} for k, v in list(series.to_dict().items())]
     return pd.DataFrame(data=sorted_list)
 
 
 def dict_reverse(my_dict):
 
-    return {v: k for k, v in my_dict.items()}
+    return {v: k for k, v in list(my_dict.items())}

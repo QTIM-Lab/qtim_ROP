@@ -19,7 +19,7 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
     for i, split_dir in enumerate(sorted(get_subdirs(all_splits))):
 
         # Place to store the results
-        print "Testing on split #{}".format(i)
+        print("Testing on split #{}".format(i))
         results_dir = make_sub_dir(out_dir, basename(split_dir))
 
         # npy files for ground truth and predictions
@@ -36,11 +36,11 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
 
             # Get model predictions
             if use_rf:
-                print "Using CNN + RF for prediction"
+                print("Using CNN + RF for prediction")
                 rf_pkl = join(split_dir, 'rf.pkl')
                 model = RetinaRF(cnn_model, rf_pkl=rf_pkl)
             else:
-                print "Using CNN only"
+                print("Using CNN only")
                 model = RetiNet(cnn_model)
 
             data_dict = model.evaluate(test_data)
@@ -54,7 +54,7 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
         else:
 
             # Load previous results
-            print "Loading previous predictions"
+            print("Loading previous predictions")
             y_true = np.load(y_true_out)
             y_pred = np.load(y_pred_out)
 
@@ -62,13 +62,13 @@ def run_cross_val(all_splits, raw_images, out_dir, use_rf=False):
         y_pred_all.append(y_pred)
 
     # ROC curves - all splits
-    for class_ in CLASSES.items():
+    for class_ in list(CLASSES.items()):
         fig, ax = plt.subplots()
         all_aucs = plot_ROC_splits(y_true_all, y_pred_all, class_)
         plt.savefig(join(out_dir, 'ROC_AUC_{}_AllSplits.png'.format(class_[0])))
         plt.savefig(join(out_dir, 'ROC_AUC_{}_AllSplits.svg'.format(class_[0])))
 
-        print "AUC for class '{}': {} +/- {}".format(class_[0], np.mean(all_aucs), np.std(all_aucs))
+        print("AUC for class '{}': {} +/- {}".format(class_[0], np.mean(all_aucs), np.std(all_aucs)))
 
 
 def map_test_to_original(test_csv, original_csv, img_path=None):
@@ -97,7 +97,7 @@ def map_test_to_original(test_csv, original_csv, img_path=None):
 def save_predictions(predictions, labels, class_dict, out_dir):
 
     # Save as CSV
-    for class_name, c in class_dict.items():
+    for class_name, c in list(class_dict.items()):
 
         pred_out = join(out_dir, 'predictions_{}.csv'.format(class_name))
         labels_out = join(out_dir, 'labels_{}.csv'.format(class_name))
@@ -105,8 +105,8 @@ def save_predictions(predictions, labels, class_dict, out_dir):
         pred_df = pd.DataFrame(predictions[class_name]).T
         labels_df = pd.DataFrame(labels[class_name]).T
 
-        print pred_df
-        print labels_df
+        print(pred_df)
+        print(labels_df)
 
         pred_df.to_csv(pred_out)
         labels_df.to_csv(labels_out)

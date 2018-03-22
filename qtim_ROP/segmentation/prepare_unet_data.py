@@ -8,7 +8,7 @@ import numpy as np
 import yaml
 from ..utils.common import write_hdf5
 from scipy.misc import imresize
-from mask_retina import create_mask
+from .mask_retina import create_mask
 
 
 class RetinalDataset(object):
@@ -60,7 +60,7 @@ class RetinalDataset(object):
         # Loop through all files in images directory
         for i, file_ in enumerate(sorted(listdir(imgs_dir))):
 
-            print "Loading '{}'".format(file_)
+            print("Loading '{}'".format(file_))
 
             # Add the image to an ndarray
             img = Image.open(join(imgs_dir, file_))
@@ -78,12 +78,12 @@ class RetinalDataset(object):
             masks_arr[i] = np.asarray(b_mask).astype(np.uint8) * 255
 
         # Value assertions
-        print "imgs max: {}".format(np.max(imgs_arr))
-        print "imgs min: {}".format(np.min(imgs_arr))
+        print("imgs max: {}".format(np.max(imgs_arr)))
+        print("imgs min: {}".format(np.min(imgs_arr)))
 
         assert(np.max(ground_truth_arr) == 255 and np.max(masks_arr) == 255)
         assert(np.min(ground_truth_arr) == 0 and np.min(masks_arr) == 0)
-        print "Ground truth and border masks are correctly within pixel value range 0 - 255 (black - white)"
+        print("Ground truth and border masks are correctly within pixel value range 0 - 255 (black - white)")
 
         # Reshaping
         imgs_arr = np.transpose(imgs_arr,(0,3,1,2))
@@ -98,7 +98,7 @@ class RetinalDataset(object):
         # Write the data to disk
         type_ = 'train' if training else 'test'
 
-        print "Saving dataset to '{}'".format(self.out_dir)
+        print("Saving dataset to '{}'".format(self.out_dir))
         write_hdf5(imgs_arr, join(self.out_dir, "image_dataset_imgs_{}.hdf5".format(type_)))
         write_hdf5(ground_truth_arr, join(self.out_dir, "image_dataset_groundTruth_{}.hdf5".format(type_)))
         write_hdf5(masks_arr, join(self.out_dir, "image_dataset_borderMasks_{}.hdf5".format(type_)))
@@ -119,12 +119,12 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
         try:
             img = np.asarray(Image.open(im_path))
         except IOError:
-            print "Error loading image '{}' - skipping".format(im_path)
+            print("Error loading image '{}' - skipping".format(im_path))
             skipped.append(im_path)
             continue
 
         if not img.shape:
-            print "'{}' has invalid image shape - skipping".format(im_path)
+            print("'{}' has invalid image shape - skipping".format(im_path))
             skipped.append(im_path)
             continue
 
@@ -133,7 +133,7 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
         if img.shape[:-1] != target_shape[:-1]:
             img = imresize(img, (height, width), interp='bicubic')
 
-        print '{}: {}'.format(basename(im_path), img.shape)
+        print('{}: {}'.format(basename(im_path), img.shape))
         imgs_arr.append(img)
 
         mask = create_mask(img, erode=erode)
@@ -155,8 +155,8 @@ if __name__ == "__main__":
 
     rd = RetinalDataset(conf)
 
-    print "Generating training data..."
+    print("Generating training data...")
     training_imgs, _training_ground_truth, training_masks = rd.create_dataset(training=True)
 
-    print "Generating test data..."
+    print("Generating test data...")
     testing_imgs, testing_ground_truth, testing_masks = rd.create_dataset(training=False)

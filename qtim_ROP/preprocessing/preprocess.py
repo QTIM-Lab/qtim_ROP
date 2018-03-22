@@ -8,7 +8,7 @@ from PIL import Image
 
 def preprocess(src_img, dst_img, params):
 
-    print "Preprocessing {}".format(src_img)
+    print("Preprocessing {}".format(src_img))
     resize, crop = params['resize'], params['crop']
     crop_width = (resize['width'] - crop['width']) / 2
     crop_height = (resize['height'] - crop['height']) / 2
@@ -17,7 +17,7 @@ def preprocess(src_img, dst_img, params):
     try:
         im_arr = cv2.imread(src_img)[:, :, ::-1]
     except TypeError:
-        print "Error loading '{}'".format(src_img)
+        print("Error loading '{}'".format(src_img))
         return False
 
     im_arr = im_arr[:,:,:3]
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     class_names = [basename(x) for x in get_subdirs(args.images)]
     imgs_by_class = find_images_by_class(args.images, classes=class_names)
 
-    for class_, imgs in imgs_by_class.items():
+    for class_, imgs in list(imgs_by_class.items()):
 
         class_dir = make_sub_dir(args.out_dir, class_)
 

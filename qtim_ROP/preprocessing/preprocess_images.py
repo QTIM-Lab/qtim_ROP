@@ -85,7 +85,7 @@ class Pipeline(object):
                 self.reader = conf_dict['reader']
 
                 if not isdir(self.input_dir):
-                    print "Input {} is not a directory!".format(self.input_dir)
+                    print("Input {} is not a directory!".format(self.input_dir))
                     exit()
 
                 # Extract pipeline parameters or set defaults
@@ -99,7 +99,7 @@ class Pipeline(object):
                     self.crop_height = (self.resize['height'] - self.crop['height']) / 2
 
         except KeyError as e:
-            print "Missing config entry {}".format(e)
+            print("Missing config entry {}".format(e))
             exit()
 
     def run(self):
@@ -108,22 +108,22 @@ class Pipeline(object):
         im_files = find_images(join(self.input_dir))
         assert (len(im_files) > 0)
 
-        if 'augmentation' in self.pipeline.keys():
-            print "Starting preprocessing ({} processes)".format(self.processes)
+        if 'augmentation' in list(self.pipeline.keys()):
+            print("Starting preprocessing ({} processes)".format(self.processes))
             optimization_pool = Pool(self.processes)
             subprocess = partial(preprocess, params=self)
             results = optimization_pool.map(subprocess, im_files)
         else:
-            print "Using previously augmented data"
+            print("Using previously augmented data")
 
         # Create training and validation (imbalanced)
-        print "Splitting into training/validation"
+        print("Splitting into training/validation")
 
         try:
             train_imgs, val_imgs = self.train_val_split(listdir(self.augment_dir))
             self.random_sample(train_imgs, val_imgs, classes=DEFAULT_CLASSES)
         except AssertionError:
-            print "No images found in one more classes - unable to split training and validation"
+            print("No images found in one more classes - unable to split training and validation")
             exit()
 
     def train_val_split(self, classes):
@@ -202,9 +202,9 @@ class Pipeline(object):
                 val_labels.append(class_)
                 # copy(vi, val_class_dir)
 
-            print '\n---'
-            print "Training ({}): {}".format(class_, len(train_imgs[cidx]))
-            print "Validation ({}): {}".format(class_, len(val_imgs[cidx]))
+            print('\n---')
+            print("Training ({}): {}".format(class_, len(train_imgs[cidx])))
+            print("Validation ({}): {}".format(class_, len(val_imgs[cidx])))
 
         # Save results
         train_data = np.transpose(np.asarray(train_arr), (0, 3, 2, 1))
@@ -230,7 +230,7 @@ class Pipeline(object):
         # Sort the augmented images alphabetically and split into chunks (of augment_size)
         imgs = sorted(imgs)
         assert(len(imgs) % self.augment_size == 0)
-        unique_chunks = [imgs[i:i+self.augment_size] for i in xrange(0, len(imgs), self.augment_size)]
+        unique_chunks = [imgs[i:i+self.augment_size] for i in range(0, len(imgs), self.augment_size)]
 
         # Calculate how many images we need to remove in each chunk (some chunks likely smaller than others)
         total_proportion = float(to_remove) / float(len(imgs))
@@ -249,7 +249,7 @@ class Pipeline(object):
 
 def preprocess(im, params):
 
-    print "Preprocessing {}".format(im)
+    print("Preprocessing {}".format(im))
 
     # Image metadata
     meta = image_to_metadata(im)
@@ -273,7 +273,7 @@ def preprocess(im, params):
     try:
         im_arr = cv2.imread(im)[:, :, ::-1]
     except TypeError:
-        print "Error loading '{}'".format(im)
+        print("Error loading '{}'".format(im))
         return False
 
     im_arr = im_arr[:,:,:3]
@@ -316,7 +316,7 @@ def preprocess(im, params):
             for rotate in [0, 1, 2, 3]:
                 new_img = np.copy(img)
                 if rotate > 0:
-                    for i in xrange(rotate):
+                    for i in range(rotate):
                         new_img = np.rot90(new_img)
                 if flip == 1:
                     new_img = np.fliplr(new_img)

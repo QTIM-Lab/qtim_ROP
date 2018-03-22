@@ -2,7 +2,7 @@ from keras.layers import Input, Dense, Convolution2D, MaxPooling2D, AveragePooli
     merge, Activation, BatchNormalization
 from keras.models import Model
 from keras.regularizers import l2
-from googlenet_custom_layers import PoolHelper, LRN
+from .googlenet_custom_layers import PoolHelper, LRN
 from os.path import join
 
 
@@ -319,7 +319,7 @@ def create_googlenet(no_classes=3, no_features=None, regression=True, input_shap
     if type(no_features) is int and no_features != 1024:
         loss3_features = Dense(no_features, name='loss3/features_{}'.format(no_features), W_regularizer=l2(0.0002))(loss3_flat)
     else:
-        print "1024 feature layer"
+        print("1024 feature layer")
         loss3_features = loss3_flat
 
     pool5_drop_7x7_s1 = Dropout(0.4)(loss3_features)

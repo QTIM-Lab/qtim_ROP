@@ -3,8 +3,8 @@
 from os import makedirs
 from os.path import isdir, isfile, basename
 
-from prepare_unet_data import imgs_to_unet_array
-from mask_retina import *
+from .prepare_unet_data import imgs_to_unet_array
+from .mask_retina import *
 from ..utils.common import find_images
 from ..utils.models import load_model
 import h5py
@@ -15,7 +15,7 @@ try:
     from ..retinaunet.lib.extract_patches import *
     from ..retinaunet.lib.pre_processing import my_PreProc
 except ImportError:
-    print "Unable to import retinaunet - git clone https://github.com/QTIM-Lab/retinaunet.git"
+    print("Unable to import retinaunet - git clone https://github.com/QTIM-Lab/retinaunet.git")
     raise
 
 
@@ -43,14 +43,14 @@ class SegmentUnet(object):
             to_segment = [im for im in img_data if not isfile(join(self.out_dir, splitext(basename(im))[0] + self.ext))]
             already_segmented = [join(self.out_dir, splitext(basename(im))[0] + self.ext)
                                  for im in img_data if im not in to_segment]
-            print "{} image(s) already segmented".format(len(already_segmented))
+            print("{} image(s) already segmented".format(len(already_segmented)))
 
         # Split into chunks of size batch_size
-        chunks = [to_segment[x:x + batch_size] for x in xrange(0, len(to_segment), batch_size)]
+        chunks = [to_segment[x:x + batch_size] for x in range(0, len(to_segment), batch_size)]
 
         for chunk_no, img_list in enumerate(chunks):
 
-            print "Segmenting batch {} of {} ".format(chunk_no + 1, len(chunks))
+            print("Segmenting batch {} of {} ".format(chunk_no + 1, len(chunks)))
 
             # Load images and create masks
             imgs_original, masks, skipped = imgs_to_unet_array(img_list, erode=self.erode)
@@ -60,7 +60,7 @@ class SegmentUnet(object):
             img_patches, new_height, new_width, padded_masks = self.pre_process(imgs_original, masks)
 
             # Get predictions
-            print "Running predictions..."
+            print("Running predictions...")
             predictions = self.model.predict(img_patches, batch_size=32, verbose=2)
             pred_imgs = pred_to_imgs(predictions, self.patch_x, self.patch_y)
 

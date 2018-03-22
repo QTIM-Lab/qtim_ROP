@@ -9,7 +9,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 from ..evaluation.metrics import roc_auc
 from ..features.tracing import VesselTree
-from geom import *
+from .geom import *
 from ..utils.common import make_sub_dir, dict_reverse
 
 CLASS_LABELS = {'normal': 0, 'pre-plus': 2, 'plus': 1}
@@ -49,7 +49,7 @@ def vessel_features(orig_dir, seg_dir, out_dir, csv_file):
 
             Image.fromarray(orig).save(join(renamed_dir, img_name + '.png'))
 
-            print "'{}' belongs to class {}".format(img_name, CLASS_LABELS[class_])
+            print("'{}' belongs to class {}".format(img_name, CLASS_LABELS[class_]))
 
             # Binarize and overlay
             vessel_mask = (seg > (255 * prob)).astype(np.uint8)
@@ -92,9 +92,9 @@ def random_forest(df_features, df_ground_truth, out_dir, n_splits=5):
     X = df_features.as_matrix()
     y_true = np.argmax(df_ground_truth.as_matrix(), axis=1)
 
-    print "~~ Class distribution ~~"
-    for k, v in sorted(CLASS_LABELS.items(), key=lambda x: x[1]):
-        print "{}: {:.2f}%".format(k.capitalize(), (len(y_true[y_true == v]) / float(len(y_true))) * 100)
+    print("~~ Class distribution ~~")
+    for k, v in sorted(list(CLASS_LABELS.items()), key=lambda x: x[1]):
+        print("{}: {:.2f}%".format(k.capitalize(), (len(y_true[y_true == v]) / float(len(y_true))) * 100))
 
     # Use stratified k-fold cross-validation
     skf = StratifiedShuffleSplit(n_splits=5, test_size=.2)
@@ -113,7 +113,7 @@ def random_forest(df_features, df_ground_truth, out_dir, n_splits=5):
 
         auc_results.append(auc['micro'])
 
-    print "\n~~ Average AUC over {} splits ~~\n{}".format(n_splits, np.mean(auc_results))
+    print("\n~~ Average AUC over {} splits ~~\n{}".format(n_splits, np.mean(auc_results)))
 
     #X_train, X_test, y_train, y_test = train_test_split(X, y_true, train_size=.7, test_size=.3, random_state=4)
     #

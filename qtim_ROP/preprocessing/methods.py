@@ -20,7 +20,7 @@ def unet_preproc(img):
 
 # https://github.com/btgraham/SparseConvNet/blob/kaggle_Diabetic_Retinopathy_competition/Data/
 # kaggleDiabeticRetinopathy/preprocessImages.py
-def kaggle_BG(img, scale):
+def kaggle_BG(img, scale=300):
 
     # Create a mask from which the approximate retinal center can be calculated
     guide_mask = create_mask(img)
@@ -46,7 +46,7 @@ def scale_radius(img, scale):
 
 
 def normalize_channels(img):
-    for colorband in xrange(img.shape[2]):
+    for colorband in range(img.shape[2]):
         img[:, :, colorband] = image_histogram_equalization(img[:, :, colorband])
     return img
 

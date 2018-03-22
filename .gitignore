@@ -98,3 +98,5 @@ download_retina_data.py
 statistics.py
 *.sh
 qtim_ROP/webapp/uploads
+
+*.bak

@@ -32,7 +32,7 @@ def get_unique(rater_dir, csv_file, out_dir):
     df = df.drop_duplicates(subset=['imID'])[['imID', 'path', 'class']]
 
     by_class = {class_: len(group) for class_, group in df.groupby('class')}
-    print by_class
+    print(by_class)
 
     all_imgs = []
     classes = []

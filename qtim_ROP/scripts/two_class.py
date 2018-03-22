@@ -12,12 +12,12 @@ def two_class(data_path):
 
     with open(txt_out, 'w') as txt_file:
 
-        for class_name, class_id in COMBINED_CLASSES.iteritems():
+        for class_name, class_id in COMBINED_CLASSES.items():
 
             class_dir = join(data_path, class_name)
             class_num = COMBINED_CLASSES[class_name]
 
-            print class_dir
+            print(class_dir)
 
             for im_path in listdir(class_dir):
 

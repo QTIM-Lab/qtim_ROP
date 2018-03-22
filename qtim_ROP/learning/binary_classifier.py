@@ -9,11 +9,11 @@ def binary_classifier(model_yaml, test_data, out_dir, merge_disease=True):
 
     net = RetiNet(model_yaml)
 
-    print "Generating predictions"
+    print("Generating predictions")
     pred_dict = net.evaluate(test_data)
 
     # Convert three class ground truth to two class
-    print "Merging predictions"
+    print("Merging predictions")
     pred_dict['y_true'] = merge_predictions(pred_dict['y_true'], merge_disease=merge_disease)
 
     # Create new class labels based on how we've merged

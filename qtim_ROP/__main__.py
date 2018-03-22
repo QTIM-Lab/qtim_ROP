@@ -1,6 +1,6 @@
 import sys
 import qtim_ROP
-from utils.common import find_images
+from .utils.common import find_images
 from appdirs import AppDirs
 from os import makedirs
 from os.path import isdir, isfile, join, abspath
@@ -48,14 +48,14 @@ class DeepROPCommands(object):
         parser.add_argument('-c', '--classifier', help='Folder containing trained GoogLeNet model and weights',
                             dest='classifier', default=None)
         args = parser.parse_args(sys.argv[2:])
-        print args
+        print(args)
 
         def print_summary():
-            print "Current segmentation model: {unet_directory}"\
-                  "\nCurrent classifier model: {classifier_directory}".format(**self.conf_dict)
+            print("Current segmentation model: {unet_directory}"\
+                  "\nCurrent classifier model: {classifier_directory}".format(**self.conf_dict))
 
         if not (args.unet or args.classifier):
-            print "DeepROP: no models specified."
+            print("DeepROP: no models specified.")
             parser.print_usage()
             print_summary()
             exit(1)
@@ -66,7 +66,7 @@ class DeepROPCommands(object):
             self.conf_dict['classifier_directory'] = abspath(args.classifier)
 
         yaml.dump(self.conf_dict, open(self.conf_file, 'w'), default_flow_style=False)
-        print "Configuration updated!"
+        print("Configuration updated!")
         print_summary()
 
     def segment_vessels(self):

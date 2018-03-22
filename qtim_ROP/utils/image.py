@@ -30,8 +30,8 @@ def imgs_to_th_array(img_dir, resize=(480, 640)):
             try:
                 img = imresize(img, resize, interp='bicubic')
             except ValueError as e:
-                print '{} skipped due to error'.format(img_path)
-                print e
+                print('{} skipped due to error'.format(img_path))
+                print(e)
                 continue
 
         img_names.append(basename(img_path))
@@ -48,7 +48,7 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
     img_arr, img_names, y_true = [], [], []
     imgs_by_class = find_images_by_class(img_dir)
 
-    for class_, img_list in imgs_by_class.items():
+    for class_, img_list in list(imgs_by_class.items()):
 
         for img_path in img_list:
 
@@ -65,9 +65,9 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
     return img_names, img_arr, y_true
 
 
-def create_generator(data_path, input_shape, batch_size=32, training=True, tf=True, regression=False, **kwargs):
+def create_generator(data_path, input_shape, batch_size=32, training=True, regression=False, **kwargs):
 
-    datagen = ImageDataGenerator()  # augmentation options, can come from a dictionary
+    datagen = ImageDataGenerator(**kwargs)  # augmentation options, can come from a dictionary
 
     if isdir(data_path):  # if we have directories of images split by class
 
@@ -81,22 +81,16 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, tf=Tr
 
     else:  # otherwise, assume HDF5 file
 
-        print "Loading data from HDF5 file '{}'".format(data_path)
+        print("Loading data from HDF5 file '{}'".format(data_path))
         f = h5py.File(data_path, 'r')
+        data = f['data']
 
-        if tf:
-            data = np.transpose(f['data'], (0, 2, 3, 1))
-        else:
-            data = f['data']
-
-        if regression or np.max(f['labels']) == 1:
+        if regression:
             labels = f['labels']
         else:
             labels = to_categorical(f['labels'])  # categorical (one-hot encoded)
 
-        print data.shape
-        print labels.shape
-        cw = class_weight.compute_class_weight('balanced', np.unique(labels), labels)
+        cw = None  # cw = class_weight.compute_class_weight('balanced', np.unique(tuple(labels)), tuple(labels))
         return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels, cw
 
 

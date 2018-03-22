@@ -18,7 +18,7 @@ class ReaderEnsemble(object):
         self.models_dir = models_dir
         self.models_list = get_subdirs(models_dir) if not names else [join(models_dir, name) for name in names]
 
-        print 'Loading models'
+        print('Loading models')
         self.models = [RetiNet(join(model_dir, basename(model_dir) + '.yaml')) for model_dir in self.models_list]
 
         if any(x not in OPTIONS for x in modes):
@@ -34,7 +34,7 @@ class ReaderEnsemble(object):
         for model in self.models:
 
             # Predict class probabilities using current model
-            print "Generating predictions for model '{}".format(model.experiment_name)
+            print("Generating predictions for model '{}".format(model.experiment_name))
             data_dict = model.evaluate(test_data)
 
             pred_prob = data_dict['probabilities']

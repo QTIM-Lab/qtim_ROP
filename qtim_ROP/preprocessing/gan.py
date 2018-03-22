@@ -90,8 +90,8 @@ def train(BATCH_SIZE):
     discriminator.compile(loss='binary_crossentropy', optimizer=d_optim)
     noise = np.zeros((BATCH_SIZE, 100))
     for epoch in range(100):
-        print("Epoch is", epoch)
-        print("Number of batches", int(X_train.shape[0]/BATCH_SIZE))
+        print(("Epoch is", epoch))
+        print(("Number of batches", int(X_train.shape[0]/BATCH_SIZE)))
         for index in range(int(X_train.shape[0]/BATCH_SIZE)):
             for i in range(BATCH_SIZE):
                 noise[i, :] = np.random.uniform(-1, 1, 100)
@@ -105,14 +105,14 @@ def train(BATCH_SIZE):
             X = np.concatenate((image_batch, generated_images))
             y = [1] * BATCH_SIZE + [0] * BATCH_SIZE
             d_loss = discriminator.train_on_batch(X, y)
-            print("batch %d d_loss : %f" % (index, d_loss))
+            print(("batch %d d_loss : %f" % (index, d_loss)))
             for i in range(BATCH_SIZE):
                 noise[i, :] = np.random.uniform(-1, 1, 100)
             discriminator.trainable = False
             g_loss = discriminator_on_generator.train_on_batch(
                 noise, [1] * BATCH_SIZE)
             discriminator.trainable = True
-            print("batch %d g_loss : %f" % (index, g_loss))
+            print(("batch %d g_loss : %f" % (index, g_loss)))
             if index % 10 == 9:
                 generator.save_weights('generator', True)
                 discriminator.save_weights('discriminator', True)

@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from ..utils.common import find_images, make_sub_dir
 from ..segmentation.segment_unet import SegmentUnet
-from evaluate_ensemble import plot_roc_auc
+from .evaluate_ensemble import plot_roc_auc
 import seaborn as sns
 
 
@@ -17,25 +17,25 @@ def evaluate_cross_val(models, test_data, out_dir):
         model_dir = join(models, 'leave_{}'.format(i))
         seg_out_dir = make_sub_dir(out_dir, 'pred_{}'.format(i))
 
-        print "Loading model '{}'".format(model_dir)
+        print("Loading model '{}'".format(model_dir))
         trained_model = SegmentUnet(model_dir, out_dir=seg_out_dir)
 
         # Get test images and ground truth
         test_imgs_dir = join(test_data, 'split_{}'.format(i), 'test', 'images')
         gt_dir = join(test_data, 'split_{}'.format(i), 'test', '1st_manual')
-        print "Testing on data from '{}'".format(test_imgs_dir)
-        print "Testing on data from '{}'".format(test_imgs_dir)
+        print("Testing on data from '{}'".format(test_imgs_dir))
+        print("Testing on data from '{}'".format(test_imgs_dir))
 
         # Segment images using model
         img_list = find_images(test_imgs_dir)
         gt_list = find_images(gt_dir)
 
-        print img_list
-        print gt_list
+        print(img_list)
+        print(gt_list)
 
         y_pred = trained_model.segment_batch(img_list)
         if len(y_pred) == 0:
-            print "Loading previous seg"
+            print("Loading previous seg")
             y_pred = [np.asarray(Image.open(img)).astype(np.float32) / 255. for img in find_images(seg_out_dir)]
 
         y_true = [np.asarray(Image.open(img)).astype(np.bool) for img in gt_list]

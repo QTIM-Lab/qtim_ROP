@@ -43,7 +43,7 @@ def unet_cross_val(data_dir, out_dir, mapping, splits, unet_conf):
     testPrePIndex = CVFile['testPrePIndex'][0]
 
     prep_dir = make_sub_dir(out_dir, 'trainTestPreP')
-    print "Generating splits for combined Pre-Plus and Plus"
+    print("Generating splits for combined Pre-Plus and Plus")
     generate_splits(trainPrePIndex, testPrePIndex, df, img_dir, mask_dir, seg_dir, prep_dir)
 
     # Train models
@@ -76,7 +76,7 @@ def generate_splits(trainIndex, testIndex, df, img_dir, mask_dir, seg_dir, out_d
         images_dir = make_sub_dir(split_dir, 'images')
 
         if isdir(images_dir) and len(listdir(images_dir)) == 6:
-            print "Data already processed for split #{}".format(i)
+            print("Data already processed for split #{}".format(i))
             continue
 
         # Training and testing indices for this split
@@ -128,12 +128,12 @@ def create_dataset(img_paths, seg_paths, mask_paths, out_dir, name):
         masks_arr[i] = np.asarray(b_mask)[:, :, 0]  # .astype(np.uint8)[:, :, 0] * 255
 
     # Value assertions
-    print "imgs max: {}".format(np.max(imgs_arr))
-    print "imgs min: {}".format(np.min(imgs_arr))
+    print("imgs max: {}".format(np.max(imgs_arr)))
+    print("imgs min: {}".format(np.min(imgs_arr)))
 
     assert (np.max(ground_truth_arr) == 255 and np.max(masks_arr) == 255)
     assert (np.min(ground_truth_arr) == 0 and np.min(masks_arr) == 0)
-    print "Ground truth and border masks are correctly within pixel value range 0 - 255 (black - white)"
+    print("Ground truth and border masks are correctly within pixel value range 0 - 255 (black - white)")
 
     # Reshaping
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
@@ -146,7 +146,7 @@ def create_dataset(img_paths, seg_paths, mask_paths, out_dir, name):
     assert (masks_arr.shape == (n_imgs, 1, height, width))
 
     # Write the data to disk
-    print "Saving dataset to '{}'".format(out_dir)
+    print("Saving dataset to '{}'".format(out_dir))
     write_hdf5(imgs_arr, join(out_dir, "imgs_{}.hdf5".format(name)))
     write_hdf5(ground_truth_arr, join(out_dir, "ground_truth_{}.hdf5".format(name)))
     write_hdf5(masks_arr, join(out_dir, "masks_{}.hdf5".format(name)))
@@ -191,9 +191,9 @@ def check_images_exist(df, img_dir, seg_dir, mask_dir):
             assert (isfile(mask_path))
 
         except AssertionError:
-            print img_path
-            print seg_path
-            print mask_path
+            print(img_path)
+            print(seg_path)
+            print(mask_path)
             exit()
 
 

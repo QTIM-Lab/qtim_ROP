@@ -2,24 +2,26 @@
 
 from os import chdir, getcwd
 from os.path import dirname, splitext, abspath
-from keras.callbacks import Callback, ModelCheckpoint, CSVLogger
-from keras.layers import Dense, Flatten, Input, Dropout, GlobalAveragePooling2D
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+config.gpu_options.per_process_gpu_memory_fraction = 0.8
+set_session(tf.Session(config=config))
+
+from keras.callbacks import TensorBoard, ModelCheckpoint, CSVLogger, EarlyStopping
+from keras.layers import Dense, Flatten, Dropout
 from keras.models import Model
-from keras.models import model_from_json
-from keras.optimizers import SGD, RMSprop, Adadelta, Adam
 from keras.utils.np_utils import to_categorical
-from googlenet_custom_layers import PoolHelper, LRN
-from custom_loss import r2_keras
+from .googlenet_custom_layers import PoolHelper, LRN
+from .custom_loss import r2_keras
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, f1_score
-import matplotlib.pyplot as plt
 from ..utils.common import *
 from ..utils.image import create_generator
-# from ..utils.models import SGDLearningRateTracker
 from ..utils.plotting import *
-from ..visualisation.tsne import tsne
-from ..evaluation.metrics import plot_ROC_by_class
+from ..evaluation.metrics import plot_confusion, plot_ROC_curves
 
 
 class RetiNet(object):
@@ -57,20 +59,20 @@ class RetiNet(object):
         try:
             self.config['mode']
         except KeyError:
-            print "Please specify a mode 'train' or 'evaluate' in the config file."
+            print("Please specify a mode 'train' or 'evaluate' in the config file.")
             exit()
 
         if self.config['mode'] == 'train':
 
             # Set up logging
             if not self.train_data:
-                print "No training data specified! Exiting..."
+                print("No training data specified! Exiting...")
                 exit()
 
             self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
 
-            print "Logging to '{}'".format(join(self.experiment_dir, 'training.log'))
+            print("Logging to '{}'".format(join(self.experiment_dir, 'training.log')))
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
             self._configure_network(build=True)
@@ -107,26 +109,10 @@ class RetiNet(object):
 
         elif 'inception':
 
-            custom_objects = {"PoolHelper": PoolHelper, "LRN": LRN}
-            mod_str = 'GoogLeNet'
-
-            from .googlenet import create_googlenet
+            mod_str = 'Inception v1'
+            from .inception_v1 import InceptionV1
             logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
-            arch = network.get('arch', None)
-
-            if arch is None:
-                self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 128),
-                                              network.get('regression'), network.get('input_shape', (3, 224, 224)))
-            else:
-                try:
-                    self.model = model_from_json(open(arch).read(), custom_objects=custom_objects)
-                except ValueError:  # keras compatibility issue
-                    self.model = create_googlenet(network.get('no_classes', 3), network.get('no_features', 128),
-                                                  network.get('regression'), network.get('input_shape', (3, 224, 224)))
-
-            if weights:
-                print "Loading weights '{}'".format(weights)
-                self.model.load_weights(weights, by_name=True)
+            self.customize_keras_model(InceptionV1, weights, network)
 
         else:
             raise Exception('Invalid model type!')
@@ -136,18 +122,16 @@ class RetiNet(object):
             opt_options = self.config['optimizer']
             optimizer, loss, params = opt_options['type'], opt_options['loss'], opt_options['params']
             metrics = ['accuracy']
-            if self.regression:
-                metrics.append(r2_keras)
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-    def customize_keras_model(self, keras_model, weights, params):
+    def customize_keras_model(self, keras_model, weights, params, dropout=0.5):
 
-        input_shape = params.get('input_shape', (3, 224, 224))
+        input_shape = params.get('input_shape', (224, 224, 3))
         base_model = keras_model(input_shape=input_shape, weights=weights, include_top=False)
         x = base_model.output
         x = Flatten()(x)
         x = Dense(params.get('no_features'), activation='relu')(x)
-        x = Dropout(0.5)(x)
+        x = Dropout(dropout)(x)
         act = 'linear' if params.get('regression') is True else 'softmax'
         predictions = Dense(params.get('no_classes'), activation=act)(x)
         self.model = Model(inputs=base_model.input, outputs=predictions)
@@ -156,8 +140,8 @@ class RetiNet(object):
 
         final_result = join(self.experiment_dir, 'final_weights.h5')
         if isfile(final_result):
-            print "Training already concluded"
-            self.conclude_training()
+            print("Training already concluded")
+            self.conclude_training(weights='best')
             return
 
         # Train
@@ -168,24 +152,26 @@ class RetiNet(object):
 
         # Create generators
         train_gen, train_n, _, cw = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch,
-                                                     regression=self.regression, tf=False,
-                                                     width_shift_range=0.1,
-                                                     height_shift_range=0.1,
-                                                     horizontal_flip=True,
-                                                     vertical_flip=True)
+                                                     regression=self.regression)
+                                                     #width_shift_range=0.1,
+                                                     #height_shift_range=0.1,
+                                                     #rotation_range=0.1)
 
         if self.val_data is not None:
-            val_gen, val_n, _, _= create_generator(self.val_data, input_shape, training=False, batch_size=val_batch,
-                                                   regression=self.regression, tf=False)
+            val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch,
+                                                    regression=self.regression)
         else:
-            print "No validation data provided."
+            print("No validation data provided.")
             val_gen = None
             val_n = None
 
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
-        checkpoint_tb = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
-        csv_log = CSVLogger(join(self.experiment_dir, 'history.csv'), separator=',', append=False)
+        tb_dir = make_sub_dir(self.experiment_dir, 'tensorboard')
+        checkpoint_cb = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
+        stop_cb = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
+        tensorboard_cb = TensorBoard(log_dir=tb_dir, histogram_freq=0, write_graph=True, write_images=True)
+        csv_log_cb = CSVLogger(join(self.experiment_dir, 'history.csv'), separator=',', append=False)
 
         logging.info("Training model for {} epochs".format(epochs))
         history = self.model.fit_generator(
@@ -194,31 +180,32 @@ class RetiNet(object):
             epochs=epochs,
             validation_data=val_gen,
             validation_steps=val_n / float(val_batch),
-            callbacks=[checkpoint_tb, csv_log], class_weight=cw)
+            callbacks=[checkpoint_cb, csv_log_cb, stop_cb, tensorboard_cb], class_weight=cw)
 
         # Save model arch, weights and history
         dict_to_csv(history.history, join(self.experiment_dir, "history.csv"))
         # np.save(join(self.experiment_dir, 'learning_rate.npy'), lr_tb.lr)
         self.model.save_weights(join(self.experiment_dir, 'final_weights.h5'))
+        self.model.save(join(self.experiment_dir, 'final_model.h5'))
 
         with open(join(self.experiment_dir, 'model_arch.json'), 'w') as arch:
             arch.writelines(self.model.to_json())
 
         # Write updated YAML file and plot history
-        return self.conclude_training()
+        return self.conclude_training('best')
 
     def conclude_training(self, weights='final'):
 
         # Create modified copy of config file
-        conf_eval = self.update_config('final')
-        with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'wb') as ce:
+        conf_eval = self.update_config(weights=weights)
+        with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'w') as ce:
             yaml.dump(conf_eval, ce, default_flow_style=False)
 
         self.plot_history()
 
         # Evaluate the model on the test/val data
-        print "Loading best weights and running inference..."
-        self.model.load_weights(join(self.experiment_dir, '{}_weights.h5'.format(weights))) # final or best
+        print("Loading best weights and running inference...")
+        self.model.load_weights(join(self.experiment_dir, '{}_weights.h5'.format(weights)))  # final or best
         return self.evaluate(self.test_data)
 
     def plot_history(self):
@@ -247,30 +234,38 @@ class RetiNet(object):
     def evaluate(self, data_path, n_samples=None):
 
         logging.info("Evaluating model for on {}".format(data_path))
-        datagen, no_samples, y_true = create_generator(data_path, self.model.input_shape[1:],
-                                                       batch_size=1, training=False, tf=False)
-        if not n_samples:
-            n_samples = no_samples
+
+        if isfile(data_path) and splitext(data_path)[1] == '.h5':
+            val_gen, val_n, y_true, _ = create_generator(self.val_data, self.model.input_shape[1:], training=False,
+                                                         batch_size=1, regression=self.regression)
+        else:
+            raise IOError("Please specify either a HDF5 file or folder of images with which to evaluate.")
 
         # Get predictions and ground truth
-        y_pred = self.model.predict_generator(datagen, n_samples)
-        y_true = to_categorical(y_true[:n_samples])
+        y_pred = np.squeeze(self.model.predict_generator(val_gen, steps=n_samples))
+        y_true = np.asarray(y_true[:n_samples])
+
+        print(y_pred.shape)
+        print(y_true.shape)
+
+        plt.figure(3)
 
         # Confusion matrix
-        confusion = confusion_matrix(np.argmax(y_true, axis=1),
-                                     np.argmax(y_pred, axis=1))
+        if self.regression:
+            confusion = confusion_matrix(y_true, np.round(np.clip(y_pred, -0.5, 2.5)))
+            plot_ROC_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, regression=True, outfile=join(self.experiment_dir, 'roc_curve.png'))
+        else:
+            confusion = confusion_matrix(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1))
+            plot_ROC_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, outfile=join(self.experiment_dir, 'roc_curve.png'))
 
-        return y_pred, confusion, f1_score(y_true, y_pred > 0.5)
+        print(confusion)
 
-        # plt.figure(3)
-        # plot_confusion(confusion, labels, join(self.experiment_dir, 'confusion.png'))
-        # plt.clf()
-        #
-        # # ROC/AUC
-        # class_indices.pop(1)  # remove Pre-Plus
-        # plt.figure(4)
-        # plot_ROC_by_class(y_true, y_pred, class_indices, outfile=join(self.experiment_dir, 'roc_curve.png'))
-        # plt.clf()
+        plt.clf()
+        plt.figure(4)
+        plot_confusion(confusion, ['Normal', 'Pre-Plus', 'Plus'], join(self.experiment_dir, 'confusion.png'))
+        plt.clf()
+
+        # return pd.DataFrame(data=)
 
     def set_intermediate(self, layer_name):
 
@@ -298,7 +293,7 @@ class RetinaRF(object):
         X_train = features['y_pred']  # inputs to train the random forest
         y_train = np.asarray(features['y_true'])  # ground truth for random forest
 
-        print "Training RF..."
+        print("Training RF...")
         self.rf.fit(X_train, y_train)
 
         if rf_out:
@@ -380,25 +375,6 @@ def locate_config(search_dir, rf=False):
         if rf:
             rf_pkl = glob(join(search_dir, '*.pkl'))[0]
     except IndexError:
-        print "Missing CNN (.yaml) or RF (.pkl) file - unable to load"
+        print("Missing CNN (.yaml) or RF (.pkl) file - unable to load")
 
     return config_file, rf_pkl
-
-if __name__ == '__main__':
-
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser()
-    parser.add_argument('-c', '--config', dest='config', required=True)
-    parser.add_argument('-d', '--data', dest='data', default=None)
-
-    args = parser.parse_args()
-
-    # Instantiate model and train
-    r = RetiNet(args.config)
-    if args.data is None:
-        r.train()
-    else:
-        # Evaluate on validation data and calculate metrics
-        data_dict = r.evaluate(args.data)
-        calculate_metrics(data_dict, out_dir=r.eval_dir)

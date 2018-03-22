@@ -16,7 +16,7 @@ class LRN(Layer):
     def call(self, x, mask=None):
 
         b, ch, r, c = x.shape
-        print x.shape
+        print(x.shape)
         half_n = self.n // 2  # half the local region
         # orig keras code
         # input_sqr = T.sqr(x)  # square the input
@@ -28,7 +28,7 @@ class LRN(Layer):
         # extra_channels = K.zeros((b, int(ch) + 2 * half_n, r, c))
         paddings = [[0, 0], [half_n, half_n], [0, 0], [0, 0]]
         input_sqr = tf.pad(input_sqr, paddings)
-        print input_sqr.shape
+        print(input_sqr.shape)
 
         scale = self.k  # offset for the scale
         norm_alpha = self.alpha / self.n  # normalized alpha

@@ -25,7 +25,7 @@ def main(X, y, channels, normalize=False):
         X_test = X_test.astype('float32') / 255.
 
     # Train model
-    print "Training autoencoder"
+    print("Training autoencoder")
     model = train_autoencoder(X_train, X_test, channels)
 
 

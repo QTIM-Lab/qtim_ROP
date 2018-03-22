@@ -18,9 +18,9 @@ def prepare_GAN(img_dir, mask_dir, out_dir, thresh=0.4):
     test_dir = make_GAN_dirs(out_dir, 'test')
 
     i = 0
-    for key, seg_img in seg_imgs.items():
+    for key, seg_img in list(seg_imgs.items()):
 
-        if key in imgs.keys():
+        if key in list(imgs.keys()):
 
             img_arr = np.asarray(Image.open(imgs[key]))
             img_arr = imresize(img_arr, (512, 512), interp='bicubic')

@@ -15,7 +15,7 @@ def evaluate_ensemble(models_dir, test_images, out_dir, rf=False):
 
     # Get images and true classes
     img_arr, y_true = imgs_by_class_to_th_array(test_images, CLASS_LABELS)
-    print img_arr.shape
+    print(img_arr.shape)
 
     y_pred_all = []
 
@@ -24,16 +24,16 @@ def evaluate_ensemble(models_dir, test_images, out_dir, rf=False):
 
         # Load model
         if rf:
-            print "Loading CNN+RF #{}".format(i)
+            print("Loading CNN+RF #{}".format(i))
             model_config, rf_pkl = locate_config(model_dir)
             model = RetinaRF(model_config, rf_pkl=rf_pkl)
         else:
-            print "Loading CNN #{}".format(i)
+            print("Loading CNN #{}".format(i))
             config_file = glob(join(model_dir, '*.yaml'))[0]
             model = RetiNet(config_file).model
 
         # Predicted probabilities
-        print "Making predictions..."
+        print("Making predictions...")
         ypred_out = join(out_dir, 'ypred_{}.npy'.format(i))
 
         if not exists(ypred_out):

@@ -1,2 +1,2 @@
-import preprocess_cross_val
-import preprocess_images
+from . import preprocess_cross_val
+from . import preprocess_images

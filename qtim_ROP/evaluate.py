@@ -2,7 +2,7 @@ from os.path import isdir, isfile, join, splitext, basename
 from qtim_ROP.learning.retina_net import RetiNet
 from qtim_ROP.utils.common import dict_reverse, find_images_by_class
 from qtim_ROP.utils.image import imgs_by_class_to_th_array
-from qtim_ROP.evaluation.metrics import plot_confusion, plot_ROC_by_class
+from qtim_ROP.evaluation.metrics import plot_confusion, plot_ROC_curves
 from qtim_ROP.deep_rop import generate_report
 from sklearn.metrics import confusion_matrix
 from keras.utils.np_utils import to_categorical
@@ -37,11 +37,11 @@ def evaluate(model_config, data, out_dir):
     # Confusion matrix
     arg_max = np.argmax(y_pred, axis=1)
     conf = confusion_matrix(y_true, arg_max)
-    plot_confusion(conf, [v for k, v in sorted(LABELS.items(), key=lambda x: x[0])], join(out_dir, 'confusion.png'))
+    plot_confusion(conf, [v for k, v in sorted(list(LABELS.items()), key=lambda x: x[0])], join(out_dir, 'confusion.png'))
 
     # ROC curves
     fig, ax = plt.subplots()
-    plot_ROC_by_class(to_categorical(y_true), y_pred, {v: k for k, v in LABELS.items() if v != 'Pre-Plus'})
+    plot_ROC_curves(to_categorical(y_true), y_pred, {v: k for k, v in list(LABELS.items()) if v != 'Pre-Plus'})
     plt.legend(loc='lower right')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([-0.025, 1.025])

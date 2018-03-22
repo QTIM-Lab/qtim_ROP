@@ -1,4 +1,4 @@
-import qtim_ROP
+from . import qtim_ROP
 
 if __name__ == '__main__':
 

@@ -55,7 +55,7 @@ def upload():
 
     # Create instance of long task
     if 'file' not in request.files:
-        print "No file found"
+        print("No file found")
         return render_template('index.html')
 
     file = request.files['file']
@@ -78,7 +78,7 @@ def send_original(filename):
 
 @app.route('/upload/<seg_name>')
 def send_segmentation(seg_name):
-    print seg_name
+    print(seg_name)
     return send_from_directory(app.config['SEG_FOLDER'], seg_name)
 
 

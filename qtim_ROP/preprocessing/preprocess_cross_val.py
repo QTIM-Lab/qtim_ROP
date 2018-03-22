@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import numpy as np
+np.random.seed(101)
 
 from functools import partial
 from multiprocessing import cpu_count
@@ -12,7 +14,7 @@ import yaml
 from random import shuffle, seed
 from PIL import Image
 
-import cv2
+from os.path import isfile
 from scipy.misc import imresize
 from os.path import join
 import numpy as np
@@ -68,7 +70,7 @@ class Pipeline(object):
                 self.label = conf_dict['reader']
 
                 if not isdir(self.input_dir):
-                    print "Input {} is not a directory!".format(self.input_dir)
+                    print("Input {} is not a directory!".format(self.input_dir))
                     exit()
 
                 # Extract pipeline parameters or set defaults
@@ -78,11 +80,11 @@ class Pipeline(object):
                 self.crop = self.pipeline.get('crop', None)
 
                 if self.crop:
-                    self.crop_width = (self.resize['width'] - self.crop['width']) / 2
-                    self.crop_height = (self.resize['height'] - self.crop['height']) / 2
+                    self.crop_width = int((self.resize['width'] - self.crop['width']) * .5)
+                    self.crop_height = int((self.resize['height'] - self.crop['height']) * .5)
 
         except KeyError as e:
-            print "Missing config entry {}".format(e)
+            print("Missing config entry {}".format(e))
             exit()
 
     def run(self):
@@ -162,7 +164,7 @@ class Pipeline(object):
             train_split = []  # to store training
             test_split = []  # to store testing
 
-            for class_ in all_splits.keys():  # for each class
+            for class_ in list(all_splits.keys()):  # for each class
 
                 class_splits = all_splits[class_]  # grab all splits for this class
                 train_indices = list(split_range - set([test_index]))  # chunks of patients to train on
@@ -175,51 +177,56 @@ class Pipeline(object):
         # For each split
         for i in split_range:  # for each split
 
-            print "\n~~ Split {} ~~".format(i)
-
-            train_split = train_test_splits[i]['train']  # get the training data
-            test_split = train_test_splits[i]['test']  # get the testing data
-
-            # There is a chance that data from the same patient are split in both sets
-            patient_intersection = set.intersection(set(train_split['patient_id'].values), set(test_split['patient_id'].values))
-
-            for pat in patient_intersection:
-
-                train_patients = train_split.loc[train_split['patient_id'] == pat]
-                test_patients = test_split.loc[test_split['patient_id'] == pat]
-
-                move_to_train = np.argmax([test_patients.shape[0], train_patients.shape[0]])
-                if move_to_train:
-                    train_split = train_split.append(test_patients)  # copy from test to train
-                    test_split = test_split[test_split.patient_id != pat]  # remove from test
-                else:
-                    test_split = test_split.append(train_patients)  # copy from train to test
-                    train_split = train_split[train_split.patient_id != pat]  # remove from train
-
-            # Re-check that there is no patient overlap
-            patient_intersection = set.intersection(set(train_split['patient_id'].values), set(test_split['patient_id'].values))
-            assert(len(patient_intersection) == 0)
-
-            # Confirms that the testing and training are split properly - same images don't appear in both
-            assert(all(x not in train_split.index.values for x in test_split.index.values))
-
-            tr0 = train_split.shape[0]
-            te0 = test_split.shape[0]
-
-            # Calculate the total images in each set (it won't be exact but hopefully close)
-            print "Train images %: {:.2f}".format(float(tr0) / (tr0 + te0) * 100)
-            print "Test images %: {:.2f}\n".format(float(te0) / (tr0 + te0) * 100)
-
-            # Check that the class distribution is maintained in each split
-            print 'Class distribution - training:'
-            print {class_: len(x) / float(tr0) for class_, x in train_split.groupby(self.label)}
-            print 'Class distribution - testing:'
-            print {class_: len(x) / float(te0) for class_, x in test_split.groupby(self.label)}
-
+            print("\n~~ Split {} ~~".format(i))
             split_dir = make_sub_dir(self.out_dir, 'split_{}'.format(i))
-            train_split.to_csv(join(split_dir, 'training.csv'))
-            test_split.to_csv(join(split_dir, 'testing.csv'))
+            train_csv = join(split_dir, 'training.csv')
+            test_csv = join(split_dir, 'testing.csv')
 
+            if not (isfile(train_csv) and isfile(test_csv)):
+
+                train_split = train_test_splits[i]['train']  # get the training data
+                test_split = train_test_splits[i]['test']  # get the testing data
+
+                # There is a chance that data from the same patient are split in both sets
+                patient_intersection = set.intersection(set(train_split['patient_id'].values), set(test_split['patient_id'].values))
+
+                for pat in patient_intersection:
+
+                    train_patients = train_split.loc[train_split['patient_id'] == pat]
+                    test_patients = test_split.loc[test_split['patient_id'] == pat]
+
+                    move_to_train = np.argmax([test_patients.shape[0], train_patients.shape[0]])
+                    if move_to_train:
+                        train_split = train_split.append(test_patients)  # copy from test to train
+                        test_split = test_split[test_split.patient_id != pat]  # remove from test
+                    else:
+                        test_split = test_split.append(train_patients)  # copy from train to test
+                        train_split = train_split[train_split.patient_id != pat]  # remove from train
+
+                # Re-check that there is no patient overlap
+                patient_intersection = set.intersection(set(train_split['patient_id'].values), set(test_split['patient_id'].values))
+                assert(len(patient_intersection) == 0)
+
+                # Confirms that the testing and training are split properly - same images don't appear in both
+                assert(all(x not in train_split.index.values for x in test_split.index.values))
+
+                tr0 = train_split.shape[0]
+                te0 = test_split.shape[0]
+
+                # Calculate the total images in each set (it won't be exact but hopefully close)
+                print("Train images %: {:.2f}".format(float(tr0) / (tr0 + te0) * 100))
+                print("Test images %: {:.2f}\n".format(float(te0) / (tr0 + te0) * 100))
+
+                # Check that the class distribution is maintained in each split
+                print('Class distribution - training:')
+                print({class_: len(x) / float(tr0) for class_, x in train_split.groupby(self.label)})
+                print('Class distribution - testing:')
+                print({class_: len(x) / float(te0) for class_, x in test_split.groupby(self.label)})
+
+                train_split.to_csv(join(split_dir, 'training.csv'))
+                test_split.to_csv(join(split_dir, 'testing.csv'))
+
+            # Use CSV files to generate datasets
             self.generate_dataset(split_dir, mode='training')
             self.generate_dataset(split_dir, mode='testing')
 
@@ -238,26 +245,29 @@ class Pipeline(object):
             make_sub_dir(data_dir, str(class_name))
 
         # Pre-process, augment and randomly sample the training set
-        print "Preprocessing {} data...".format(mode)
+        print("Preprocessing {} data...".format(mode))
 
         if len(find_images(join(data_dir, '*'))) == 0:
-            pool = Pool(self.processes)
+            pool = Pool(2)
             subprocess = partial(do_preprocess, args={'params': self, 'augment': do_augment, 'out_dir': data_dir})
             img_list = list(split_df['full_path'])
+
+            print(img_list)
             _ = pool.map(subprocess, img_list)
 
-        self.generate_h5(find_images_by_class(data_dir, classes=classes), join(split_dir, '{}.h5'.format(mode)), split_df,
-                         random_sample=True, classes=classes)
+        self.generate_h5(find_images_by_class(data_dir, classes=classes),  # enumerated classes
+                         join(split_dir, '{}.h5'.format(mode)), split_df, random_sample=mode == 'training')
 
     def generate_h5(self, imgs, out_file, df, random_sample=True, classes=DEFAULT_CLASSES):
 
-        class_sizes = {c: len(x) for c, x in imgs.items()}
+        class_sizes = {c: len(x) for c, x in list(imgs.items())}
 
         img_arr = []
         img_labels = []
         original_images = []
+        cidx = 0
 
-        for cidx, class_ in enumerate(classes):
+        for class_ in classes:
 
             removal_num = class_sizes[class_] - int(
                 (float(min(class_sizes.values())) / float(class_sizes[class_])) * class_sizes[class_])
@@ -277,15 +287,16 @@ class Pipeline(object):
                 assert(all(original_image.split('_')[j] == basename(img_path).split('_')[j] for j in range(0, 5)))
 
                 img_arr.append(np.asarray(Image.open(img_path)))
-                img_labels.append(class_)
+                img_labels.append(cidx)
                 original_images.append(original_image)
 
-            print "{} ({}): {}".format(out_file, class_, len(imgs[class_]))
+            print("{} ({}, index={}): {}".format(out_file, class_, cidx, len(imgs[class_])))
+            cidx += 1
 
         # Save results
-        train_data = np.transpose(np.asarray(img_arr), (0, 3, 2, 1))
+        train_data = np.asarray(img_arr)
         img_labels = np.asarray(img_labels)
-        original_images = np.asarray(original_images)
+        original_images = np.asarray(original_images).astype('|S9')
 
         with h5py.File(out_file, "w") as f:
             f.create_dataset('data', data=train_data, dtype=train_data.dtype)
@@ -319,7 +330,7 @@ class Pipeline(object):
 
 def do_preprocess(im, args):
 
-    # print "Pre-processing '{}'".format(im)
+    print("Pre-processing '{}'".format(im))
     params, out_dir, augment = args['params'], args['out_dir'], args['augment']
 
     # Image metadata
@@ -330,18 +341,12 @@ def do_preprocess(im, args):
     row = params.label_data.loc[im_ID]
     reader = params.label
     class_ = row[reader]
-    # stage = row['ROP_stage']
-    # quality = row['quality']
-
-    # Skip images with invalid class, advanced ROP or insufficient quality
-    # if class_ not in DEFAULT_CLASSES or not quality or stage > 3:
-    #     return False
 
     # Resize, preprocess and augment
     try:
         im_arr = cv2.imread(im)[:, :, ::-1]
     except TypeError:
-        print "Error loading '{}'".format(im)
+        print("Error loading '{}'".format(im))
         return False
 
     im_arr = im_arr[:,:,:3]
@@ -372,7 +377,7 @@ def do_preprocess(im, args):
             for rotate in [0, 1, 2, 3]:
                 new_img = np.copy(img)
                 if rotate > 0:
-                    for i in xrange(rotate):
+                    for i in range(rotate):
                         new_img = np.rot90(new_img)
                 if flip == 1:
                     new_img = np.fliplr(new_img)

@@ -3,7 +3,7 @@ from os.path import join, basename, isfile
 import numpy as np
 from PIL import Image
 from sklearn.metrics import roc_curve, auc, confusion_matrix
-from segment_unet import SegmentUnet
+from .segment_unet import SegmentUnet
 from ..utils.common import find_images, get_subdirs, make_sub_dir
 
 
@@ -20,16 +20,16 @@ def evaluate(models, img_dir, true_dir, out_dir, ignore=None):
 
         # Get model name and create folder to store segmentation results (for debugging)
         model_name = basename(unet_dir)
-        print "Testing '{}'".format(model_name)
+        print("Testing '{}'".format(model_name))
         result_dir = make_sub_dir(out_dir, 'seg_' + model_name)
 
         npy_file = join(out_dir, model_name + '.npy')
 
         if isfile(npy_file):
-            print "Loading previous segmentation results"
+            print("Loading previous segmentation results")
             seg_imgs = np.load(npy_file)
         else:
-            print "Performing U-Net segmentation"
+            print("Performing U-Net segmentation")
             unet = SegmentUnet(unet_dir, out_dir=result_dir)
             seg_imgs = unet.segment_batch(imgs, batch_size=100)  # samples, channels, height, width
             np.save(npy_file, np.asarray(seg_imgs))
@@ -37,7 +37,7 @@ def evaluate(models, img_dir, true_dir, out_dir, ignore=None):
         plot_roc_auc(seg_imgs, ground_truth, name=model_name)
 
         if ignore and model_name == ignore:
-            print "Not including '{}' in the ensemble".format(model_name)
+            print("Not including '{}' in the ensemble".format(model_name))
             continue  # don't include the results of this model in the ensembling
 
         all_predictions.append(seg_imgs)

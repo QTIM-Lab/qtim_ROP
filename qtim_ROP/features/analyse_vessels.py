@@ -13,7 +13,7 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
     orig_dict = find_images_by_class(orig_dir)
     seg_dict = find_images_by_class(seg_dir)
 
-    assert(all(len(orig_dict[c]) == len(seg_dict[c]) for c in orig_dict.keys()))
+    assert(all(len(orig_dict[c]) == len(seg_dict[c]) for c in list(orig_dict.keys())))
 
     pixel_totals, pixel_hist = {}, {}
 
@@ -30,14 +30,14 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
 
     cidx = 0
 
-    for (class_, orig_list), (_, seg_list) in zip(orig_dict.items(), seg_dict.items()):
+    for (class_, orig_list), (_, seg_list) in zip(list(orig_dict.items()), list(seg_dict.items())):
 
         # Load all original images in this class
-        print "Loading original '{}' images".format(class_)
+        print("Loading original '{}' images".format(class_))
         orig_images = np.array([np.asarray(Image.open(im)) for im in orig_list])
 
         # Load segmented images and apply threshold
-        print "Loading segmented '{}' images".format(class_)
+        print("Loading segmented '{}' images".format(class_))
         seg_images = np.array([np.asarray(Image.open(im)) for im in seg_list])
 
         # Compute total pixels per image
@@ -51,8 +51,8 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
         sorted_seg = seg_images[order]
         sorted_names = [basename(orig_list[x]) for x in order]
 
-        print "Original images: {}".format(sorted_orig.shape)
-        print "Segmented images: {}".format(sorted_seg.shape)
+        print("Original images: {}".format(sorted_orig.shape))
+        print("Segmented images: {}".format(sorted_seg.shape))
 
         step = int(np.ceil(sorted_orig.shape[0] / 10.0))
 
@@ -64,7 +64,7 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
             im_name = sorted_names[j]
             Image.fromarray(sorted_orig[j]).save(join(fewest_dir, '{}.jpg'.format(im_name)))
 
-        sample = range(0, sorted_orig.shape[0], step)
+        sample = list(range(0, sorted_orig.shape[0], step))
 
         for i, idx in enumerate(sample):
 
@@ -100,14 +100,14 @@ def analyse_vessels(orig_dir, seg_dir, out_dir, thresh):
     fig3.savefig(join(out_dir, 'bin_order.png'))
 
     # Plot histogram
-    df = pd.DataFrame({k: pd.Series(v) for k, v in pixel_totals.iteritems()})
+    df = pd.DataFrame({k: pd.Series(v) for k, v in pixel_totals.items()})
     fig, ax = plt.subplots()
     cols = ['r', 'g', 'b']
 
-    for (class_, total_pixels), color in zip(pixel_totals.items(), cols):
+    for (class_, total_pixels), color in zip(list(pixel_totals.items()), cols):
         plt.hist(total_pixels, normed=True, stacked=True, color=color, alpha=0.25, label=class_)
 
-    plt.legend(pixel_totals.keys())
+    plt.legend(list(pixel_totals.keys()))
     plt.xlabel('Number of vessel pixels')
     plt.ylabel('Normalized frequency')
     plt.savefig(join(out_dir, 'hist.png'))

@@ -4,11 +4,11 @@ import pandas as pd
 import numpy as np
 import yaml
 import time
-from segmentation.segment_unet import SegmentUnet
-from preprocessing.preprocess import preprocess
-from learning.retina_net import RetiNet, locate_config
-from utils.common import make_sub_dir
-from utils.image import find_images
+from .segmentation.segment_unet import SegmentUnet
+from .preprocessing.preprocess import preprocess
+from .learning.retina_net import RetiNet, locate_config
+from .utils.common import make_sub_dir
+from .utils.image import find_images
 
 LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 
@@ -22,7 +22,7 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     ext = '.bmp'
 
     if skip_segmentation:
-        print "Assuming input images are already segmented"
+        print("Assuming input images are already segmented")
         already_segmented = image_files  # the images provided are already segmented
     else:
 
@@ -30,8 +30,8 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
             unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext, stride=stride)
             newly_segmented, already_segmented, failures = unet.segment_batch(image_files, batch_size=batch_size)
         except IOError as ioe:
-            print "Unable to locate segmentation model - use 'deeprop configure' to update model location"
-            print ioe
+            print("Unable to locate segmentation model - use 'deeprop configure' to update model location")
+            print(ioe)
             raise
             
     # Resizing images for inference
@@ -49,14 +49,14 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
 
     # Reshape array - samples, channels, height, width
     preprocessed_arr = np.asarray(preprocessed_arr).transpose((0, 3, 1, 2))
-    print preprocessed_arr.shape
+    print(preprocessed_arr.shape)
     return preprocessed_arr, img_names
 
 
 def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=100, stride=(32, 32)):
 
-    if any(v is None for v in conf_dict.values()):
-        print "Please run 'deeprop configure' to specify the models for segmentation and classification"
+    if any(v is None for v in list(conf_dict.values())):
+        print("Please run 'deeprop configure' to specify the models for segmentation and classification")
         exit(1)
 
     # Create directories
@@ -72,7 +72,7 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
         image_files = [input_imgs]
     else:
         image_files = []
-        print "Please specify a valid image file or a folder of images."
+        print("Please specify a valid image file or a folder of images.")
         exit(1)
 
     preprocessed_arr, img_names = preprocess_images(image_files, out_dir, conf_dict,
@@ -81,12 +81,12 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
                                                     stride=stride)
 
     # CNN initialization
-    print "Initializing classifier"
+    print("Initializing classifier")
     classifier_dir = conf_dict['classifier_directory']
     model_config, rf_pkl = locate_config(classifier_dir)
     cnn = RetiNet(model_config)
 
-    print "Performing inference..."
+    print("Performing inference...")
     y_preda = cnn.predict(preprocessed_arr)
     generate_report(img_names, y_preda, csv_out)
 
@@ -103,6 +103,6 @@ def generate_report(img_names, y_preda, csv_out, y_true=None):
 
     df['Campbell Formula'] = df['P(No)'] + (2 * df['P(Pre-Plus)']) + (3 * df['P(Plus)'])
 
-    print df
-    print "Results saved to: " + csv_out
+    print(df)
+    print("Results saved to: " + csv_out)
     df.to_csv(csv_out)

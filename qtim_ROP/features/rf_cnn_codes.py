@@ -10,7 +10,7 @@ from keras.utils.np_utils import to_categorical
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 
-from ..evaluation.metrics import confusion_matrix, misclassifications, plot_ROC_by_class
+from ..evaluation.metrics import confusion_matrix, misclassifications, plot_ROC_curves
 from ..learning.retina_net import RetiNet
 from ..utils.plotting import plot_confusion
 from ..utils.common import dict_reverse, make_sub_dir
@@ -22,7 +22,7 @@ LABELS = {0: 'No', 1: 'Plus', 2: 'Pre-Plus'}
 def train_rf(net, train_data):
 
     # Get CNN codes
-    print "Getting features..."
+    print("Getting features...")
     train_codes = net.evaluate(train_data)
 
     # Create random forest
@@ -34,7 +34,7 @@ def train_rf(net, train_data):
     # print "T-SNE visualisation of training features"
     # make_tsne(X_train, y_train, out_dir)
 
-    print "Training RF..."
+    print("Training RF...")
     rf.fit(X_train, y_train)
     return rf, X_train, y_train
 
@@ -51,7 +51,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     """
 
     # Load model and set last layer
-    print "Loading trained CNN model..."
+    print("Loading trained CNN model...")
     net = RetiNet(model_conf)
     net.set_intermediate('flatten_3')
 
@@ -61,19 +61,19 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     train_labels_out = join(out_dir, 'cnn_train_labels.npy')
 
     if not isfile(rf_out):
-        print "Training new RF on '{}'".format(train_data)
+        print("Training new RF on '{}'".format(train_data))
         rf, X_train, y_train = train_rf(net, train_data)
         joblib.dump(rf, rf_out)
         np.save(train_features_out, X_train)
         np.save(train_labels_out, y_train)
     else:
-        print "Loading previously trained RF from '{}'".format(rf_out)
+        print("Loading previously trained RF from '{}'".format(rf_out))
         rf = joblib.load(rf_out)
         X_train = np.load(train_features_out)
         y_train = np.load(train_labels_out)
 
     # Load test data
-    print "Extracting test features using pre-trained network '{}'".format(net.experiment_name)
+    print("Extracting test features using pre-trained network '{}'".format(net.experiment_name))
     cnn_features = net.evaluate(test_data)
     X_test = cnn_features['y_pred']
     y_test = cnn_features['y_true']
@@ -88,7 +88,7 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
     # Predict classes
     y_pred_classes = rf.predict(X_test)
     confusion = confusion_matrix(y_test, y_pred_classes)
-    labels = [k[0] for k in sorted(cnn_features['classes'].items(), key=lambda x: x[1])]
+    labels = [k[0] for k in sorted(list(cnn_features['classes'].items()), key=lambda x: x[1])]
     plot_confusion(confusion, labels, join(out_dir, 'confusion.svg'))
 
     misclass_dir = make_sub_dir(out_dir, 'misclassified')
@@ -96,12 +96,12 @@ def main(model_conf, test_data, raw_images, out_dir, train_data=None):
                        y_test, y_pred_classes, cnn_features['classes'], misclass_dir)
 
     # Predict probabilities
-    print "Getting RF predictions..."
+    print("Getting RF predictions...")
     y_pred = rf.predict_proba(X_test)
     LABELS.pop(2)  # remove Pre-Plus for ROC curve
 
     fig, ax = plt.subplots()
-    plot_ROC_by_class(to_categorical(y_test), y_pred, dict_reverse(LABELS))
+    plot_ROC_curves(to_categorical(y_test), y_pred, dict_reverse(LABELS))
     plt.title('Receiver operating characteristic')
     plt.legend(loc='lower right')
     plt.plot([0, 1], [0, 1], 'k--')

@@ -20,7 +20,7 @@ def images_to_hdf5(input_images, original_images, out_path, class_names=None):
     imgs_by_class = find_images_by_class(input_images, classes=class_names)
     orig_by_class = find_images_by_class(original_images, classes=class_names)
 
-    for class_name, imgs in imgs_by_class.items():
+    for class_name, imgs in list(imgs_by_class.items()):
 
         for i, src_img in enumerate(imgs):
 

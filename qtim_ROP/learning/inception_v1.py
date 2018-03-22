@@ -12,8 +12,8 @@ so require a shift compared to the other models here.
 
 Based on https://github.com/mdda/deep-learning-models/blob/d83b434446e93977b595e5794ff6d685677059b5/inception_v1.py
 """
-from __future__ import print_function
-from __future__ import absolute_import
+
+
 
 import warnings
 import numpy as np
@@ -185,8 +185,7 @@ def InceptionV1(include_top=True,
         # default_size=299,
         default_size=224,
         min_size=139,
-        data_format=K.image_data_format(),
-        include_top=include_top)
+        data_format=K.image_data_format(), require_flatten=True)
 
     if input_tensor is None:
         img_input = Input(shape=input_shape)

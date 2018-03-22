@@ -24,7 +24,7 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     predictions, datagen, y_true, class_indices = [data_dict[x] for x in ['probabilities', 'data', 'y_true', 'classes']]
 
     # Create data frames for predictions and ground truth
-    cols = np.asarray(sorted([[k, v] for k, v in class_indices.items()], key=lambda x: x[1]))
+    cols = np.asarray(sorted([[k, v] for k, v in list(class_indices.items())], key=lambda x: x[1]))
     pred_df = pd.DataFrame(data=predictions, columns=cols[:, 0])
     true_df = pd.DataFrame(data=to_categorical(y_true), columns=cols[:, 0])
     pred_df.to_csv(join(out_dir, 'predictions.csv'))
@@ -35,15 +35,15 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
         y_pred = np.argmax(predictions, axis=1)
 
     # Confusion
-    labels = [k[0] for k in sorted(class_indices.items(), key=lambda x: x[1])]
+    labels = [k[0] for k in sorted(list(class_indices.items()), key=lambda x: x[1])]
     confusion = confusion_matrix(y_true, y_pred)
 
     plot_confusion(confusion, labels, join(out_dir, 'confusion' + ext))
     with open(join(out_dir, 'confusion.csv'), 'wb') as conf_csv:
         pd.DataFrame(data=confusion).to_csv(conf_csv)
 
-    print "Accuracy: {}".format(accuracy_score(y_true, y_pred))
-    print classification_report(y_true, y_pred)
+    print("Accuracy: {}".format(accuracy_score(y_true, y_pred)))
+    print(classification_report(y_true, y_pred))
 
     # Misclassified images  #  TODO fix bug when classes < 3
     misclassified_dir = make_sub_dir(out_dir, 'misclassified')
@@ -55,7 +55,7 @@ def calculate_metrics(data_dict, out_dir, y_pred=None, ext='.png'):
     y_true = y_true.as_matrix()
 
     fig, ax = plt.subplots()
-    plot_ROC_by_class(y_pred, y_true, col_names)
+    plot_ROC_curves(y_pred, y_true, col_names)
     plt.savefig(join(out_dir, 'roc_auc' + ext))
 
 
@@ -81,8 +81,9 @@ def misclassifications(file_names, img_path, y_true, y_pred, classes, out_dir, n
             class_count[yp] += 1
 
 
-def plot_ROC_splits(y_true_all, y_pred_all, (class_name, class_index)):
+def plot_ROC_splits(y_true_all, y_pred_all, xxx_todo_changeme):
 
+    (class_name, class_index) = xxx_todo_changeme
     line_styles = cycle(['-', '--', '-.', ':', 'solid'])
     all_aucs = []
 
@@ -105,8 +106,9 @@ def plot_ROC_splits(y_true_all, y_pred_all, (class_name, class_index)):
     return all_aucs
 
 
-def plot_PR_splits(y_true_all, y_pred_all, (class_name, class_index)):
+def plot_PR_splits(y_true_all, y_pred_all, xxx_todo_changeme1):
 
+    (class_name, class_index) = xxx_todo_changeme1
     line_styles = cycle(['-', '--', '-.', ':', 'solid'])
 
     for split_no, (y_true_split, y_pred_split) in enumerate(zip(y_true_all, y_pred_all)):
@@ -124,27 +126,27 @@ def plot_PR_splits(y_true_all, y_pred_all, (class_name, class_index)):
     plt.xlabel('False Positive Rate')
 
 
-def plot_ROC_by_class(y_true, y_pred, classes, ls='-', outfile=None):
-
-    print y_true.shape
-    print y_pred.shape
+def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=None):
 
     best_thresh = {}
-    for c, class_name in classes.items():  # for each class
+    for c, class_name in list(classes.items()):  # for each class
 
         # Compute ROC curve
-        fpr, tpr, thresholds = roc_curve(y_true[:, c], y_pred[:, c])
+        if regression:
+            fpr, tpr, thresholds = roc_curve(y_true == c, y_pred)
+            if c == 0:
+                fpr = 1 - fpr
+                tpr = 1 - tpr
+        else:
+            fpr, tpr, thresholds = roc_curve(y_true[:, c], y_pred[:, c])
+            J = [j_statistic(y_true[:, c], y_pred[:, c], t) for t in thresholds]
+            j_best = np.argmax(J)
+            best_thresh[class_name] = J[j_best]
+
         roc_auc = auc(fpr, tpr)
 
         # Plot ROC curve
         plt.plot(fpr, tpr, label='{}, AUC = {:.3f}'.format(class_name, roc_auc), linestyle=ls)
-
-        # Calculate J statistic
-        J = [j_statistic(y_true[:, c], y_pred[:, c], t) for t in thresholds]
-        j_best = np.argmax(J)
-
-        # Store best threshold for each class
-        best_thresh[class_name] = J[j_best]
 
     plt.legend(loc='lower right')
     plt.plot([0, 1], [0, 1], 'k--')
@@ -159,7 +161,7 @@ def plot_ROC_by_class(y_true, y_pred, classes, ls='-', outfile=None):
 def plot_PR_by_class(y_pred, y_true, classes, out_path):
 
     best_thresh = {}
-    for class_name, c in classes.items():  # for each class
+    for class_name, c in list(classes.items()):  # for each class
 
         # Compute ROC curve
         precision, recall, thresholds = precision_recall_curve(y_true[:, c], y_pred[:, c])
@@ -181,7 +183,7 @@ def plot_PR_by_class(y_pred, y_true, classes, out_path):
 def confusion(y_true, y_pred, classes, out_path):
 
     confusion = confusion_matrix(y_true, y_pred)
-    labels = [k[0] for k in sorted(classes.items(), key=lambda x: x[1])]
+    labels = [k[0] for k in sorted(list(classes.items()), key=lambda x: x[1])]
     plot_confusion(confusion, labels, out_path)
 
 
