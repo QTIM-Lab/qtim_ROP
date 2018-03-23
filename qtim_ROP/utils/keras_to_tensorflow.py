@@ -16,14 +16,15 @@ from keras.applications.mobilenet import relu6, DepthwiseConv2D
 from .common import make_sub_dir
 
 
-def keras_to_tensorflow(model_json, weights, save_dir, num_output=3):
+def keras_to_tensorflow(model_json, weights, save_dir, num_output=1, quantize=False):
 
     # Load keras model and rename output
     K.set_learning_phase(0)
 
     try:
-        net_model = model_from_json(model_json, custom_objects={'relu6': relu6, 'DepthwiseConv2d': DepthwiseConv2D})
-        net_model.load_weights(weights)
+        with open(model_json, 'r') as f:
+            net_model = model_from_json(f.read(), custom_objects={'relu6': relu6, 'DepthwiseConv2d': DepthwiseConv2D})
+            net_model.load_weights(weights)
     except ValueError as err:
         print("Error loading model")
         raise err
@@ -32,28 +33,24 @@ def keras_to_tensorflow(model_json, weights, save_dir, num_output=3):
     pred = [None] * num_output
     pred_node_names = [None] * num_output
     for i in range(num_output):
-        pred_node_names[i] = args.output_node_prefix + str(i)
+        pred_node_names[i] = 'pred' + str(i)
         pred[i] = tf.identity(net_model.outputs[i], name=pred_node_names[i])
 
     sess = K.get_session()
     out_dir = make_sub_dir(save_dir, 'tf_model')
 
-    if args.graph_def:
-        f = args.output_graphdef_file
-        tf.train.write_graph(sess.graph.as_graph_def(), out_dir, f, as_text=True)
-
     # convert variables to constants and save
     from tensorflow.python.framework import graph_util
     from tensorflow.python.framework import graph_io
 
-    if args.quantize:
+    if quantize:
         from tensorflow.tools.graph_transforms import TransformGraph
         transforms = ["quantize_weights", "quantize_nodes"]
         transformed_graph_def = TransformGraph(sess.graph.as_graph_def(), [], pred_node_names, transforms)
         constant_graph = graph_util.convert_variables_to_constants(sess, transformed_graph_def, pred_node_names)
     else:
         constant_graph = graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), pred_node_names)
-    graph_io.write_graph(constant_graph, out_dir, args.output_model_file, as_text=False)
+    graph_io.write_graph(constant_graph, out_dir, 'tf_model.pb', as_text=False)
 
 
 if __name__ == "__main__":
