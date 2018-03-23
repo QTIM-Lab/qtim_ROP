@@ -19,3 +19,4 @@ confs = glob(sys.argv[1])
 for c in confs:
     net = RetiNet(c)
     net.train()
+    del net

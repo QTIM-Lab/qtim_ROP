@@ -8,6 +8,7 @@ import h5py
 from scipy.misc import imresize
 from ..utils.common import find_images, find_images_by_class
 
+DEFAULT_CLASSES = {'No': 0, 'Pre-Plus': 1, 'Plus': 2}
 
 def overlay_mask(img, mask, out):
 
@@ -85,10 +86,21 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
         f = h5py.File(data_path, 'r')
         data = f['data']
 
-        if regression:
-            labels = f['labels']
-        else:
-            labels = to_categorical(f['labels'])  # categorical (one-hot encoded)
+        # Check if in TF ordering
+        if data.shape[3] != 3:
+            print("Data was transposed to have channels last")
+            data = np.transpose(data, (0, 2, 3, 1))
+
+        # Convert string labels to numeric if necessary
+        labels = list(f['labels'])
+
+        if not isinstance(labels[0], int):
+            print("String labels converted to integers")
+            print(DEFAULT_CLASSES)
+            labels = [DEFAULT_CLASSES[l.decode("utf-8")] for l in labels]
+
+        if not regression:
+            labels = to_categorical(labels)  # categorical (one-hot encoded)
 
         cw = None  # cw = class_weight.compute_class_weight('balanced', np.unique(tuple(labels)), tuple(labels))
         return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels, cw

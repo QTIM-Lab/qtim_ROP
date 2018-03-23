@@ -4,24 +4,23 @@ from os import chdir, getcwd
 from os.path import dirname, splitext, abspath
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-config.gpu_options.per_process_gpu_memory_fraction = 0.8
-set_session(tf.Session(config=config))
-
 from keras.callbacks import TensorBoard, ModelCheckpoint, CSVLogger, EarlyStopping
 from keras.layers import Dense, Flatten, Dropout
 from keras.models import Model
-from keras.utils.np_utils import to_categorical
-from .googlenet_custom_layers import PoolHelper, LRN
-from .custom_loss import r2_keras
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix, f1_score
+from sklearn.metrics import confusion_matrix
 from ..utils.common import *
 from ..utils.image import create_generator
 from ..utils.plotting import *
+from ..utils.keras_to_tensorflow import keras_to_tensorflow
 from ..evaluation.metrics import plot_confusion, plot_ROC_curves
+
+# Set various TF training parameters
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = False
+config.gpu_options.per_process_gpu_memory_fraction = 0.8
+set_session(tf.Session(config=config))
 
 
 class RetiNet(object):
@@ -76,7 +75,6 @@ class RetiNet(object):
             setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
             self._configure_network(build=True)
-            # plot(self.model, join(self.experiment_dir, 'final_model.png'))
 
         elif self.config['mode'] == 'evaluate':
 
@@ -169,7 +167,7 @@ class RetiNet(object):
         weights_out = join(self.experiment_dir, 'best_weights.h5')
         tb_dir = make_sub_dir(self.experiment_dir, 'tensorboard')
         checkpoint_cb = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
-        stop_cb = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
+        stop_cb = EarlyStopping(monitor='val_loss', verbose=1, patience=10)
         tensorboard_cb = TensorBoard(log_dir=tb_dir, histogram_freq=0, write_graph=True, write_images=True)
         csv_log_cb = CSVLogger(join(self.experiment_dir, 'history.csv'), separator=',', append=False)
 
@@ -200,13 +198,23 @@ class RetiNet(object):
         conf_eval = self.update_config(weights=weights)
         with open(join(self.experiment_dir, self.experiment_name + '.yaml'), 'w') as ce:
             yaml.dump(conf_eval, ce, default_flow_style=False)
-
         self.plot_history()
 
         # Evaluate the model on the test/val data
-        print("Loading best weights and running inference...")
-        self.model.load_weights(join(self.experiment_dir, '{}_weights.h5'.format(weights)))  # final or best
-        return self.evaluate(self.test_data)
+        print("Loading {} weights and saving model".format(weights))
+        model_json = join(self.experiment_dir, 'model_arch.json')
+        model_weights = join(self.experiment_dir, '{}_weights.h5'.format(weights))
+        model_out = join(self.experiment_dir, '{}_model.h5'.format(weights))
+        self.model.save(model_out)
+
+        # Create TensorFlow graph
+        print("Generating pure TF model")
+        keras_to_tensorflow(model_json, model_weights, self.experiment_dir)
+
+        if not isfile(join(self.experiment_dir, 'roc_curve.png')):
+            print("Final evaluation on test data")
+            self.model.load_weights(model_weights)
+            self.evaluate(self.test_data)
 
     def plot_history(self):
 
@@ -264,8 +272,6 @@ class RetiNet(object):
         plt.figure(4)
         plot_confusion(confusion, ['Normal', 'Pre-Plus', 'Plus'], join(self.experiment_dir, 'confusion.png'))
         plt.clf()
-
-        # return pd.DataFrame(data=)
 
     def set_intermediate(self, layer_name):
 
