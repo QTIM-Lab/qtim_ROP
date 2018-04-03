@@ -23,6 +23,32 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/nanobar/0.2.1/nanobar.min.js"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/main.js') }}"></script>
 
+
+	
+		<style>
+        .model-header
+        {
+         } 
+
+	.modal-headerFD
+	{
+	padding: 15px;
+	background-color:#006600;
+	color: white;
+	}
+	
+	.showSms
+	{
+	color:green;
+	}
+	
+        .showerr
+        {
+        color:red;
+        }
+	</style>
+	
+	
 </head>
 
 <body>
@@ -44,6 +70,7 @@
                 <li><a href="#">Download</a></li>
                 <li><a href="#">Cite</a></li>
                 <li><a href="#">About</a></li>
+				<li><a id="feedbackLink">Feedback</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
@@ -73,6 +100,74 @@
 
   </div>
 </div>
+
+
+<div id="feedbackMOdel" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Feedback</h4>
+      </div>
+      <div class="modal-body">
+          
+		 <div class="container">
+			
+				
+				<div class="row">
+				    <div class="col-xs-2">
+						<label for="email">Email:(Optional)</label>
+					</div>
+					
+					<div class="col-xs-4">
+						<input type="email" class="form-control" id="email" placeholder="Enter email" name="email">
+				    </div>
+				</div>
+				
+				</br>
+				
+				<div class="row">
+				    <div class="col-xs-2">
+						<label for="email">Subject:</label>
+					</div>
+					
+					<div class="col-xs-4">
+						<input type="text" class="form-control" id="fsubject" placeholder="Enter feedback Subject" name="fsubject">
+				    </div>
+				</div>
+				
+				</br>
+				
+				<div class="row">
+				    <div class="col-xs-2">
+						<label for="email">Details:</label>
+					</div>
+					
+					<div class="col-xs-4">
+						<textarea class="form-control" rows="4" cols="30" name="fdetails" id='fdetails' placeholder="Details"></textarea>
+				    </div>
+				</div>
+				
+				</br>
+				
+				<div class="row">
+				<div class="col-xs-6">
+					<button id="submitFeedback" class="btn btn-success pull-right">Submit</button>
+				</div>
+				</div>
+			
+		</div>
+		  
+		  
+      </div>
+     
+    </div>
+
+  </div>
+</div>
+
 
 <main role="main">
 
@@ -198,6 +293,74 @@
     </div>
 </main>
 
+<div id="feedbackMOdel" class="modal fade" role="dialog">
+  <div " class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header" id="mdfd">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 id="mftitle" class="modal-title">Feedback</h4>
+      </div>
+      <div class="modal-body" id="modalbodyFD">
+          
+		 <div class="container">
+			
+				
+				<div class="row">
+				    <div class="col-xs-2">
+						<label for="email">Email:(Optional)</label>
+					</div>
+					
+					<div class="col-xs-4">
+						<input type="email" class="form-control" id="email" placeholder="Enter email" name="email">
+				    </div>
+				</div>
+				
+				</br>
+				
+				<div class="row">
+				    <div class="col-xs-2">
+						<label for="email">Subject:</label>
+					</div>
+					
+					<div class="col-xs-4">
+						<input type="text" class="form-control" id="fsubject" placeholder="Enter feedback Subject" name="fsubject" required>
+				    </div>
+				</div>
+				
+				</br>
+				
+				<div class="row">
+				    <div class="col-xs-2">
+						<label for="email">Details:</label>
+					</div>
+					
+					<div class="col-xs-4">
+						<textarea class="form-control" rows="4" cols="30" name="fdetails" id='fdetails' placeholder="Details" required></textarea>
+				    </div>
+				</div>
+				
+				</br>
+				
+				<div class="row">
+				<div class="col-xs-6">
+					<button id="submitFeedback" class="btn btn-success pull-right">Submit</button>
+				</div>
+				</div>
+			<div class="showSms"> </div>
+		        <div class="showerr"> </div>
+                   </div>
+		  
+		  
+      </div>
+     
+    </div>
+
+  </div>
+</div>
+
+
 <script>
 
     $(window).on('load',function() {
@@ -280,6 +443,57 @@
             start_long_task();
         }
     });
+
+$("#feedbackLink").click(function(){
+
+    $('#mftitle').html("Feedback");
+    $('#mdfd').removeClass('modal-headerFD').addClass('modal-header');
+     
+    $('.showSms').text("");
+
+    $('#feedbackMOdel').modal('show');
+    $('.showerr').text("");
+});
+
+$("#submitFeedback").click(function(){
+
+	
+	var emailid=$("#email").val();
+	var fSubject=$("#fsubject").val();
+	var fDeatils=$("#fdetails").val();
+ 
+     $('.showerr').text("");	
+     var emailid=$("#email").val();
+     var fSubject=$("#fsubject").val();
+     var fDeatils=$("#fdetails").val();
+      
+     if(fSubject!="" && fDeatils!="")
+     {
+
+     	$.ajax({
+            type: 'POST',
+            url: '/feedback',
+            data: {'email': emailid,'fSubject':fSubject,'fDeatils':fDeatils},
+            success: function(data, status, request) {
+                
+            },
+            
+        });	
+
+
+		
+      $('#mdfd').removeClass('modal-header').addClass('modal-headerFD');		
+      $('#mftitle').html("Feedback Sent");
+<!-- $('#modalbodyFD').html("Thank you for feedback"); -->
+      $('.showSms').text("Thank you for feedback");
+      setTimeout(function() {$('#feedbackMOdel').modal('hide');}, 2000);
+    }
+  else
+   {
+    $('.showerr').html("Please enter mandatory fields subject and details");   
+   }
+
+});		
 </script>
 
 </body>

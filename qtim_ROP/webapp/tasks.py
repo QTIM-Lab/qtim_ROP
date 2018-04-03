@@ -7,7 +7,7 @@ from os.path import *
 import time
 import numpy as np
 import yaml
-
+import smtplib
 
 def make_celery(app):
 
@@ -162,6 +162,38 @@ def taskstatus(task_id):
         }
     return jsonify(response)
 
+	
+@app.route('/feedback',methods=['GET', 'POST'])
+def userFeedback():
+	if request.method == 'POST':
+		 print("inside userFeedback1")
+		 email=request.form['email']
+		 print("inside userFeedback12")
+		 fSubject=request.form['fSubject']
+		 fDetails=request.form['fDeatils']
+		 print(email)
+		 print(fSubject)
+		 print(fDetails)
+		 
+		 print("inside userFeedback 123")
+		 
+		 
+		 gmail_user = 'admin@deeprop.io'
+		 gmail_password='secret'
+		 
+		 emaibody="Hi James"+'\n' + '\n' + "Please find the Feedback details given by - " + email + '\n' +'\n' + \
+          "Feedback Subject :"+fSubject +'\n'+ \
+          "Details :" +fDetails +'\n'+ '\n'+ \
+          "Thanks"+'\n'+"DeepRop Team"
+		  
+		 message = 'Subject: {}\n\n{}'.format(fSubject, emaibody)
+		 server = smtplib.SMTP('smtp.deeprop.io', 587)
+		 server.starttls()
+		 server.login(gmail_user, gmail_password)
+		 server.sendmail(gmail_user, "JBROWN97@mgh.harvard.edu,snandekar@mgh.harvard.edu", message)
+		 server.quit()
+		 
+	return "done" 	
 
 if __name__ == '__main__':
 
