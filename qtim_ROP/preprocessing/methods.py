@@ -12,10 +12,10 @@ def unet_preproc(img):
     imgs_arr[0] = img
 
     imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
-    pre_proc = my_PreProc(imgs_arr).astype(dtype=np.float16)
+    pre_proc = np.stack([my_PreProc(imgs_arr)[0, 0, :, :]] * 3, axis=-1)
 
-    result = np.transpose(pre_proc[0], (1, 2, 0))[:, :, 0]
-    return result
+    pre_proc = ((pre_proc / pre_proc.max()) * 255).astype(np.uint8)
+    return pre_proc
 
 
 # https://github.com/btgraham/SparseConvNet/blob/kaggle_Diabetic_Retinopathy_competition/Data/
@@ -24,10 +24,10 @@ def kaggle_BG(img, scale=300):
 
     # Create a mask from which the approximate retinal center can be calculated
     guide_mask = create_mask(img)
-    retina_center = tuple((np.mean(np.argwhere(guide_mask), axis=0)).astype(np.uint8))[::-1]
+    retina_center = tuple((np.mean(np.argwhere(guide_mask), axis=0)).astype(np.uint16)[::-1])
 
     # Generate a circle of the approximate size, centered based on the guide mask
-    cf = 1.2
+    cf = 0.95
     circular_mask = np.zeros(img.shape)
     cv2.circle(circular_mask, retina_center, int(scale * cf), (1, 1, 1), -1, 8, 0)
 

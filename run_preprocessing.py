@@ -1,3 +1,5 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 from qtim_ROP.preprocessing import preprocess_cross_val
 if __name__ == '__main__':
 

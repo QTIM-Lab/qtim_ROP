@@ -5,20 +5,19 @@ np.random.seed(101)
 from functools import partial
 from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
-from os.path import isdir, basename, abspath, dirname, splitext, join
+from os.path import isdir, basename, abspath, dirname, splitext
 import h5py
 
 import addict
 import pandas as pd
 import yaml
 from random import shuffle, seed
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from os.path import isfile
 from scipy.misc import imresize
 from os.path import join
-import numpy as np
-from PIL import Image
+from glob import glob
 
 from ..utils.common import make_sub_dir, find_images_by_class, find_images
 from ..utils.metadata import image_to_metadata
@@ -90,7 +89,6 @@ class Pipeline(object):
     def run(self):
 
         # Get paths to all images
-        # im_files = find_images(join(self.input_dir, '*'))
         im_files = find_images(join(self.input_dir))
         assert (len(im_files) > 0)
 
@@ -112,9 +110,6 @@ class Pipeline(object):
             # Binary classification: 2 or better vs. 3 or worse
             img_data.loc[img_data['ROP_stage'] <= 2, 'ROP_stage'] = 0
             img_data.loc[img_data['ROP_stage'] > 2, 'ROP_stage'] = 1
-
-            # df['ROP_stage'][df['ROP_stage'] <= 2] = 0
-            # df['ROP_stage'][df['ROP_stage'] > 2] = 1
             assert (np.max(img_data['ROP_stage']) == 1)
         else:
             # Remove stage 4 and 5 ROP cases
@@ -122,10 +117,6 @@ class Pipeline(object):
             img_data = img_data[img_data.quality]
 
         self.label_data = img_data
-
-        # Add a column with the names of the original images
-        # orig_names = [self.label_data.iloc[i]['imageName'] for i in img_data.index.values if i in self.label_data.index]
-        # img_data['original'] = orig_names
 
         # Check that the filename IDs match the data frame IDs
         assert(all(int(basename(x['full_path']).split('_')[1]) == int(index) for index, x in img_data.iterrows()))
@@ -140,6 +131,7 @@ class Pipeline(object):
 
         # Group by class/patient, and split into folds
         all_splits = {}  # to keep track of all splits of the data
+        split_dirs = []  # to track the output folders
 
         # Split by class (reader)
         for class_, c_group in img_data.groupby(self.label):
@@ -177,13 +169,14 @@ class Pipeline(object):
         # For each split
         for i in split_range:  # for each split
 
-            print("\n~~ Split {} ~~".format(i))
             split_dir = make_sub_dir(self.out_dir, 'split_{}'.format(i))
             train_csv = join(split_dir, 'training.csv')
             test_csv = join(split_dir, 'testing.csv')
+            split_dirs.append(split_dir)
 
             if not (isfile(train_csv) and isfile(test_csv)):
 
+                print("\n~~ Split {} ~~".format(i))
                 train_split = train_test_splits[i]['train']  # get the training data
                 test_split = train_test_splits[i]['test']  # get the testing data
 
@@ -226,9 +219,12 @@ class Pipeline(object):
                 train_split.to_csv(join(split_dir, 'training.csv'))
                 test_split.to_csv(join(split_dir, 'testing.csv'))
 
-            # Use CSV files to generate datasets
-            self.generate_dataset(split_dir, mode='training')
-            self.generate_dataset(split_dir, mode='testing')
+        # Use CSV files to generate datasets of each split
+        for split_dir in split_dirs:
+            if len(glob(join(split_dir, '*.h5'))) != 2:
+                print("Generating h5 files for split {}...".format(split_dir))
+                self.generate_dataset(split_dir, mode='training')
+                self.generate_dataset(split_dir, mode='testing')
 
     def generate_dataset(self, split_dir, mode='training'):
 
@@ -240,7 +236,8 @@ class Pipeline(object):
         data_dir = make_sub_dir(split_dir, mode)  # output directory for images
 
         # Make directories for each class of images in advance
-        classes = [str(l) for l in split_df[self.label].unique()]
+        label = 'class' if self.label not in split_df.columns else self.label
+        classes = [str(l) for l in split_df[label].unique()]
         for class_name in classes:
             make_sub_dir(data_dir, str(class_name))
 
@@ -248,11 +245,9 @@ class Pipeline(object):
         print("Preprocessing {} data...".format(mode))
 
         if len(find_images(join(data_dir, '*'))) == 0:
-            pool = Pool(2)
+            pool = Pool(self.processes)
             subprocess = partial(do_preprocess, args={'params': self, 'augment': do_augment, 'out_dir': data_dir})
-            img_list = list(split_df['full_path'])
-
-            print(img_list)
+            img_list = list(split_df['imageName'].apply(lambda x: join(self.input_dir, x)))
             _ = pool.map(subprocess, img_list)
 
         self.generate_h5(find_images_by_class(data_dir, classes=classes),  # enumerated classes
@@ -266,6 +261,8 @@ class Pipeline(object):
         img_labels = []
         original_images = []
         cidx = 0
+
+        class_examples = {}
 
         for class_ in classes:
 
@@ -286,9 +283,20 @@ class Pipeline(object):
 
                 assert(all(original_image.split('_')[j] == basename(img_path).split('_')[j] for j in range(0, 5)))
 
-                img_arr.append(np.asarray(Image.open(img_path)))
+                img = np.asarray(Image.open(img_path))
+                if img.shape != (224, 224, 3):
+                    print(img_path)
+                    continue
+
+                img_arr.append(img)
                 img_labels.append(cidx)
                 original_images.append(original_image)
+
+                if class_examples.get(class_, None) is None:
+                    example = Image.fromarray(img)
+                    draw = ImageDraw.Draw(example)
+                    draw.text((10, 10), original_image, fill=(255, 255, 255))
+                    class_examples[class_] = np.asarray(example)
 
             print("{} ({}, index={}): {}".format(out_file, class_, cidx, len(imgs[class_])))
             cidx += 1
@@ -302,6 +310,10 @@ class Pipeline(object):
             f.create_dataset('data', data=train_data, dtype=train_data.dtype)
             f.create_dataset('labels', data=img_labels, dtype=img_labels.dtype)
             f.create_dataset('original_files', data=original_images, dtype=original_images.dtype)
+
+        # Save example montage
+        Image.fromarray(np.hstack(class_examples.values()))\
+            .save(join(dirname(out_file),'{}_examples.png'.format(splitext(basename(out_file))[0])))
 
     def choose_random(self, imgs, to_remove):
         return np.random.choice(imgs, len(imgs) - to_remove, replace=False)
@@ -331,7 +343,7 @@ class Pipeline(object):
 def do_preprocess(im, args):
 
     print("Pre-processing '{}'".format(im))
-    params, out_dir, augment = args['params'], args['out_dir'], args['augment']
+    params, out_dir, augment, ext = args['params'], args['out_dir'], args['augment'], args.get('ext', '.png')
 
     # Image metadata
     meta = image_to_metadata(im)
@@ -342,7 +354,7 @@ def do_preprocess(im, args):
     reader = params.label
     class_ = row[reader]
 
-    # Resize, preprocess and augment
+    # Resize, pre-process and augment
     try:
         im_arr = cv2.imread(im)[:, :, ::-1]
     except TypeError:
@@ -381,13 +393,13 @@ def do_preprocess(im, args):
                         new_img = np.rot90(new_img)
                 if flip == 1:
                     new_img = np.fliplr(new_img)
-                im = Image.fromarray(new_img)
 
-                out_name = '{}_{}_{}.png'.format(meta['prefix'], flip_names[flip], rotate_names[rotate])
+                im = Image.fromarray(new_img)
+                out_name = '{}_{}_{}'.format(meta['prefix'], flip_names[flip], rotate_names[rotate]) + ext
                 out_path = join(class_dir, out_name)
                 im.save(out_path)
 
     else:
-        Image.fromarray(preprocessed_im).save(join(class_dir, meta['prefix'] + '.png'))
+        Image.fromarray(preprocessed_im).save(join(class_dir, meta['prefix'] + ext))
 
     return im

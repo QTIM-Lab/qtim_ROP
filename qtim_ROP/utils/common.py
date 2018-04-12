@@ -94,6 +94,8 @@ def setup_log(log_file, to_file=False):
         sout.setFormatter(fmt)
         logger.addHandler(sout)
 
+    return logger
+
 
 def dict_to_csv(my_dict, my_csv):
 

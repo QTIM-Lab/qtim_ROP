@@ -7,7 +7,7 @@ try:
 except IndexError:
     gpu = "0"
 
-print("using gpu {}".format(gpu))
+print("Training using gpu {}".format(gpu))
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -17,6 +17,6 @@ from qtim_ROP.learning.retina_net import RetiNet
 confs = glob(sys.argv[1])
 
 for c in confs:
+    print(c)
     net = RetiNet(c)
     net.train()
-    del net

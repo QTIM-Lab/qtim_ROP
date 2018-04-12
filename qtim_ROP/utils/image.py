@@ -66,7 +66,7 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
     return img_names, img_arr, y_true
 
 
-def create_generator(data_path, input_shape, batch_size=32, training=True, regression=False, **kwargs):
+def create_generator(data_path, input_shape, batch_size=32, training=True, regression=False, no_samples=None, **kwargs):
 
     datagen = ImageDataGenerator(**kwargs)  # augmentation options, can come from a dictionary
 
@@ -94,14 +94,20 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
         # Convert string labels to numeric if necessary
         labels = list(f['labels'])
 
-        if not isinstance(labels[0], int):
-            print("String labels converted to integers")
-            print(DEFAULT_CLASSES)
+        try:
             labels = [DEFAULT_CLASSES[l.decode("utf-8")] for l in labels]
+            print("Converted string labels to to integers")
+            print(DEFAULT_CLASSES)
+        except AttributeError:
+            print("Numeric labels in range {} to {}".format(min(labels), max(labels)))
 
         if not regression:
             labels = to_categorical(labels)  # categorical (one-hot encoded)
 
+        if no_samples is None:
+            no_samples = data.shape[0]
+
+        print("{} on {} samples".format('Training' if training else 'Testing', no_samples))
         cw = None  # cw = class_weight.compute_class_weight('balanced', np.unique(tuple(labels)), tuple(labels))
         return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels, cw
 

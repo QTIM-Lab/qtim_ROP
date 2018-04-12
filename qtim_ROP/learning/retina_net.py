@@ -19,7 +19,7 @@ from ..evaluation.metrics import plot_confusion, plot_ROC_curves
 # Set various TF training parameters
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = False
-config.gpu_options.per_process_gpu_memory_fraction = 0.8
+config.gpu_options.per_process_gpu_memory_fraction = 0.95
 set_session(tf.Session(config=config))
 
 
@@ -58,21 +58,22 @@ class RetiNet(object):
         try:
             self.config['mode']
         except KeyError:
-            print("Please specify a mode 'train' or 'evaluate' in the config file.")
+            logging.error("Please specify a mode 'train' or 'evaluate' in the config file.")
             exit()
 
         if self.config['mode'] == 'train':
 
             # Set up logging
             if not self.train_data:
-                print("No training data specified! Exiting...")
+                logging.warning("No training data specified! Exiting...")
                 exit()
 
             self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
 
-            print("Logging to '{}'".format(join(self.experiment_dir, 'training.log')))
-            setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
+            if self.config.get('logging', False):
+                print("Logging to '{}'".format(join(self.experiment_dir, 'training.log')))
+            self.logger = setup_log(join(self.experiment_dir, 'training.log'), to_file=self.config.get('logging', False))
             logging.info("Experiment name: {}".format(self.experiment_name))
             self._configure_network(build=True)
 
@@ -105,12 +106,18 @@ class RetiNet(object):
             logging.info("Instantiating Mobilenet model" + fine_tuning)
             self.customize_keras_model(MobileNet, weights, network)
 
-        elif 'inception':
+        elif 'inception' in type_:
 
             mod_str = 'Inception v1'
             from .inception_v1 import InceptionV1
             logging.info("Instantiating {} model".format(mod_str) + fine_tuning)
             self.customize_keras_model(InceptionV1, weights, network)
+
+        elif 'resnet' in type_:
+
+            from keras.applications.resnet50 import ResNet50
+            logging.info("Instantiating ResNet model" + fine_tuning)
+            self.customize_keras_model(ResNet50, weights, network)
 
         else:
             raise Exception('Invalid model type!')
@@ -122,14 +129,19 @@ class RetiNet(object):
             metrics = ['accuracy']
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-    def customize_keras_model(self, keras_model, weights, params, dropout=0.5):
+    def customize_keras_model(self, keras_model, weights, params):
 
         input_shape = params.get('input_shape', (224, 224, 3))
+        dropout = params.get('dropout', 0.)
+        logging.info("Dropout rate = {}".format(dropout))
         base_model = keras_model(input_shape=input_shape, weights=weights, include_top=False)
         x = base_model.output
         x = Flatten()(x)
-        x = Dense(params.get('no_features'), activation='relu')(x)
-        x = Dropout(dropout)(x)
+
+        if dropout:
+            x = Dense(params.get('no_features'), activation='relu')(x)
+            x = Dropout(dropout)(x)
+
         act = 'linear' if params.get('regression') is True else 'softmax'
         predictions = Dense(params.get('no_classes'), activation=act)(x)
         self.model = Model(inputs=base_model.input, outputs=predictions)
@@ -138,7 +150,7 @@ class RetiNet(object):
 
         final_result = join(self.experiment_dir, 'final_weights.h5')
         if isfile(final_result):
-            print("Training already concluded")
+            logging.warning("Training already concluded")
             self.conclude_training(weights='best')
             return
 
@@ -159,7 +171,7 @@ class RetiNet(object):
             val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch,
                                                     regression=self.regression)
         else:
-            print("No validation data provided.")
+            logging.info("No validation data provided.")
             val_gen = None
             val_n = None
 
@@ -201,20 +213,22 @@ class RetiNet(object):
         self.plot_history()
 
         # Evaluate the model on the test/val data
-        print("Loading {} weights and saving model".format(weights))
+        logging.info("Loading {} weights and saving model".format(weights))
         model_json = join(self.experiment_dir, 'model_arch.json')
         model_weights = join(self.experiment_dir, '{}_weights.h5'.format(weights))
         model_out = join(self.experiment_dir, '{}_model.h5'.format(weights))
         self.model.save(model_out)
 
         # Create TensorFlow graph
-        print("Generating pure TF model")
+        logging.info("Generating pure TF model")
         keras_to_tensorflow(model_json, model_weights, self.experiment_dir)
 
         if not isfile(join(self.experiment_dir, 'roc_curve.png')):
-            print("Final evaluation on test data")
+            logging.info("Final evaluation on test data")
             self.model.load_weights(model_weights)
             self.evaluate(self.test_data)
+
+        self.logger.handlers = []
 
     def plot_history(self):
 
@@ -253,9 +267,6 @@ class RetiNet(object):
         y_pred = np.squeeze(self.model.predict_generator(val_gen, steps=n_samples))
         y_true = np.asarray(y_true[:n_samples])
 
-        print(y_pred.shape)
-        print(y_true.shape)
-
         plt.figure(3)
 
         # Confusion matrix
@@ -265,8 +276,6 @@ class RetiNet(object):
         else:
             confusion = confusion_matrix(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1))
             plot_ROC_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, outfile=join(self.experiment_dir, 'roc_curve.png'))
-
-        print(confusion)
 
         plt.clf()
         plt.figure(4)
@@ -299,7 +308,7 @@ class RetinaRF(object):
         X_train = features['y_pred']  # inputs to train the random forest
         y_train = np.asarray(features['y_true'])  # ground truth for random forest
 
-        print("Training RF...")
+        logging.info("Training RF...")
         self.rf.fit(X_train, y_train)
 
         if rf_out:
@@ -337,40 +346,6 @@ class RetinaRF(object):
         features = self.cnn.evaluate(img_data)
         return features
 
-# class ROCCallback(Callback):
-# 
-#     def __init__(self, training_data, validation_data):
-#         super(Roc).__init__
-#         self.x = training_data[0]
-#         self.y = training_data[1]
-#         self.x_val = validation_data[0]
-#         self.y_val = validation_data[1]
-# 
-#     def on_train_begin(self, logs={}):
-#         return
-# 
-#     def on_train_end(self, logs={}):
-#         return
-# 
-#     def on_epoch_begin(self, epoch, logs={}):
-#         return
-# 
-#     def on_epoch_end(self, epoch, logs={}):
-#         y_pred = self.model.predict(self.x)
-#         roc = roc_auc_score(self.y, y_pred)
-# 
-#         y_pred_val = self.model.predict(self.x_val)
-#         roc_val = roc_auc_score(self.y_val, y_pred_val)
-# 
-#         print(
-#         '\rroc-auc: %s - roc-auc_val: %s' % (str(round(roc, 4)), str(round(roc_val, 4))), end=100 * ' ' + '\n')
-#         return
-# 
-#     def on_batch_begin(self, batch, logs={}):
-#         return
-# 
-#     def on_batch_end(self, batch, logs={}):
-#         return
 
 def locate_config(search_dir, rf=False):
 
