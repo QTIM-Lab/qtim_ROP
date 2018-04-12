@@ -6,6 +6,7 @@ import logging
 import cv2
 import h5py
 from scipy.misc import imresize
+from math import isclose
 from ..utils.common import find_images, find_images_by_class
 
 DEFAULT_CLASSES = {'No': 0, 'Pre-Plus': 1, 'Plus': 2}
@@ -102,7 +103,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
             print("Numeric labels in range {} to {}".format(min(labels), max(labels)))
 
         # Subsample the training data
-        if subset is not None:
+        if subset is not None and not isclose(subset, 1.0):
             data, labels = get_training_subset(data, np.asarray(labels), ratio=subset)
 
         if not regression:
@@ -119,7 +120,7 @@ def get_training_subset(data, labels, ratio):
 
         X = data[labels == label, ...]
         no_in_class = X.shape[0]
-        subset_size = no_in_class * ratio
+        subset_size = int(np.round(no_in_class * ratio))
         random_subset = np.random.permutation(range(0, no_in_class))[:subset_size]
 
         X_subset = X[random_subset, ...]
