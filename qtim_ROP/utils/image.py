@@ -108,7 +108,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
         if not regression:
             labels = to_categorical(labels)  # categorical (one-hot encoded)
 
-        return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels, cw
+        return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels, None
 
 
 def get_training_subset(data, labels, ratio):
