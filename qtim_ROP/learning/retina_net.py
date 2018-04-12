@@ -133,7 +133,7 @@ class RetiNet(object):
     def customize_keras_model(self, keras_model, weights, params):
 
         input_shape = params.get('input_shape', (224, 224, 3))
-        dropout = params.get('dropout', 0.)
+        dropout = params.get('dropout', 0.5)
         logging.info("Dropout rate = {}".format(dropout))
         base_model = keras_model(input_shape=input_shape, weights=weights, include_top=False)
         x = base_model.output

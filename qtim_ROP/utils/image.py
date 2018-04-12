@@ -103,7 +103,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
 
         # Subsample the training data
         if subset is not None:
-            data, labels = get_training_subset(data, labels, ratio=subset)
+            data, labels = get_training_subset(data, np.asarray(labels), ratio=subset)
 
         if not regression:
             labels = to_categorical(labels)  # categorical (one-hot encoded)
@@ -115,7 +115,7 @@ def get_training_subset(data, labels, ratio):
 
     data_subset, label_subset = [], []
 
-    for label in labels.unique():
+    for label in np.unique(labels):
 
         X = data[labels == label, ...]
         no_in_class = X.shape[0]
@@ -132,7 +132,7 @@ def get_training_subset(data, labels, ratio):
 
     logging.info("A total of {} samples will be used for training (:.2f % of the total data)".format(
         data_subset.shape[0], ratio * 100))
-    
+
     return data_subset, label_subset
 
 
