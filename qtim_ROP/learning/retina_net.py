@@ -36,6 +36,7 @@ class RetiNet(object):
         self.conf_dir = dirname(abspath(self.conf_file))
         self.experiment_name = splitext(basename(self.conf_file))[0]
         self.regression = self.config['network']['regression']
+        self.training_ratio = self.config.get('training_samples', 1.)
 
         cwd = getcwd()
         chdir(self.conf_dir)
@@ -162,10 +163,7 @@ class RetiNet(object):
 
         # Create generators
         train_gen, train_n, _, cw = create_generator(self.train_data, input_shape, training=True, batch_size=train_batch,
-                                                     regression=self.regression)
-                                                     #width_shift_range=0.1,
-                                                     #height_shift_range=0.1,
-                                                     #rotation_range=0.1)
+                                                     regression=self.regression, subset=self.training_ratio)
 
         if self.val_data is not None:
             val_gen, val_n, _, _ = create_generator(self.val_data, input_shape, training=False, batch_size=val_batch,

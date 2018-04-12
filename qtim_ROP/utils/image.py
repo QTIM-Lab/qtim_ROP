@@ -2,7 +2,7 @@ from os.path import isdir, basename
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils.np_utils import to_categorical
-from sklearn.utils import class_weight
+import logging
 import cv2
 import h5py
 from scipy.misc import imresize
@@ -66,7 +66,7 @@ def imgs_by_class_to_th_array(img_dir, class_labels):
     return img_names, img_arr, y_true
 
 
-def create_generator(data_path, input_shape, batch_size=32, training=True, regression=False, no_samples=None, **kwargs):
+def create_generator(data_path, input_shape, batch_size=32, training=True, regression=False, subset=None, **kwargs):
 
     datagen = ImageDataGenerator(**kwargs)  # augmentation options, can come from a dictionary
 
@@ -101,15 +101,39 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
         except AttributeError:
             print("Numeric labels in range {} to {}".format(min(labels), max(labels)))
 
+        # Subsample the training data
+        if subset is not None:
+            data, labels = get_training_subset(data, labels, ratio=subset)
+
         if not regression:
             labels = to_categorical(labels)  # categorical (one-hot encoded)
 
-        if no_samples is None:
-            no_samples = data.shape[0]
-
-        print("{} on {} samples".format('Training' if training else 'Testing', no_samples))
-        cw = None  # cw = class_weight.compute_class_weight('balanced', np.unique(tuple(labels)), tuple(labels))
         return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels, cw
+
+
+def get_training_subset(data, labels, ratio):
+
+    data_subset, label_subset = [], []
+
+    for label in labels.unique():
+
+        X = data[labels == label, ...]
+        no_in_class = X.shape[0]
+        subset_size = no_in_class * ratio
+        random_subset = np.random.permutation(range(0, no_in_class))[:subset_size]
+
+        X_subset = X[random_subset, ...]
+        y_subset = np.ones(subset_size, 1) * label
+
+        data_subset.append(X_subset)
+        label_subset.append(y_subset)
+
+    data_subset, label_subset = np.stack(data_subset, axis=0), np.stack(label_subset, axis=0)
+
+    logging.info("A total of {} samples will be used for training (:.2f % of the total data)".format(
+        data_subset.shape[0], ratio * 100))
+    
+    return data_subset, label_subset
 
 
 def hdf5_images_and_labels(data_path):
