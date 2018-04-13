@@ -122,6 +122,7 @@ def get_training_subset(data, labels, ratio):
         no_in_class = X.shape[0]
         subset_size = int(np.round(no_in_class * ratio))
         random_subset = np.random.permutation(range(0, no_in_class))[:subset_size]
+        print(random_subset)
 
         X_subset = X[random_subset, ...]
         y_subset = np.ones((subset_size, 1), dtype=int) * label
@@ -129,9 +130,9 @@ def get_training_subset(data, labels, ratio):
         data_subset.append(X_subset)
         label_subset.append(y_subset)
 
-    data_subset, label_subset = np.stack(data_subset, axis=0), np.stack(label_subset, axis=0)
+    data_subset, label_subset = np.concatenate(data_subset, axis=0), np.concatenate(label_subset, axis=0)
 
-    logging.info("A total of {} samples will be used for training (:.2f % of the total data)".format(
+    logging.info("A total of {} samples will be used for training ({:.2f} % of the total data)".format(
         data_subset.shape[0], ratio * 100))
 
     return data_subset, label_subset
