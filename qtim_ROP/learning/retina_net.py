@@ -9,7 +9,7 @@ from keras.layers import Dense, Flatten, Dropout
 from keras.models import Model
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 # from ..deep_rop import generate_report
 from ..utils.common import *
 from ..utils.image import create_generator
@@ -265,7 +265,6 @@ class RetiNet(object):
         # Get predictions and ground truth
         y_pred = np.squeeze(self.model.predict_generator(val_gen, steps=n_samples))
         y_true = np.asarray(y_true[:n_samples])
-        # generate_report(range(0, val_n), y_pred, join(self.experiment_dir, 'predictions.csv'), y_true=y_true)
 
         plt.figure(3)
 
@@ -281,6 +280,10 @@ class RetiNet(object):
         plt.figure(4)
         plot_confusion(confusion, ['Normal', 'Pre-Plus', 'Plus'], join(self.experiment_dir, 'confusion.png'))
         plt.clf()
+
+        # Calculate precision and recall
+        precision, recall, fbeta_score, support = precision_recall_fscore_support(y_true, y_pred)
+        pd.DataFrame([{'precision': precision, 'recall': recall, 'fbeta': fbeta_score, 'support': support}]).to_csv(join(self.experiment_dir, 'precision_recall.csv'))
 
     def set_intermediate(self, layer_name):
 
