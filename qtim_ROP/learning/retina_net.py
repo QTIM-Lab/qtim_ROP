@@ -274,8 +274,11 @@ class RetiNet(object):
             plot_ROC_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, regression=True, outfile=join(self.experiment_dir, 'roc_curve.png'))
         else:
             confusion = confusion_matrix(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1))
-            plot_ROC_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, outfile=join(self.experiment_dir, 'roc_curve.png'))
-            plot_PR_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, outfile=join(self.experiment_dir, 'pr_curve.png'))
+            roc_aucs = plot_ROC_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, outfile=join(self.experiment_dir, 'roc_curve.png'))
+            pr_aucs = plot_PR_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, outfile=join(self.experiment_dir, 'pr_curve.png'))
+
+            df = pd.concat((pd.DataFrame(roc_aucs), pd.DataFrame(pr_aucs)))
+            df.to_csv(join(self.experiment_dir, 'evaluation.csv'))
 
         plt.clf()
         plt.figure(4)

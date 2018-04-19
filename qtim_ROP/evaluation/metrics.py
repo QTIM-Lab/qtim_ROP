@@ -128,8 +128,8 @@ def plot_PR_splits(y_true_all, y_pred_all, xxx_todo_changeme1):
 
 def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=None):
 
-    best_thresh = {}
-    aucs = dict()
+    # best_thresh = {}
+    aucs = []
 
     for c, class_name in list(classes.items()):  # for each class
 
@@ -146,7 +146,7 @@ def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=N
             # best_thresh[class_name] = J[j_best]
 
         roc_auc = auc(fpr, tpr)
-        aucs[class_name] = roc_auc
+        aucs.append(dict(method='ROC', label=class_name, score=roc_auc))
 
         # Plot ROC curve
         plt.plot(fpr, tpr, label='{}, AUC = {:.3f}'.format(class_name, roc_auc), linestyle=ls)
@@ -165,13 +165,14 @@ def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=N
 
 def plot_PR_curves(y_pred, y_true, classes, outfile):
 
-    aucs = dict()
+    aucs = []
     for class_name, c in list(classes.items()):  # for each class
 
         # Compute ROC curve
         precision, recall, thresholds = precision_recall_curve(y_true[:, c], y_pred[:, c])
+
         pr_auc = auc(recall, precision)
-        aucs[class_name] = pr_auc
+        aucs.append(dict(method='PR', label=class_name, score=pr_auc))
 
         # Plot PR curve
         plt.plot(recall, precision, label='{}, AUC = {:.3f}'.format(class_name, pr_auc))
@@ -184,7 +185,9 @@ def plot_PR_curves(y_pred, y_true, classes, outfile):
 
     if outfile:
         plt.savefig(outfile, dpi=300)
+
     return aucs
+
 
 def confusion(y_true, y_pred, classes, out_path):
 
