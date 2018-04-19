@@ -15,7 +15,7 @@ from ..utils.common import *
 from ..utils.image import create_generator
 from ..utils.plotting import *
 from ..utils.keras_to_tensorflow import keras_to_tensorflow
-from ..evaluation.metrics import plot_confusion, plot_ROC_curves
+from ..evaluation.metrics import plot_confusion, plot_ROC_curves, plot_PR_curves
 
 # Set various TF training parameters
 config = tf.ConfigProto()
@@ -275,6 +275,7 @@ class RetiNet(object):
         else:
             confusion = confusion_matrix(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1))
             plot_ROC_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, outfile=join(self.experiment_dir, 'roc_curve.png'))
+            plot_PR_curves(y_true, y_pred, {0: 'Normal', 2: 'Plus'}, outfile=join(self.experiment_dir, 'pr_curve.png'))
 
         plt.clf()
         plt.figure(4)

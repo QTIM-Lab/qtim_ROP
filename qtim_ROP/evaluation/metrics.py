@@ -129,6 +129,8 @@ def plot_PR_splits(y_true_all, y_pred_all, xxx_todo_changeme1):
 def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=None):
 
     best_thresh = {}
+    aucs = dict()
+
     for c, class_name in list(classes.items()):  # for each class
 
         # Compute ROC curve
@@ -139,11 +141,12 @@ def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=N
                 tpr = 1 - tpr
         else:
             fpr, tpr, thresholds = roc_curve(y_true[:, c], y_pred[:, c])
-            J = [j_statistic(y_true[:, c], y_pred[:, c], t) for t in thresholds]
-            j_best = np.argmax(J)
-            best_thresh[class_name] = J[j_best]
+            # J = [j_statistic(y_true[:, c], y_pred[:, c], t) for t in thresholds]
+            # j_best = np.argmax(J)
+            # best_thresh[class_name] = J[j_best]
 
         roc_auc = auc(fpr, tpr)
+        aucs[class_name] = roc_auc
 
         # Plot ROC curve
         plt.plot(fpr, tpr, label='{}, AUC = {:.3f}'.format(class_name, roc_auc), linestyle=ls)
@@ -157,28 +160,31 @@ def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=N
     if outfile:
         plt.savefig(outfile, dpi=300)
 
+    return aucs
 
-def plot_PR_by_class(y_pred, y_true, classes, out_path):
 
-    best_thresh = {}
+def plot_PR_curves(y_pred, y_true, classes, outfile):
+
+    aucs = dict()
     for class_name, c in list(classes.items()):  # for each class
 
         # Compute ROC curve
         precision, recall, thresholds = precision_recall_curve(y_true[:, c], y_pred[:, c])
         pr_auc = auc(recall, precision)
+        aucs[class_name] = pr_auc
 
         # Plot PR curve
         plt.plot(recall, precision, label='{}, AUC = {:.3f}'.format(class_name, pr_auc))
 
-        # Calculate J statistic
-        J = [j_statistic(y_true, y_pred, t) for t in thresholds]
-        j_best = np.argmax(J)
+    plt.legend(loc='upper right')
+    plt.xlim([-0.025, 1.025])
+    plt.ylim([-0.025, 1.025])
+    plt.ylabel('Precision')
+    plt.xlabel('Recall')
 
-        # Store best threshold for each class
-        best_thresh[class_name] = J[j_best]
-
-    return best_thresh
-
+    if outfile:
+        plt.savefig(outfile, dpi=300)
+    return aucs
 
 def confusion(y_true, y_pred, classes, out_path):
 
