@@ -6,7 +6,7 @@ import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 from keras.callbacks import TensorBoard, ModelCheckpoint, CSVLogger, EarlyStopping
 from keras.layers import Dense, Flatten, Dropout
-from keras.models import Model
+from keras.models import Model, load_model
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
@@ -84,7 +84,8 @@ class RetiNet(object):
             # Set up logging
             self.experiment_dir = self.conf_dir
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
-            self._configure_network(build=False)
+            # self._configure_network(build=False)
+            self.model = load_model(join(self.experiment_dir, 'best_model.h5'))
 
         self.history_file = join(self.experiment_dir, "history.csv")
         self.lr_file = join(self.experiment_dir, 'learning_rate.npy')
