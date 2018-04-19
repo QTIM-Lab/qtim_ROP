@@ -223,10 +223,10 @@ class RetiNet(object):
         logging.info("Generating pure TF model")
         keras_to_tensorflow(model_json, model_weights, self.experiment_dir)
 
-        if not isfile(join(self.experiment_dir, 'roc_curve.png')):
-            logging.info("Final evaluation on test data")
-            self.model.load_weights(model_weights)
-            self.evaluate(self.test_data)
+        #if not isfile(join(self.experiment_dir, 'roc_curve.png')):
+        logging.info("Final evaluation on test data")
+        self.model.load_weights(model_weights)
+        self.evaluate(self.test_data)
 
         self.logger.handlers = []
 
