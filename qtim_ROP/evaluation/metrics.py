@@ -163,7 +163,7 @@ def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=N
     return aucs
 
 
-def plot_PR_curves(y_pred, y_true, classes, outfile):
+def plot_PR_curves(y_true, y_pred, classes, outfile):
 
     aucs = []
     for class_name, c in list(classes.items()):  # for each class
