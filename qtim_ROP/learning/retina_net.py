@@ -286,10 +286,6 @@ class RetiNet(object):
         plot_confusion(confusion, ['Normal', 'Pre-Plus', 'Plus'], join(self.experiment_dir, 'confusion.png'))
         plt.clf()
 
-        # Calculate precision and recall
-        precision, recall, fbeta_score, support = precision_recall_fscore_support(y_true, y_pred)
-        pd.DataFrame([{'precision': precision, 'recall': recall, 'fbeta': fbeta_score, 'support': support}]).to_csv(join(self.experiment_dir, 'precision_recall.csv'))
-
     def set_intermediate(self, layer_name):
 
         self.model = Model(input=self.model.input,

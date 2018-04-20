@@ -165,12 +165,12 @@ def plot_ROC_curves(y_true, y_pred, classes, ls='-', regression=False, outfile=N
 
 def plot_PR_curves(y_true, y_pred, classes, outfile):
 
+    plt.clf()
     aucs = []
-    for class_name, c in list(classes.items()):  # for each class
+    for c, class_name in list(classes.items()):  # for each class
 
         # Compute ROC curve
-        precision, recall, thresholds = precision_recall_curve(y_true[:, c], y_pred[:, c])
-
+        precision, recall, _ = precision_recall_curve(y_true[:, c], y_pred[:, c])
         pr_auc = auc(recall, precision)
         aucs.append(dict(method='PR', label=class_name, score=pr_auc))
 
