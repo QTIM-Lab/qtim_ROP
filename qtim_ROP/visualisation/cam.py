@@ -52,7 +52,7 @@ def visualize_activations(model_path, layer_name="dense_6"):
 
 def visualize_attention(model_path, img_path, layer_name="dense_6", class_idx=2, modifier='relu'):
 
-    print("Visualizing saliency")
+    print("Visualizing attention")
     model = load_model(model_path, custom_objects=custom_objects)
     try:
         layer_idx = utils.find_layer_idx(model, layer_name)
