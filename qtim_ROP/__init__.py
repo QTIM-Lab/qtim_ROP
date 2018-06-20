@@ -1,7 +1,13 @@
 import matplotlib  # set matplotlib backend
 matplotlib.use('Agg')
 
+
+from .__main__ import initialize
+conf_dict = initialize()
+
 import os  # set the keras backend
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = conf_dict['gpu']
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 import keras
 keras.backend.set_image_dim_ordering('tf')

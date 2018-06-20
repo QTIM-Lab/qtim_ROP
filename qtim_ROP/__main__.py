@@ -51,8 +51,9 @@ class DeepROPCommands(object):
         print(args)
 
         def print_summary():
-            print("Current segmentation model: {unet_directory}"\
-                  "\nCurrent classifier model: {classifier_directory}".format(**self.conf_dict))
+            print("Current segmentation model: {unet_directory}"
+                  "\nCurrent classifier model: {classifier_directory}"
+                  "\nGPU: {gpu}".format(**self.conf_dict))
 
         if not (args.unet or args.classifier):
             print("DeepROP: no models specified.")
@@ -90,7 +91,6 @@ class DeepROPCommands(object):
 
     def classify_plus(self):
 
-
         parser = ArgumentParser()
         parser.add_argument('-i', '--image-dir', help='Folder of images to classify', dest='image_dir', required=True)
         parser.add_argument('-o', '--out-dir', help='Folder to output results', dest='out_dir', required=True)
@@ -113,7 +113,7 @@ class DeepROPCommands(object):
         pipeline.run()
 
 
-def initialize(unet=None, classifier=None):
+def initialize(unet=None, classifier=None, gpu=None):
     # Setup appdirs
     dirs = AppDirs("DeepROP", "QTIM", version=__version__)
     conf_dir = dirs.user_config_dir
@@ -123,7 +123,7 @@ def initialize(unet=None, classifier=None):
         makedirs(conf_dir)
 
     if not isfile(conf_file):
-        config_dict = {'unet_directory': unet, 'classifier_directory': classifier}
+        config_dict = {'unet_directory': unet, 'classifier_directory': classifier, 'gpu': str(gpu)}
 
         with open(conf_file, 'w') as f:
             yaml.dump(config_dict, f, default_flow_style=False)
