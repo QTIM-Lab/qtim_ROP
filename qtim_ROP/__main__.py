@@ -47,6 +47,8 @@ class DeepROPCommands(object):
                             dest='unet', default=None)
         parser.add_argument('-c', '--classifier', help='Folder containing trained GoogLeNet model and weights',
                             dest='classifier', default=None)
+        parser.add_argument('-g', '--gpu', help='Folder containing trained GoogLeNet model and weights',
+                            dest='gpu', default=None)
         args = parser.parse_args(sys.argv[2:])
         print(args)
 
@@ -65,6 +67,8 @@ class DeepROPCommands(object):
             self.conf_dict['unet_directory'] = abspath(args.unet)
         if args.classifier is not None:
             self.conf_dict['classifier_directory'] = abspath(args.classifier)
+        if args.gpu is not None:
+            self.conf_dict['gpu'] = str(args.gpu)
 
         yaml.dump(self.conf_dict, open(self.conf_file, 'w'), default_flow_style=False)
         print("Configuration updated!")
