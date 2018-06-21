@@ -112,8 +112,8 @@ class DeepROPCommands(object):
         parser.add_argument('-o', '--outdir', dest='out_dir')
         parser.add_argument('-n', '--nfolds', dest='folds', default=5, type=int)
         args = parser.parse_args(sys.argv[2:])
-            
-        pipeline = qtim_ROP.preprocessing.preprocess_cross_val.Pipeline(args.config, n_folds=args.nfolds, out_dir=args.out_dir)
+
+        pipeline = qtim_ROP.preprocessing.preprocess_cross_val.Pipeline(args.config, n_folds=args.folds, out_dir=args.out_dir)
         pipeline.run()
 
 
