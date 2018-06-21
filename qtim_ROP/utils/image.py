@@ -104,7 +104,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
 
         # Subsample the training data
         if subset is not None:
-            data, labels = get_training_subset(data, np.asarray(labels), ratio=subset)
+            data, labels = get_training_subset(data, np.asarray(labels), subset_size=subset)
 
         if not regression:
             labels = to_categorical(labels)  # categorical (one-hot encoded)
