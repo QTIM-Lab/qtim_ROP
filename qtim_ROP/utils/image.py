@@ -115,12 +115,14 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
 def get_training_subset(data, labels, subset_size):
 
     data_subset, label_subset = [], []
+    no_labels = np.unique(labels)
+    samples_per_class = int(np.ceil(subset_size / no_labels))
 
-    for label in np.unique(labels):
+    for label in no_labels:
 
         X = data[labels == label, ...]
         no_in_class = X.shape[0]
-        random_subset = np.random.permutation(range(0, no_in_class))[:subset_size]
+        random_subset = np.random.permutation(range(0, no_in_class))[:samples_per_class]
         print(random_subset)
 
         X_subset = X[random_subset, ...]
@@ -131,8 +133,7 @@ def get_training_subset(data, labels, subset_size):
 
     data_subset, label_subset = np.concatenate(data_subset, axis=0), np.concatenate(label_subset, axis=0)
 
-    logging.info("A total of {} samples will be used for training ({:.2f} % of the total data)".format(
-        data_subset.shape[0], subset_size))
+    logging.info("A total of {} samples will be used for training".format(subset_size))
 
     return data_subset, label_subset
 
