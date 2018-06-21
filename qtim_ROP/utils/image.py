@@ -103,7 +103,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
             print("Numeric labels in range {} to {}".format(min(labels), max(labels)))
 
         # Subsample the training data
-        if subset is not None and not isclose(subset, 1.0):
+        if subset is not None:
             data, labels = get_training_subset(data, np.asarray(labels), ratio=subset)
 
         if not regression:
@@ -112,7 +112,7 @@ def create_generator(data_path, input_shape, batch_size=32, training=True, regre
         return datagen.flow(data, y=labels, batch_size=batch_size, shuffle=training), f['data'].shape[0], labels, None
 
 
-def get_training_subset(data, labels, ratio):
+def get_training_subset(data, labels, subset_size):
 
     data_subset, label_subset = [], []
 
@@ -120,7 +120,6 @@ def get_training_subset(data, labels, ratio):
 
         X = data[labels == label, ...]
         no_in_class = X.shape[0]
-        subset_size = int(np.round(no_in_class * ratio))
         random_subset = np.random.permutation(range(0, no_in_class))[:subset_size]
         print(random_subset)
 
