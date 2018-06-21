@@ -90,6 +90,7 @@ class Pipeline(object):
 
         # Get paths to all images
         im_files = find_images(join(self.input_dir))
+        print(im_files)
         assert (len(im_files) > 0)
 
         # Split images into metadata
@@ -122,9 +123,9 @@ class Pipeline(object):
         assert(all(int(basename(x['full_path']).split('_')[1]) == int(index) for index, x in img_data.iterrows()))
 
         if self.n_folds == 1:
-
-            exclude_patients = pd.Series.from_csv(self.exclusions).values
-            img_data = img_data[~img_data['patient_id'].isin(exclude_patients)]
+            if self.exclusions:
+                exclude_patients = pd.Series.from_csv(self.exclusions).values
+                img_data = img_data[~img_data['patient_id'].isin(exclude_patients)]
             img_data.to_csv(join(self.out_dir, 'training.csv'))
             self.generate_dataset(self.out_dir, mode='training')
             quit()
@@ -247,7 +248,8 @@ class Pipeline(object):
         if len(find_images(join(data_dir, '*'))) == 0:
             pool = Pool(self.processes)
             subprocess = partial(do_preprocess, args={'params': self, 'augment': do_augment, 'out_dir': data_dir})
-            img_list = list(split_df['imageName'].apply(lambda x: join(self.input_dir, x)))
+            # img_list = list(split_df['imageName'].apply(lambda x: join(self.input_dir, x)))
+            img_list = list(split_df['full_path'])
             _ = pool.map(subprocess, img_list)
 
         self.generate_h5(find_images_by_class(data_dir, classes=classes),  # enumerated classes
@@ -357,8 +359,9 @@ def do_preprocess(im, args):
     # Resize, pre-process and augment
     try:
         im_arr = cv2.imread(im)[:, :, ::-1]
-    except TypeError:
+    except TypeError as e:
         print("Error loading '{}'".format(im))
+        print(e)
         return False
 
     im_arr = im_arr[:,:,:3]

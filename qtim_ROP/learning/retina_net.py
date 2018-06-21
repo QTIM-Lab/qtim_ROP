@@ -154,7 +154,7 @@ class RetiNet(object):
         final_result = join(self.experiment_dir, 'final_weights.h5')
         if isfile(final_result):
             logging.warning("Training already concluded")
-            self.conclude_training(weights='best')
+            self.conclude_training(weights='best' if self.val_data else 'final')
             return
 
         # Train
@@ -173,7 +173,7 @@ class RetiNet(object):
         else:
             logging.info("No validation data provided.")
             val_gen = None
-            val_n = None
+            val_n = 1
 
         # Check point callback saves weights on improvement
         weights_out = join(self.experiment_dir, 'best_weights.h5')
@@ -202,7 +202,8 @@ class RetiNet(object):
             arch.writelines(self.model.to_json())
 
         # Write updated YAML file and plot history
-        return self.conclude_training('best')
+        return self.conclude_training('best' if self.val_data else 'final')
+
 
     def conclude_training(self, weights='final'):
 
