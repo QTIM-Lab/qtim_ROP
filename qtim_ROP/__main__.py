@@ -50,14 +50,13 @@ class DeepROPCommands(object):
         parser.add_argument('-g', '--gpu', help='Folder containing trained GoogLeNet model and weights',
                             dest='gpu', default=None)
         args = parser.parse_args(sys.argv[2:])
-        print(args)
 
         def print_summary():
             print("Current segmentation model: {unet_directory}"
                   "\nCurrent classifier model: {classifier_directory}"
                   "\nGPU: {gpu}".format(**self.conf_dict))
 
-        if not (args.unet or args.classifier):
+        if not (args.unet or args.classifier or args.gpu):
             print("DeepROP: no models specified.")
             parser.print_usage()
             print_summary()
