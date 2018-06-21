@@ -132,7 +132,7 @@ def get_training_subset(data, labels, subset_size):
     data_subset, label_subset = np.concatenate(data_subset, axis=0), np.concatenate(label_subset, axis=0)
 
     logging.info("A total of {} samples will be used for training ({:.2f} % of the total data)".format(
-        data_subset.shape[0], ratio * 100))
+        data_subset.shape[0], subset_size))
 
     return data_subset, label_subset
 
