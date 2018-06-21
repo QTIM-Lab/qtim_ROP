@@ -26,7 +26,7 @@ set_session(tf.Session(config=config))
 
 class RetiNet(object):
 
-    def __init__(self, conf_file):
+    def __init__(self, conf_file, out_dir=None):
 
         # Parse config
         self.conf_file = conf_file
@@ -70,7 +70,11 @@ class RetiNet(object):
                 logging.warning("No training data specified! Exiting...")
                 exit()
 
-            self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
+            if out_dir is None:
+                self.experiment_dir = make_sub_dir(self.conf_dir, self.experiment_name)
+            else:
+                self.experiment_dir = out_dir
+
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
 
             if self.config.get('logging', False):
