@@ -15,7 +15,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = gpu
 
 from qtim_ROP.learning.retina_net import RetiNet
 confs = glob(sys.argv[1])
-out_dir = sys.argv[2] if len(sys.argv > 2) else None
+out_dir = sys.argv[2] if len(sys.argv) > 2 else None
 
 for c in confs:
     print(c)
