@@ -126,7 +126,7 @@ def get_training_subset(data, labels, subset_size):
         print(random_subset)
 
         X_subset = X[random_subset, ...]
-        y_subset = np.ones((subset_size, 1), dtype=int) * label
+        y_subset = np.ones((samples_per_class, 1), dtype=int) * label
 
         data_subset.append(X_subset)
         label_subset.append(y_subset)
