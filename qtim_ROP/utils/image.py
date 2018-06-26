@@ -116,7 +116,7 @@ def get_training_subset(data, labels, subset_size):
 
     data_subset, label_subset = [], []
     no_labels = np.unique(labels)
-    samples_per_class = int(np.ceil(subset_size / no_labels))
+    samples_per_class = int(np.ceil(subset_size / len(no_labels)))
 
     for label in no_labels:
 
