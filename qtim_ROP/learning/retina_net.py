@@ -208,7 +208,6 @@ class RetiNet(object):
         # Write updated YAML file and plot history
         return self.conclude_training('best' if self.val_data else 'final')
 
-
     def conclude_training(self, weights='final'):
 
         # Create modified copy of config file
@@ -290,6 +289,8 @@ class RetiNet(object):
         plt.figure(4)
         plot_confusion(confusion, ['Normal', 'Pre-Plus', 'Plus'], join(self.experiment_dir, 'confusion.png'))
         plt.clf()
+
+        return y_pred
 
     def set_intermediate(self, layer_name):
 
