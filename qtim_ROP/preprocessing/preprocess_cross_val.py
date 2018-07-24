@@ -356,7 +356,12 @@ def do_preprocess(im, args):
     im_ID = int(meta['imID'])
 
     # Get class and quality info
-    row = params.label_data.loc[im_ID]
+    try:
+        row = params.label_data.loc[im_ID]
+    except KeyError:
+        print(im)
+        return False
+
     reader = params.label
     class_ = row[reader]
 
