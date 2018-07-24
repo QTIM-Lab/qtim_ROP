@@ -271,7 +271,7 @@ class RetiNet(object):
         y_pred = np.squeeze(self.model.predict_generator(val_gen, steps=n_samples))
         y_true = np.asarray(y_true[:n_samples])
 
-        pd.DataFrame(data=np.hstack([y_true, y_pred]), index=['y_true', 'y_pred'])\
+        pd.DataFrame(data=np.concatenate([y_true, y_pred], axis=1))\
             .to_csv(join(self.eval_dir, 'predictions.csv'))
 
         plt.figure(3)
