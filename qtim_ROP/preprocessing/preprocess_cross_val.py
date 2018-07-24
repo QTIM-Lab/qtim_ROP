@@ -249,7 +249,11 @@ class Pipeline(object):
             pool = Pool(self.processes)
             subprocess = partial(do_preprocess, args={'params': self, 'augment': do_augment, 'out_dir': data_dir})
             # img_list = list(split_df['imageName'].apply(lambda x: join(self.input_dir, x)))
-            img_list = list(split_df['full_path'])
+
+            if self.input_dir != basename(list(split_df['full_path'])[0]):
+                img_list = [join(self.input_dir, basename(img)) for img in list(split_df['full_path'])]
+            else:
+                img_list = list(split_df['full_path'])
             _ = pool.map(subprocess, img_list)
 
         self.generate_h5(find_images_by_class(data_dir, classes=classes),  # enumerated classes
