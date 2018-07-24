@@ -283,7 +283,7 @@ class Pipeline(object):
 
                 try:
                     id_ = int(basename(img_path).split('_')[1])
-                    original_image = df.loc[id_]['imageName']
+                    original_image = df.loc[id_]['original']
                 except KeyError:
                     raise
 
