@@ -230,7 +230,7 @@ class RetiNet(object):
         #if not isfile(join(self.experiment_dir, 'roc_curve.png')):
         logging.info("Final evaluation on test data")
         self.model.load_weights(model_weights)
-        self.evaluate(self.test_data)
+        self.evaluate(self.val_data)
 
         self.logger.handlers = []
 
