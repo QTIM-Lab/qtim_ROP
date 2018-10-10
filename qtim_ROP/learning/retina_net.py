@@ -7,7 +7,7 @@ from keras.backend.tensorflow_backend import set_session
 from keras.callbacks import TensorBoard, ModelCheckpoint, CSVLogger, EarlyStopping
 from keras.layers import Dense, Flatten, Dropout
 from keras.models import Model, load_model
-from keras.optimizers import SGD
+from keras.optimizers import *
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
@@ -134,12 +134,23 @@ class RetiNet(object):
         # Configure optimizer
         if build:
             opt_options = self.config['optimizer']
-            optimizer, loss, params = opt_options['type'], opt_options['loss'], opt_options['params']
+            opt_type, loss, params = opt_options['type'], opt_options['loss'], opt_options['params']
             metrics = ['accuracy']
 
-            optimizer = SGD(**params)  # TODO make this more flexible
-            print(optimizer)
+            optimizers = {'sgd': SGD, 'rmsprop': RMSprop, 'adam': Adam, 'nadam': Nadam}
+
+            try:
+                OPT = optimizers[opt_type]
+                optimizer = OPT(**params)  # TODO make this more flexible
+            except KeyError:
+                print(f'Invalid optimizer type "{opt_type}". Defaulting to SGD with 1e-4 learning rate.')
+                optimizer = SGD(lr=0.0001)
+            except TypeError:
+                print("One or more invalid optimizer parameters specified for '{opt_type}'. Using defaults")
+                optimizer = optimizers[opt_type]
+
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+            
 
     def customize_keras_model(self, keras_model, weights, params):
 
