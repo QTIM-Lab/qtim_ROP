@@ -128,6 +128,12 @@ class RetiNet(object):
             logging.info("Instantiating ResNet model" + fine_tuning)
             self.customize_keras_model(ResNet50, weights, network)
 
+        elif 'densenet' in type_:
+
+            from keras.applications.densenet import DenseNet121
+            logging.info("Instantiating DenseNet model" + fine_tuning)
+            self.customize_keras_model(DenseNet121, weights, network)
+
         else:
             raise Exception('Invalid model type!')
 
