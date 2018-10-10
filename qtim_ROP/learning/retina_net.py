@@ -195,9 +195,9 @@ class RetiNet(object):
             val_n = 1
 
         # Check point callback saves weights on improvement
-        weights_out = join(self.experiment_dir, 'best_weights.h5')
+        best_model = join(self.experiment_dir, 'best_model.h5')
         tb_dir = make_sub_dir(self.experiment_dir, 'tensorboard')
-        checkpoint_cb = ModelCheckpoint(filepath=weights_out, verbose=1, save_best_only=True)
+        checkpoint_cb = ModelCheckpoint(filepath=best_model, verbose=1, save_best_only=True)
         stop_cb = EarlyStopping(monitor='val_loss', verbose=1, patience=10)
         tensorboard_cb = TensorBoard(log_dir=tb_dir, histogram_freq=0, write_graph=True, write_images=True)
         csv_log_cb = CSVLogger(join(self.experiment_dir, 'history.csv'), separator=',', append=False)
