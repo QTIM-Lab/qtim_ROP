@@ -141,7 +141,7 @@ class RetiNet(object):
 
             try:
                 OPT = optimizers[opt_type]
-                optimizer = OPT(**params)  # TODO make this more flexible
+                optimizer = OPT(**params)
             except KeyError:
                 print(f'Invalid optimizer type "{opt_type}". Defaulting to SGD with 1e-4 learning rate.')
                 optimizer = SGD(lr=0.0001)
@@ -150,7 +150,6 @@ class RetiNet(object):
                 optimizer = optimizers[opt_type]
 
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-            
 
     def customize_keras_model(self, keras_model, weights, params):
 
