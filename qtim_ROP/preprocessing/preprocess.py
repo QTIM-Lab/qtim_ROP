@@ -10,8 +10,8 @@ def preprocess(src_img, dst_img, params):
 
     print("Preprocessing {}".format(src_img))
     resize, crop = params['resize'], params['crop']
-    crop_width = (resize['width'] - crop['width']) / 2
-    crop_height = (resize['height'] - crop['height']) / 2
+    crop_width = (resize['width'] - crop['width']) // 2
+    crop_height = (resize['height'] - crop['height']) // 2
 
     # Resize, preprocess and augment
     try:

@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import yaml
 import time
+import matplotlib.pyplot as plt
 from .segmentation.segment_unet import SegmentUnet
 from .preprocessing.preprocess import preprocess
 from .learning.retina_net import RetiNet, locate_config
@@ -48,7 +49,7 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
         preprocessed_arr.append(prep_img)
 
     # Reshape array - samples, channels, height, width
-    preprocessed_arr = np.asarray(preprocessed_arr).transpose((0, 3, 1, 2))
+    preprocessed_arr = np.asarray(preprocessed_arr) #.transpose((0, 3, 1, 2))
     print(preprocessed_arr.shape)
     return preprocessed_arr, img_names
 

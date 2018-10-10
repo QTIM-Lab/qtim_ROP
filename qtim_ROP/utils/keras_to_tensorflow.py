@@ -12,7 +12,7 @@ import argparse
 import tensorflow as tf
 from keras import backend as K
 from keras.models import model_from_json
-from keras.applications.mobilenet import relu6, DepthwiseConv2D
+# from keras.applications.mobilenet import relu6, DepthwiseConv2D
 from .common import make_sub_dir
 
 
@@ -23,7 +23,7 @@ def keras_to_tensorflow(model_json, weights, save_dir, num_output=1, quantize=Fa
 
     try:
         with open(model_json, 'r') as f:
-            net_model = model_from_json(f.read(), custom_objects={'relu6': relu6, 'DepthwiseConv2d': DepthwiseConv2D})
+            net_model = model_from_json(f.read()) #, custom_objects={'relu6': relu6, 'DepthwiseConv2d': DepthwiseConv2D})
             net_model.load_weights(weights)
     except ValueError as err:
         print("Error loading model")

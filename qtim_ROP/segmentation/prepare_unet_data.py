@@ -128,7 +128,7 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
             skipped.append(im_path)
             continue
 
-        img = img[:, : ,:3]  # in case there's an alpha channel
+        img = img[:, :, :3]  # in case there's an alpha channel
 
         if img.shape[:-1] != target_shape[:-1]:
             img = imresize(img, (height, width), interp='bicubic')
@@ -142,8 +142,8 @@ def imgs_to_unet_array(img_list, target_shape=(480, 640, 3), erode=10):
     imgs_arr = np.stack(imgs_arr, axis=0)
     masks_arr = np.stack(masks_arr, axis=0)
 
-    imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
-    masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
+    # imgs_arr = np.transpose(imgs_arr, (0, 3, 1, 2))
+    # masks_arr = np.transpose(masks_arr, (0, 3, 1, 2))
 
     return imgs_arr, masks_arr, skipped
 

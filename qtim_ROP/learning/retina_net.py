@@ -7,6 +7,7 @@ from keras.backend.tensorflow_backend import set_session
 from keras.callbacks import TensorBoard, ModelCheckpoint, CSVLogger, EarlyStopping
 from keras.layers import Dense, Flatten, Dropout
 from keras.models import Model, load_model
+from keras.optimizers import SGD
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
@@ -88,7 +89,8 @@ class RetiNet(object):
             # Set up logging
             self.experiment_dir = self.conf_dir
             self.eval_dir = make_sub_dir(self.experiment_dir, 'eval')
-            # self._configure_network(build=False)
+            #self._configure_network(build=False)
+            print("Loading best model")
             self.model = load_model(join(self.experiment_dir, 'best_model.h5'))
 
         self.history_file = join(self.experiment_dir, "history.csv")
@@ -134,6 +136,9 @@ class RetiNet(object):
             opt_options = self.config['optimizer']
             optimizer, loss, params = opt_options['type'], opt_options['loss'], opt_options['params']
             metrics = ['accuracy']
+
+            optimizer = SGD(**params)  # TODO make this more flexible
+            print(optimizer)
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     def customize_keras_model(self, keras_model, weights, params):
@@ -141,6 +146,13 @@ class RetiNet(object):
         input_shape = params.get('input_shape', (224, 224, 3))
         dropout = params.get('dropout', 0.5)
         logging.info("Dropout rate = {}".format(dropout))
+
+        loadable_weights = None
+        if weights is not None and weights.endswith('.h5'):
+            loadable_weights = weights
+            weights = None
+
+        print(loadable_weights, weights)
         base_model = keras_model(input_shape=input_shape, weights=weights, include_top=False)
         x = base_model.output
         x = Flatten()(x)
@@ -152,6 +164,9 @@ class RetiNet(object):
         act = 'linear' if params.get('regression') is True else 'softmax'
         predictions = Dense(params.get('no_classes'), activation=act)(x)
         self.model = Model(inputs=base_model.input, outputs=predictions)
+
+        if loadable_weights:
+            self.model.load_weights(join(self.conf_dir, loadable_weights))
 
     def train(self):
 
