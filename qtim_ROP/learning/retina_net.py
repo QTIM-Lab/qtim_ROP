@@ -153,7 +153,7 @@ class RetiNet(object):
                 optimizer = SGD(lr=0.0001)
             except TypeError:
                 print("One or more invalid optimizer parameters specified for '{opt_type}'. Using defaults")
-                optimizer = optimizers[opt_type]
+                optimizer = optimizers[opt_type]()
 
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
