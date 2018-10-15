@@ -177,7 +177,13 @@ class RetiNet(object):
             x = Dense(params.get('no_features'), activation='relu')(x)
             x = Dropout(dropout)(x)
 
-        act = 'linear' if params.get('regression') is True else 'softmax'
+        regression_mode = params.get('regression')
+        if type(regression_mode) is str:
+            act = 'sigmoid' if regression_mode == 'ordinal' else 'linear'
+        else:
+            act = 'linear' if regression_mode is True else 'softmax'
+            
+        # act = 'linear' if params.get('regression') is True else 'softmax'
         predictions = Dense(params.get('no_classes'), activation=act)(x)
         self.model = Model(inputs=base_model.input, outputs=predictions)
 
