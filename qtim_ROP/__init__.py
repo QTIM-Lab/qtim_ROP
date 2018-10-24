@@ -21,3 +21,4 @@ from . import segmentation
 from . import preprocessing
 from . import evaluation
 from . import retinaunet
+from  . import quality_assurance

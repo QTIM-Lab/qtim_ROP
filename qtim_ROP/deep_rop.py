@@ -89,7 +89,8 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
 
     print("Performing inference...")
     y_preda = cnn.predict(preprocessed_arr)
-    generate_report(img_names, y_preda, csv_out)
+    report = generate_report(img_names, y_preda, csv_out)
+    return report
 
 
 def generate_report(img_names, y_preda, csv_out, y_true=None):
@@ -107,3 +108,4 @@ def generate_report(img_names, y_preda, csv_out, y_true=None):
     print(df)
     print("Results saved to: " + csv_out)
     df.to_csv(csv_out)
+    return df

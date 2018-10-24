@@ -7,6 +7,7 @@ from os.path import isdir, isfile, join, abspath
 import yaml
 from pkg_resources import get_distribution, DistributionNotFound
 from argparse import ArgumentParser
+from .quality_assurance import QualityAssurance
 
 try:
     __version__ = get_distribution('qtim_ROP').version
@@ -24,9 +25,11 @@ class DeepROPCommands(object):
             usage='''deeprop <command> [<args>]
 
             The following commands are available:
-               configure                    Configure DeepROP models to use for segmentation and classification
-               segment_vessels              Perform vessel segmentation using a trained U-Net
+               configure                    Configure DeepROP models to use for segmentation, classification, and QA
                classify_plus                Classify plus disease in retinal images
+               segment_vessels              Perform vessel segmentation using a trained U-Net
+               segment_optic_disc           Perform optic disc segmentation using a trained U-Net
+               quality_assurance            Assess image quality using multiple trained models
             ''')
 
         parser.add_argument('command', help='Command to run')
@@ -43,29 +46,39 @@ class DeepROPCommands(object):
         parser = ArgumentParser(
             description='Update models for vessel segmentation and/or classification')
 
-        parser.add_argument('-s', '--segmentation', help='Folder containing trained U-Net model and weights',
-                            dest='unet', default=None)
-        parser.add_argument('-c', '--classifier', help='Folder containing trained GoogLeNet model and weights',
-                            dest='classifier', default=None)
-        parser.add_argument('-g', '--gpu', help='Folder containing trained GoogLeNet model and weights',
+        parser.add_argument('-p', '--plus', help='Folder containing model for plus disease classification',
+                            dest='plus', default=None)
+        parser.add_argument('-v', '--vessels', help='Folder containing model/weights trained for vessel segmentation',
+                            dest='vessels', default=None)
+        parser.add_argument('-o', '--optic', help='Folder containing model/weights trained for optic disc segmentation',
+                            dest='optic', default=None)
+        parser.add_argument('-q', '--quality', help='Folder containing model/weights trained for quality estimation',
+                            dest='quality', default=None)
+        parser.add_argument('-g', '--gpu', help='Numerical identifier of which GPU to use (0-N, or -1 for CPU)',
                             dest='gpu', default=None)
         args = parser.parse_args(sys.argv[2:])
 
         def print_summary():
-            print("Current segmentation model: {unet_directory}"
-                  "\nCurrent classifier model: {classifier_directory}"
-                  "\nGPU: {gpu}".format(**self.conf_dict))
+            print("Current plus disease model: {plus_directory}"
+                  "\nCurrent vessel segmentation model: {vessel_directory}"
+                  "\nCurrent optic disc segmentation model: {optic_directory}"
+                  "\nCurrent quality model: {quality_directory}"
+                  "\nGPU (-1 for CPU): {gpu}".format(**self.conf_dict))
 
-        if not (args.unet or args.classifier or args.gpu):
+        if all([v is None for k, v in args.__dict__.items()]):
             print("DeepROP: no models specified.")
             parser.print_usage()
             print_summary()
             exit(1)
 
-        if args.unet is not None:
-            self.conf_dict['unet_directory'] = abspath(args.unet)
-        if args.classifier is not None:
-            self.conf_dict['classifier_directory'] = abspath(args.classifier)
+        if args.plus is not None:
+            self.conf_dict['plus_directory'] = abspath(args.plus)
+        if args.vessels is not None:
+            self.conf_dict['vessel_directory'] = abspath(args.vessels)
+        if args.optic is not None:
+            self.conf_dict['optic_directory'] = abspath(args.optic)
+        if args.quality is not None:
+            self.conf_dict['quality_directory'] = abspath(args.quality)
         if args.gpu is not None:
             self.conf_dict['gpu'] = str(args.gpu)
 
@@ -92,6 +105,21 @@ class DeepROPCommands(object):
         else:
             raise IOError("Please specify a valid folder of images")
 
+    def quality_assurance(self):
+
+        parser = ArgumentParser(
+            description='Run quality assurance models to verify the integrity of provided data.')
+
+        parser.add_argument('-i', '--images', help='Directory of image files to assess', dest='images', required=True)
+        parser.add_argument('-o', '--out-dir', help='Output directory', dest="out_dir", required=True)
+        parser.add_argument('-c', '--config', help='Configuration file specifying models to use', dest='config',
+                            default=self.conf_dict)
+        parser.add_argument('-b', '--batch-size', help='Number of images to assess at a time', dest='batch_size')
+
+        args = parser.parse_args(sys.argv[2:])
+        qa = QualityAssurance(args.images, args.config, out_dir=args.out_dir, batch_size=args.batch_size)
+        return qa.run()
+
     def classify_plus(self):
 
         parser = ArgumentParser()
@@ -102,6 +130,26 @@ class DeepROPCommands(object):
         parser.add_argument('--skip-seg', help='Skip the segmentation', action='store_true', dest='skip_seg', default=False)
         args = parser.parse_args(sys.argv[2:])
 
+        qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict,
+                                   skip_segmentation=args.skip_seg, batch_size=args.batch_size)
+
+    def run(self):
+        """
+        Run inference for plus disease with additional quality control measures
+        :return: Spreadsheet listing images
+        """
+
+        parser = ArgumentParser()
+        parser.add_argument('-i', '--image-dir', help='Folder of images to classify', dest='image_dir', required=True)
+        parser.add_argument('-o', '--out-dir', help='Folder to output results', dest='out_dir', required=True)
+        parser.add_argument('-b', '--batch-size', help='Number of images to process at once', dest='batch_size',
+                            type=int, default=10)
+        parser.add_argument('--skip-seg', help='Skip the segmentation', action='store_true', dest='skip_seg',
+                            default=False)
+        args = parser.parse_args(sys.argv[2:])
+
+        qa = QualityAssurance(args.images, args.config, out_dir=args.out_dir, batch_size=args.batch_size)
+        qa_result = qa.run()
         qtim_ROP.deep_rop.classify(args.image_dir, args.out_dir, self.conf_dict,
                                    skip_segmentation=args.skip_seg, batch_size=args.batch_size)
 
@@ -117,7 +165,8 @@ class DeepROPCommands(object):
         pipeline.run()
 
 
-def initialize(unet=None, classifier=None, gpu=None):
+def initialize(plus_model=None, vessel_model=None, od_model=None, quality_model=None, gpu=None):
+
     # Setup appdirs
     dirs = AppDirs("DeepROP", "QTIM", version=__version__)
     conf_dir = dirs.user_config_dir
@@ -127,7 +176,11 @@ def initialize(unet=None, classifier=None, gpu=None):
         makedirs(conf_dir)
 
     if not isfile(conf_file):
-        config_dict = {'unet_directory': unet, 'classifier_directory': classifier, 'gpu': str(gpu)}
+        config_dict = {'plus_directory': plus_model,
+                       'vessel_directory': vessel_model,
+                       'optic_directory': od_model,
+                       'quality_directory': quality_model,
+                       'gpu': str(gpu)}
 
         with open(conf_file, 'w') as f:
             yaml.dump(config_dict, f, default_flow_style=False)
@@ -137,3 +190,4 @@ def initialize(unet=None, classifier=None, gpu=None):
 
 def main():
     DeepROPCommands()
+

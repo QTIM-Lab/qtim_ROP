@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='qtim_ROP',
     packages=find_packages(),
-    version='0.3',
+    version='0.4',
     description = 'A package for segmentation and classification of retinal images',
     entry_points = {
         "console_scripts": ['deeprop = qtim_ROP.__main__:main']
