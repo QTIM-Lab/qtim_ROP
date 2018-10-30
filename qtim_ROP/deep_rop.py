@@ -28,7 +28,7 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     else:
 
         try:   # use a U-Net to segment the input images
-            unet = SegmentUnet(conf_dict['unet_directory'], seg_dir, ext=ext, stride=stride)
+            unet = SegmentUnet(conf_dict['vessel_directory'], seg_dir, ext=ext, stride=stride)
             newly_segmented, already_segmented, failures = unet.segment_batch(image_files, batch_size=batch_size)
         except IOError as ioe:
             print("Unable to locate segmentation model - use 'deeprop configure' to update model location")
@@ -83,7 +83,7 @@ def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size
 
     # CNN initialization
     print("Initializing classifier")
-    classifier_dir = conf_dict['classifier_directory']
+    classifier_dir = conf_dict['plus_directory']
     model_config, rf_pkl = locate_config(classifier_dir)
     cnn = RetiNet(model_config)
 
