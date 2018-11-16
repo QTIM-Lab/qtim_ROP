@@ -60,6 +60,8 @@ class QualityAssurance:
         print("Verifying images are posterior pole...")
         self.is_posterior()
 
+        print(self.results)
+        self.results.to_csv(join(self.out_dir, 'QA.csv'))
         return self.results
 
     def is_retina(self):
