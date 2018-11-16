@@ -22,7 +22,8 @@ class QualityAssurance:
         self.config = config
         self.out_dir = out_dir
         self.od_dir = join(self.out_dir, 'optic_disk')
-        makedirs(self.od_dir)
+        if not exists(self.od_dir):
+            makedirs(self.od_dir)
         self.batch_size = batch_size
 
         if isdir(input_imgs):
