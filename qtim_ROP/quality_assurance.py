@@ -1,4 +1,5 @@
 from os.path import *
+from os import makedirs
 from glob import glob
 import numpy as np
 import keras.backend as K
@@ -20,7 +21,8 @@ class QualityAssurance:
 
         self.config = config
         self.out_dir = out_dir
-        self.od_dir = make_sub_dir(self.out_dir, 'optic_disk')
+        self.od_dir = join(self.out_dir, 'optic_disk')
+        makedirs(self.od_dir)
         self.batch_size = batch_size
 
         if isdir(input_imgs):
