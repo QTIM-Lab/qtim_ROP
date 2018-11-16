@@ -38,6 +38,7 @@ class QualityAssurance:
             exit(1)
 
         self.image_files = image_files
+        print(f"Processing {self.image_files} image files")
         self.quality_path = config['quality_directory']
         # self.retina_path = config['retina_directory']
         self.posterior_path = config['optic_directory']
