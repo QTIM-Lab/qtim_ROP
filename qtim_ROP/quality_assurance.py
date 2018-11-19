@@ -155,13 +155,10 @@ class QualityAssurance:
 
             if has_output:
                 if not all([isfile(f) for f in analyzed_batch]):
-                    print("Loading raw data for segmentation")
                     yield load_batch(batch), True
                 else:
-                    print("Loading pre-segmented data")
                     yield load_batch(analyzed_batch), False
             else:
-                print("Loading raw data for segmentation")
                 yield load_batch(batch), True
 
 
