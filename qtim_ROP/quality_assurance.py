@@ -96,7 +96,7 @@ class QualityAssurance:
         od_model.load_weights(od_weights)
         results = []
 
-        for (file_names, batch), is_raw in self.batch_loader(has_output=True, target_size=(480, 640)):
+        for (file_names, batch), is_raw in self.batch_loader(has_output=True, out_dir=self.od_dir, target_size=(480, 640)):
 
             # Run inference, if the data loaded is the raw data
             if is_raw:
@@ -125,7 +125,7 @@ class QualityAssurance:
         for img, out_file in zip(pred, file_names):
             Image.fromarray((255. * img[0]).astype('uint8')).save(join(out_dir, basename(out_file)))
 
-    def batch_loader(self, has_output=False, target_size=(150, 150)):
+    def batch_loader(self, has_output=False, out_dir=None, target_size=(150, 150)):
 
         skipped = []
 
@@ -151,7 +151,7 @@ class QualityAssurance:
 
             end = min(start + self.batch_size, len(self.image_files))
             batch = self.image_files[start:end]
-            analyzed_batch = [join(self.out_dir, basename(f)) for f in batch]
+            analyzed_batch = [join(out_dir, basename(f)) for f in batch]
 
             if has_output:
                 if not all([isfile(f) for f in analyzed_batch]):
