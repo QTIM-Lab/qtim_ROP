@@ -87,7 +87,7 @@ class QualityAssurance:
         concat_series = pd.concat(results, axis=0)
         self.results['Quality'] = concat_series
 
-    def is_posterior(self, tol_pixels=100):
+    def is_posterior(self, tol_pixels=1000):
 
         # Load the model
         od_json = open(glob(join(self.posterior_path, '*.json'))[0], 'r').read()
@@ -105,23 +105,24 @@ class QualityAssurance:
                 predictions = od_model.predict(prep_batch)
                 self.save_batch(predictions, file_names, self.od_dir)
             else:
-                predictions = batch.astype(float)  # just load the previous predictions
-                predictions /= 255.
+                predictions = batch.transpose((0, 3, 1, 2)).astype(np.float32) / 255.  # just load the previous predictions
 
             # Calculate statistics
             index = [splitext(basename(f))[0] for f in file_names]
             batch_stats = pd.DataFrame(
                 [od_statistics(img[0], filename) for img, filename in zip(predictions, index)]).set_index('filename')
-
             results.append(batch_stats)
 
         # Compile final DataFrame
-        centroid = (480, 480)
+        centroid = (240, 240)
         result_df = pd.concat(results, axis=0)
         result_df['euc_distance_centroid'] = result_df.apply(lambda p: euclidean(centroid, p[['x', 'y']]) if p['no_objects'] > 0 else None, axis=1)
-        self.results['is_posterior'] = result_df['no_objects'] & result_df['euc_distance_centroid'] < tol_pixels
+        self.results['euc_distance_centroid'] = result_df['euc_distance_centroid']
+        self.results['is_posterior'] = (result_df['no_objects'].astype(int) == 1) & (result_df['euc_distance_centroid'] < tol_pixels)
+        self.results['no_objects'] = result_df['no_objects']
         self.results['x'] = result_df['x']
         self.results['y'] = result_df['y']
+        print(self.results)
 
     def save_batch(self, pred, file_names, out_dir):
 
