@@ -47,21 +47,23 @@ class QualityAssurance:
         self.results = pd.DataFrame([], index=index)
         self.results['Full path'] = self.image_files
 
+        self.csv_out = join(self.out_dir, 'QA.csv')
+
     def run(self):
 
         # Determine if this is a retina
-        pass
+        pass  # TODO need from Aaron
 
         # Check its quality
         print("Estimating image quality...")
-        self.is_quality()
+        # self.is_quality()
 
         # Verify that it's a posterior pole image
         print("Verifying images are posterior pole...")
         self.is_posterior()
 
         print(self.results)
-        self.results.to_csv(join(self.out_dir, 'QA.csv'))
+        self.results.to_csv(self.csv_out)
         return self.results
 
     def is_retina(self):
@@ -94,13 +96,16 @@ class QualityAssurance:
         od_model.load_weights(od_weights)
         results = []
 
-        for file_names, batch in self.batch_loader(target_size=(480, 640)):
+        for (file_names, batch), is_raw in self.batch_loader(target_size=(480, 640)):
 
-            # Run inference
-            prep_batch = my_PreProc(batch)
-            prep_batch = prep_batch[:, :, 80:-80, :].transpose((0, 3, 1, 2))  # crop to 480 x 480 square
-            predictions = od_model.predict(prep_batch)
-            self.save_batch(predictions, file_names, self.od_dir)
+            # Run inference, if the data loaded is the raw data
+            if is_raw:
+                prep_batch = my_PreProc(batch)
+                prep_batch = prep_batch[:, :, 80:-80, :].transpose((0, 3, 1, 2))  # crop to 480 x 480 square
+                predictions = od_model.predict(prep_batch)
+                self.save_batch(predictions, file_names, self.od_dir)
+            else:
+                predictions = batch  # just load the previous predictions
 
             # Calculate statistics
             index = [splitext(basename(f))[0] for f in file_names]
@@ -150,11 +155,11 @@ class QualityAssurance:
 
             if has_output:
                 if not all([isfile(f) for f in analyzed_batch]):
-                    yield load_batch(batch)
+                    yield load_batch(batch), True
                 else:
-                    continue
+                    yield load_batch(analyzed_batch), False
             else:
-                yield load_batch(batch)
+                yield load_batch(batch), True
 
 
 if __name__ == "__main__":
