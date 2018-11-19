@@ -76,7 +76,7 @@ class QualityAssurance:
         quality_model = load_model(glob(join(self.quality_path, '*.h5'))[0])
         results = []
 
-        for file_names, batch in self.batch_loader():
+        for (file_names, batch), _ in self.batch_loader():
 
             index = [splitext(basename(f))[0] for f in file_names]
             batch = batch / 255
