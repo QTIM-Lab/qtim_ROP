@@ -96,7 +96,7 @@ class QualityAssurance:
         od_model.load_weights(od_weights)
         results = []
 
-        for (file_names, batch), is_raw in self.batch_loader(target_size=(480, 640)):
+        for (file_names, batch), is_raw in self.batch_loader(has_output=True, target_size=(480, 640)):
 
             # Run inference, if the data loaded is the raw data
             if is_raw:
