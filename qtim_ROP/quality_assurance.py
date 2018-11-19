@@ -105,7 +105,8 @@ class QualityAssurance:
                 predictions = od_model.predict(prep_batch)
                 self.save_batch(predictions, file_names, self.od_dir)
             else:
-                predictions = batch  # just load the previous predictions
+                predictions = batch.astype(float)  # just load the previous predictions
+                predictions /= 255.
 
             # Calculate statistics
             index = [splitext(basename(f))[0] for f in file_names]
@@ -119,6 +120,8 @@ class QualityAssurance:
         result_df = pd.concat(results, axis=0)
         result_df['euc_distance_centroid'] = result_df.apply(lambda p: euclidean(centroid, p[['x', 'y']]) if p['no_objects'] > 0 else None, axis=1)
         self.results['is_posterior'] = result_df['no_objects'] & result_df['euc_distance_centroid'] < tol_pixels
+        self.results['x'] = result_df['x']
+        self.results['y'] = result_df['y']
 
     def save_batch(self, pred, file_names, out_dir):
 
