@@ -117,7 +117,7 @@ class QualityAssurance:
         # Compile final DataFrame
         centroid = (480, 480)
         result_df = pd.concat(results, axis=0)
-        result_df['euc_distance_centroid'] = result_df.apply(lambda p: euclidean(centroid, p) if p['no_objects'] > 0 else None, axis=1)
+        result_df['euc_distance_centroid'] = result_df.apply(lambda p: euclidean(centroid, p[['x', 'y']]) if p['no_objects'] > 0 else None, axis=1)
         self.results['is_posterior'] = result_df['no_objects'] & result_df['euc_distance_centroid'] < tol_pixels
 
     def save_batch(self, pred, file_names, out_dir):
