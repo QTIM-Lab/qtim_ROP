@@ -56,7 +56,7 @@ class QualityAssurance:
 
         # Check its quality
         print("Estimating image quality...")
-        # self.is_quality()
+        self.is_quality()
 
         # Verify that it's a posterior pole image
         print("Verifying images are posterior pole...")
@@ -155,9 +155,9 @@ class QualityAssurance:
 
             end = min(start + self.batch_size, len(self.image_files))
             batch = self.image_files[start:end]
-            analyzed_batch = [join(out_dir, basename(f)) for f in batch]
 
-            if has_output:
+            if has_output and out_dir:
+                analyzed_batch = [join(out_dir, basename(f)) for f in batch]
                 if not all([isfile(f) for f in analyzed_batch]):
                     yield load_batch(batch), True
                 else:
