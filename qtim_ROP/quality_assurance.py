@@ -56,7 +56,7 @@ class QualityAssurance:
 
         # Check its quality
         print("Estimating image quality...")
-        # self.is_quality()
+        self.is_quality()
 
         # Verify that it's a posterior pole image
         print("Verifying images are posterior pole...")
@@ -105,21 +105,22 @@ class QualityAssurance:
                 predictions = od_model.predict(prep_batch)
                 self.save_batch(predictions, file_names, self.od_dir)
             else:
-                predictions = batch.astype(float)  # just load the previous predictions
-                predictions /= 255.
+                predictions = batch.transpose((0, 3, 1, 2)).astype(np.float32) / 255.  # just load the previous predictions
 
             # Calculate statistics
             index = [splitext(basename(f))[0] for f in file_names]
             batch_stats = pd.DataFrame(
                 [od_statistics(img[0], filename) for img, filename in zip(predictions, index)]).set_index('filename')
-
             results.append(batch_stats)
 
         # Compile final DataFrame
-        centroid = (480, 480)
+        centroid = (240, 240)
         result_df = pd.concat(results, axis=0)
-        result_df['euc_distance_centroid'] = result_df.apply(lambda p: euclidean(centroid, p[['x', 'y']]) if p['no_objects'] > 0 else None, axis=1)
-        self.results['is_posterior'] = result_df['no_objects'] & result_df['euc_distance_centroid'] < tol_pixels
+        print(result_df)
+
+        result_df['euc_distance_centroid'] = result_df.apply(lambda p: euclidean(centroid, p[['x', 'y']]) if p['no_objects'] == 1 else None, axis=1)
+        print(result_df['no_objects'].dtype, result_df['euc_distance_centroid'].dtype, tol_pixels)
+        self.results['is_posterior'] = result_df['no_objects'] == 1 & (result_df['euc_distance_centroid'] < tol_pixels)
         self.results['x'] = result_df['x']
         self.results['y'] = result_df['y']
 
