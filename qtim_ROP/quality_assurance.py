@@ -9,7 +9,7 @@ import pandas as pd
 from PIL import Image
 from scipy.spatial.distance import euclidean
 from tqdm import tqdm
-from .utils.common import make_sub_dir
+from .utils.common import find_images_recursive
 from .utils.image import find_images
 from .retinaunet.lib.pre_processing import my_PreProc
 from .segmentation.optic_disc import od_statistics
@@ -17,7 +17,7 @@ from .segmentation.optic_disc import od_statistics
 
 class QualityAssurance:
 
-    def __init__(self, input_imgs, config, out_dir, batch_size=4):
+    def __init__(self, input_imgs, config, out_dir, batch_size=32, recursive=True):
 
         self.config = config
         self.out_dir = out_dir
@@ -27,13 +27,12 @@ class QualityAssurance:
         self.batch_size = batch_size
 
         if isdir(input_imgs):
-            image_files = find_images(input_imgs)
+            search_func = find_images_recursive if recursive else find_images
+            image_files = search_func(input_imgs)
         elif isfile(input_imgs):
             image_files = [input_imgs]
         else:
-            image_files = glob(input_imgs)
-
-        if not image_files:
+            image_files = None
             print("Please specify a valid image file or a folder of images.")
             exit(1)
 
