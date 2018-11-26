@@ -115,7 +115,7 @@ class DeepROPCommands(object):
         parser.add_argument('-c', '--config', help='Configuration file specifying models to use', dest='config',
                             default=self.conf_dict)
         parser.add_argument('-b', '--batch-size', help='Number of images to assess at a time', dest='batch_size', type=int, default=50)
-        parser.add_argument('-r', '--recursive', help='Option to search directory recursively', dest='recursive', type=bool, default=False)
+        parser.add_argument('-r', '--recursive', help='Option to search directory recursively', dest='recursive', action='store_true', default=False)
 
         args = parser.parse_args(sys.argv[2:])
         qa = QualityAssurance(args.images, args.config, out_dir=args.out_dir, batch_size=args.batch_size, recursive=args.recursive)
