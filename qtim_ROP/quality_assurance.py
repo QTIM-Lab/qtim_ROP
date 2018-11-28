@@ -1,5 +1,5 @@
 from os.path import *
-from os import makedirs
+from os import makedirs, listdir
 from glob import glob
 import numpy as np
 import keras.backend as K
@@ -22,10 +22,17 @@ class QualityAssurance:
         self.config = config
         self.out_dir = out_dir
         self.od_dir = join(self.out_dir, 'optic_disk')
+
+
         if not exists(self.od_dir):
+            print("Creating optic disk directory")
             makedirs(self.od_dir)
+        else:
+            print('Optic disk folder already exists')
+
         self.batch_size = batch_size
 
+        print("Searching for files")
         if isdir(input_imgs):
             search_func = find_images_recursive if recursive else find_images
             image_files = search_func(input_imgs)
@@ -37,7 +44,7 @@ class QualityAssurance:
             exit(1)
 
         self.image_files = image_files
-        print(f"Processing {len(self.image_files)} image files")
+        print(f'Found {len(self.image_files)} files, and {len(listdir(self.od_dir))} already appear to be segmented')
         self.quality_path = config['quality_directory']
         # self.retina_path = config['retina_directory']
         self.posterior_path = config['optic_directory']
