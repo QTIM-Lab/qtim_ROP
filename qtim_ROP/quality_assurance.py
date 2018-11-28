@@ -23,12 +23,11 @@ class QualityAssurance:
         self.out_dir = out_dir
         self.od_dir = join(self.out_dir, 'optic_disk')
 
-
         if not exists(self.od_dir):
             print("Creating optic disk directory")
             makedirs(self.od_dir)
         else:
-            print('Optic disk folder already exists')
+            print(f'Optic disk folder already exists: {self.od_dir}')
 
         self.batch_size = batch_size
 
