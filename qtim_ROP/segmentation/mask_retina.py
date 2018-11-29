@@ -64,7 +64,7 @@ def circular_mask(img, cf=.98):
 def apply_mask(im, mask):
 
     im[np.invert(mask.astype(np.bool))] = 0
-    return np.transpose(im, (1, 2, 0))
+    return im[:,:,0]
 
 
 if __name__ == "__main__":

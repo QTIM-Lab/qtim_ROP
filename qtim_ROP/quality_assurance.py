@@ -17,7 +17,7 @@ from .segmentation.optic_disc import od_statistics
 
 class QualityAssurance:
 
-    def __init__(self, input_imgs, config, out_dir, batch_size=32, recursive=True):
+    def __init__(self, input_imgs, config, out_dir, batch_size=32, recursive=True, debug=False):
 
         self.config = config
         self.out_dir = out_dir

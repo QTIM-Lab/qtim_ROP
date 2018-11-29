@@ -36,7 +36,6 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
             raise
             
     # Resizing images for inference
-    classifier_dir = conf_dict['classifier_directory']
     prep_conf = yaml.load(open(abspath(join(dirname(__file__), 'config', 'preprocessing.yaml'))))['pipeline']
     img_names, preprocessed_arr = [], []
 
@@ -54,7 +53,7 @@ def preprocess_images(image_files, out_dir, conf_dict, skip_segmentation=False, 
     return preprocessed_arr, img_names
 
 
-def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=100, stride=(32, 32)):
+def classify(input_imgs, out_dir, conf_dict, skip_segmentation=False, batch_size=100, stride=(8, 8)):
 
     if any(v is None and k in ['plus_directory', 'vessel_directory'] for k, v in conf_dict.items()):
         print("Please run 'deeprop configure' to specify the models for segmentation and classification")

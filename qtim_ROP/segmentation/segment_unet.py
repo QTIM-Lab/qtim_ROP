@@ -62,6 +62,7 @@ class SegmentUnet(object):
             # Get predictions
             print("Running predictions...")
             predictions = self.model.predict(img_patches, batch_size=32, verbose=2)
+
             pred_imgs = pred_to_imgs(predictions, self.patch_x, self.patch_y)
 
             # Reconstruct images
@@ -71,6 +72,8 @@ class SegmentUnet(object):
 
                 # Mask the segmentation and transpose
                 seg_masked = apply_mask(seg, mask)
+
+                print(seg_masked.shape)
 
                 # Save masked segmentation
                 if self.out_dir is not None:
@@ -101,7 +104,7 @@ class SegmentUnet(object):
         # Extract patches from the full images
         patches_imgs_test = extract_ordered_overlap(test_imgs, self.patch_x, self.patch_y, self.stride_x, self.stride_y)
 
-        return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3], test_masks
+        return patches_imgs_test, test_imgs.shape[1], test_imgs.shape[2], test_masks
 
 
 def segment(im_arr, unet):  # static method
