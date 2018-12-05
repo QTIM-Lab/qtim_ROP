@@ -48,11 +48,13 @@ class QualityAssurance:
         # self.retina_path = config['retina_directory']
         self.posterior_path = config['optic_directory']
 
-        index = [splitext(basename(f))[0] for f in self.image_files]
-        self.results = pd.DataFrame([], index=index)
-        self.results['Full path'] = self.image_files
-
         self.csv_out = join(self.out_dir, 'QA.csv')
+        if isfile(self.csv_out):
+            self.results = pd.read_csv(self.csv_out, index_col=0)
+        else:
+            index = [splitext(basename(f))[0] for f in self.image_files]
+            self.results = pd.DataFrame([], index=index)
+            self.results['Full path'] = self.image_files
 
     def run(self):
 
@@ -91,6 +93,7 @@ class QualityAssurance:
 
         concat_series = pd.concat(results, axis=0)
         self.results['Quality'] = concat_series
+        self.results.to_csv(self.csv_out)
 
     def is_posterior(self, tol_pixels=1000):
 
