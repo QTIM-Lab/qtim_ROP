@@ -102,7 +102,9 @@ class QualityAssurance:
         od_weights = glob(join(self.posterior_path, '*.h5'))[0]
         od_model = model_from_json(od_json)  # note: only works in Keras 2.1.6 / tensorflow-gpu 1.8
         od_model.load_weights(od_weights)
+
         results = []
+        centroid = (240, 240)
 
         for (file_names, batch), is_raw in self.batch_loader(has_output=True, out_dir=self.od_dir, target_size=(480, 640)):
 
@@ -119,17 +121,22 @@ class QualityAssurance:
             index = [splitext(basename(f))[0] for f in file_names]
             batch_stats = pd.DataFrame(
                 [od_statistics(img[0], filename) for img, filename in zip(predictions, index)]).set_index('filename')
+
+            batch_stats['euc_distance_centroid'] = batch_stats.apply(lambda p: euclidean(centroid, p[['x', 'y']]) if p['no_objects'] > 0 else None, axis=1)
+            batch_stats['is_posterior'] = (batch_stats['no_objects'].astype(int) == 1) & (batch_stats['euc_distance_centroid'] < tol_pixels)
+
             results.append(batch_stats)
+            print(len(results))
 
         # Compile final DataFrame
-        centroid = (240, 240)
         result_df = pd.concat(results, axis=0)
-        result_df['euc_distance_centroid'] = result_df.apply(lambda p: euclidean(centroid, p[['x', 'y']]) if p['no_objects'] > 0 else None, axis=1)
-        self.results['euc_distance_centroid'] = result_df['euc_distance_centroid']
-        self.results['is_posterior'] = (result_df['no_objects'].astype(int) == 1) & (result_df['euc_distance_centroid'] < tol_pixels)
-        self.results['no_objects'] = result_df['no_objects']
-        self.results['x'] = result_df['x']
-        self.results['y'] = result_df['y']
+        self.results = self.results.join(result_df)
+        # result_df['euc_distance_centroid'] = result_df.apply(lambda p: euclidean(centroid, p[['x', 'y']]) if p['no_objects'] > 0 else None, axis=1)
+        # self.results['euc_distance_centroid'] = result_df['euc_distance_centroid']
+        # self.results['is_posterior'] = (result_df['no_objects'].astype(int) == 1) & (result_df['euc_distance_centroid'] < tol_pixels)
+        # self.results['no_objects'] = result_df['no_objects']
+        # self.results['x'] = result_df['x']
+        # self.results['y'] = result_df['y']
         print(self.results)
 
     def save_batch(self, pred, file_names, out_dir):
