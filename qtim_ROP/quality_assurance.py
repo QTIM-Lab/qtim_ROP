@@ -92,6 +92,8 @@ class QualityAssurance:
             results.append(series)
 
         concat_series = pd.concat(results, axis=0)
+        concat_series = concat_series[~concat_series.index.duplicated(keep='first')]  # ridiculous hack to deal with duplicate indices
+
         self.results['Quality'] = concat_series
         self.results.to_csv(self.csv_out)
 
