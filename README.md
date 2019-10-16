@@ -53,7 +53,7 @@ results will be printed to the terminal and output to a timestamped CSV file.
 To segment the vessels in a set of retinal images:
 
 ```bash
-deeprop segment -i <directory-of-images> -o <output-directory> -u <path-to-unet>
+deeprop segment_vessels -i <directory-of-images> -o <output-directory> -u <path-to-unet>
 ```
 
 # Acknowledgements
